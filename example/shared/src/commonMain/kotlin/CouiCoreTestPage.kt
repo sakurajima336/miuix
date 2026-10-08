@@ -57,7 +57,9 @@ fun CouiCoreTestPage(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(CouiTheme.colors.background)
+                // Settings pages that host cards sit on couiColorBackgroundWithCard (#F0F1F2);
+                // couiColorCardBackground is the white fill on top of it.
+                .background(CouiTheme.colors.backgroundWithCard)
                 .verticalScroll(rememberScrollState())
                 .padding(padding)
                 .padding(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()),

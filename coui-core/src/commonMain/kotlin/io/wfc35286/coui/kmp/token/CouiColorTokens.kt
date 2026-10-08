@@ -1,21 +1,5 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
-
-// ---------------------------------------------------------------------------------------
-// GENERATED FILE - do not edit by hand.
-//
-// Source: ColorOS 17.0.0 `com.android.settings` resources.arsc.
-//
-// The `Theme.COUI.Main` / `Theme.COUI.Main.Dark` style chains were expanded recursively
-// (12 levels: Theme.COUI.Main -> Theme.COUI.Blue -> Theme.COUI -> ThemeOverrideBase ->
-// Theme.AppCompat.Light -> ...), then every remaining `@color/...` indirection was followed
-// to a literal ARGB value. 103 of 103 `coui*` colour attributes resolved
-// on both the light and the dark side and are reproduced below.
-//
-// Values are 8-digit AARRGGBB.
-//
-// Regenerate with: coui/tools/gen_tokens.py
-// ---------------------------------------------------------------------------------------
 
 package io.wfc35286.coui.kmp.token
 
@@ -176,6 +160,8 @@ data class CouiColorTokens(
     val labelTertiary: Color,
     /** `couiColorLabelTheme` */
     val labelTheme: Color,
+    /** `couiColorLink` - theme alias of `couiColorLabelTheme` */
+    val link: Color,
     /** `couiColorMask` */
     val mask: Color,
     /** `couiColorMint` */
@@ -184,6 +170,8 @@ data class CouiColorTokens(
     val mintVariant: Color,
     /** `couiColorOnPrimary` */
     val onPrimary: Color,
+    /** `couiColorOnSecondary` - theme alias of `couiColorPrimaryText` */
+    val onSecondary: Color,
     /** `couiColorOrange` */
     val orange: Color,
     /** `couiColorOrangeVariant` */
@@ -234,6 +222,10 @@ data class CouiColorTokens(
     val yellow: Color,
     /** `couiColorYellowVariant` */
     val yellowVariant: Color,
+    /** `couiDefaultTextColor` */
+    val couiDefaultTextColor: Color,
+    /** `couiEditTextDeleteBgColorNormal` - theme alias of `couiColorLabelTertiary` */
+    val couiEditTextDeleteBgColorNormal: Color,
     /** `couiPrimaryTextColor` */
     val couiPrimaryTextColor: Color,
 ) {
@@ -313,10 +305,12 @@ data class CouiColorTokens(
             labelSecondaryVariant = Color(0x66000000),
             labelTertiary = Color(0x42000000),
             labelTheme = Color(0xFF0080FF),
+            link = Color(0xFF0080FF),
             mask = Color(0x33000000),
             mint = Color(0xFF00CC88),
             mintVariant = Color(0xFF39BD91),
             onPrimary = Color(0xFFFFFFFF),
+            onSecondary = Color(0xFF0080FF),
             orange = Color(0xFFFF7700),
             orangeVariant = Color(0xFFE58F45),
             press = Color(0x1F000000),
@@ -342,6 +336,8 @@ data class CouiColorTokens(
             violetVariant = Color(0xFF7E73E5),
             yellow = Color(0xFFFFB200),
             yellowVariant = Color(0xFFE5AF2E),
+            couiDefaultTextColor = Color(0xFF32CEB2),
+            couiEditTextDeleteBgColorNormal = Color(0x42000000),
             couiPrimaryTextColor = Color(0xFF000000),
         )
 
@@ -420,10 +416,12 @@ data class CouiColorTokens(
             labelSecondaryVariant = Color(0x66FFFFFF),
             labelTertiary = Color(0x4DFFFFFF),
             labelTheme = Color(0xFF1A8CFF),
+            link = Color(0xFF1A8CFF),
             mask = Color(0x99000000),
             mint = Color(0xFF1AB883),
             mintVariant = Color(0xFF32A881),
             onPrimary = Color(0xFFFFFFFF),
+            onSecondary = Color(0xFF5C9DFF),
             orange = Color(0xFFF08222),
             orangeVariant = Color(0xFFCC7F3D),
             press = Color(0x33FFFFFF),
@@ -449,6 +447,8 @@ data class CouiColorTokens(
             violetVariant = Color(0xFF7E73E5),
             yellow = Color(0xFFE5A100),
             yellowVariant = Color(0xFFC29427),
+            couiDefaultTextColor = Color(0xFF30C67E),
+            couiEditTextDeleteBgColorNormal = Color(0x4DFFFFFF),
             couiPrimaryTextColor = Color(0xFFFFFFFF),
         )
     }
