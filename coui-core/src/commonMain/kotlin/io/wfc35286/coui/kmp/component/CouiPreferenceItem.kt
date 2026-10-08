@@ -1,10 +1,11 @@
-// Copyright 2026, compose-miuix-ui contributors
+// Copyright 2026, COUI contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package io.wfc35286.coui.kmp.component
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,6 +27,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.wfc35286.coui.kmp.motion.couiStateMask
+import io.wfc35286.coui.kmp.motion.rememberCouiHaptics
 import io.wfc35286.coui.kmp.theme.CouiTheme
 import io.wfc35286.coui.kmp.token.CouiTextEmphasis
 import io.wfc35286.coui.kmp.token.CouiTypography
@@ -70,6 +75,7 @@ fun CouiPreferenceItem(
     trailing: (@Composable () -> Unit)? = null,
     minHeight: Dp = CouiPreferenceDefaults.MinHeight,
     position: CouiPreferencePosition = CouiPreferencePosition.Single,
+    hapticFeedback: Boolean = true,
 ) {
     val density = LocalDensity.current
     // Official setPadding(position) adds these to the row, not to its parent card.
@@ -78,6 +84,21 @@ fun CouiPreferenceItem(
     val headPadding = if (position == CouiPreferencePosition.First || position == CouiPreferencePosition.Single) edgePadding else 0.dp
     val tailPadding = if (position == CouiPreferencePosition.Last || position == CouiPreferencePosition.Single) edgePadding else 0.dp
     val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    // COUIRecyclerDividerManager fades the dividers around a held row; the rows of this card
+    // report their press state to the shared group so the right two lines can be found.
+    val rowGroup = LocalCouiRowGroup.current
+    val rowIndex = remember(rowGroup) { rowGroup?.allocateIndex() ?: -1 }
+    if (rowGroup != null && rowIndex >= 0) {
+        DisposableEffect(rowGroup, rowIndex) {
+            onDispose { rowGroup.setRowPressed(rowIndex, false) }
+        }
+        LaunchedEffect(rowGroup, rowIndex, pressed, enabled, onClick) {
+            rowGroup.setRowPressed(rowIndex, pressed && enabled && onClick != null)
+            rowGroup.syncDividerAlpha()
+        }
+    }
+    val haptics = rememberCouiHaptics()
     val dividerColor = CouiTheme.colors.divider
     val titleInset = CouiPreferenceDefaults.PaddingStart +
         if (leading != null) CouiPreferenceDefaults.IconSize + CouiPreferenceDefaults.IconMarginEnd else 0.dp
@@ -88,18 +109,30 @@ fun CouiPreferenceItem(
                 drawContent()
                 if (showDivider) {
                     drawCouiDivider(
-                        dividerColor,
-                        CouiDividerDefaults.Thickness,
-                        titleInset,
-                        CouiPreferenceDefaults.PaddingEnd,
-                        size.height,
+                        color = dividerColor,
+                        thickness = CouiDividerDefaults.Thickness,
+                        start = titleInset,
+                        end = CouiPreferenceDefaults.PaddingEnd,
+                        y = size.height,
+                        // Both lines touching the held row spring to 0, as the manager does.
+                        alpha = if (rowGroup != null && rowGroup.isDividerAffected(rowIndex)) {
+                            rowGroup.dividerAlpha.value
+                        } else {
+                            1f
+                        },
                     )
                 }
             }
             .couiStateMask(source, enabled && onClick != null)
             .then(
                 if (onClick != null) {
-                    Modifier.clickable(interactionSource = source, indication = null, enabled = enabled, onClick = onClick)
+                    Modifier.clickable(interactionSource = source, indication = null, enabled = enabled) {
+                        // GRANULAR_SHORT_VIBRATE (0x12e): the pulse COUIButton, COUISwitch and
+                        // COUICheckBoxPreference all fire, and the one the row background util
+                        // plays through COUIBackgroundAnimationUtil.performHapticFeedback().
+                        if (hapticFeedback) haptics.granularShort()
+                        onClick()
+                    }
                 } else {
                     Modifier
                 },

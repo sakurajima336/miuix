@@ -1,4 +1,4 @@
-// Copyright 2026, compose-miuix-ui contributors
+// Copyright 2026, COUI contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package io.wfc35286.coui.kmp.component
@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -22,6 +23,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.wfc35286.coui.kmp.motion.couiStateMask
+import io.wfc35286.coui.kmp.motion.rememberCouiHaptics
 import io.wfc35286.coui.kmp.shape.couiCardPath
 import io.wfc35286.coui.kmp.shape.createCouiCardShader
 import io.wfc35286.coui.kmp.theme.CouiTheme
@@ -63,12 +65,17 @@ fun CouiCard(
     insideMargin: PaddingValues = CouiCardDefaults.InsideMargin,
     colors: CouiCardColors = CouiCardDefaults.colors(),
     onClick: (() -> Unit)? = null,
+    hapticFeedback: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val source = remember { MutableInteractionSource() }
     val shader = remember { createCouiCardShader() }
-    Column(
-        modifier = modifier
+    // The rows of this card share their press state so the dividers next to a held row can fade.
+    val rowGroup = remember { CouiRowGroupState() }
+    val haptics = rememberCouiHaptics()
+    CompositionLocalProvider(LocalCouiRowGroup provides rowGroup) {
+        Column(
+            modifier = modifier
             .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
             .drawWithCache {
                 val radius = cornerRadius.roundToPx().toFloat()
@@ -90,12 +97,17 @@ fun CouiCard(
             .couiStateMask(source, enabled = onClick != null)
             .then(
                 if (onClick != null) {
-                    Modifier.clickable(interactionSource = source, indication = null, onClick = onClick)
+                    Modifier.clickable(interactionSource = source, indication = null) {
+                        // Same GRANULAR_SHORT_VIBRATE pulse the COUI controls fire on click.
+                        if (hapticFeedback) haptics.granularShort()
+                        onClick()
+                    }
                 } else {
                     Modifier
                 },
             )
             .padding(insideMargin),
-        content = content,
-    )
+            content = content,
+        )
+    }
 }

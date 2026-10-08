@@ -1,4 +1,4 @@
-// Copyright 2026, compose-miuix-ui contributors
+// Copyright 2026, COUI contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package io.wfc35286.coui.kmp.component
@@ -44,12 +44,23 @@ fun CouiDivider(
     )
 }
 
-internal fun DrawScope.drawCouiDivider(color: Color, thickness: Dp, start: Dp, end: Dp, y: Float) {
+internal fun DrawScope.drawCouiDivider(
+    color: Color,
+    thickness: Dp,
+    start: Dp,
+    end: Dp,
+    y: Float,
+    alpha: Float = 1f,
+) {
     val startPx = start.roundToPx().toFloat()
     val endPx = end.roundToPx().toFloat()
     val left = if (layoutDirection == LayoutDirection.Ltr) startPx else endPx
     val right = size.width - if (layoutDirection == LayoutDirection.Ltr) endPx else startPx
-    if (right > left) {
-        drawRect(color, Offset(left, y.toInt().toFloat()), Size(right - left, thickness.roundToPx().coerceAtLeast(1).toFloat()))
+    if (right > left && alpha > 0f) {
+        drawRect(
+            color = if (alpha >= 1f) color else color.copy(alpha = color.alpha * alpha),
+            topLeft = Offset(left, y.toInt().toFloat()),
+            size = Size(right - left, thickness.roundToPx().coerceAtLeast(1).toFloat()),
+        )
     }
 }

@@ -1,4 +1,4 @@
-// Copyright 2026, compose-miuix-ui contributors
+// Copyright 2026, COUI contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package io.wfc35286.coui.kmp.shape
