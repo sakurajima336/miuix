@@ -11,6 +11,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.jvm.JvmInline
 
 /**
  * A font size, remembering whether the original resource was expressed in `sp` or `dp`.
