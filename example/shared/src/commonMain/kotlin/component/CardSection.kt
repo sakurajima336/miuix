@@ -6,58 +6,50 @@ package component
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
+import io.wfc35286.coui.kmp.component.CouiCard
+import io.wfc35286.coui.kmp.component.CouiCardDefaults
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.utils.PressFeedbackType
 
+/**
+ * Card, drawn with COUI's own corner geometry instead of `miuix.Card`.
+ *
+ * The radius comes from `coui_component_card_*_bg` (`<corners android:radius="16dp"/>`) and the
+ * fill from `couiColorCardBackground`. The corner itself is the table-driven Bézier that
+ * `COUIShapePath.getRoundRectPath` produces, so this is the same silhouette ColorOS draws.
+ */
 fun LazyListScope.cardSection() {
     item(key = "card") {
         SmallTitle(text = "Card")
-        Card(
+        CouiCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp)
                 .padding(bottom = 12.dp),
-            colors = CardDefaults.defaultColors(
-                color = MiuixTheme.colorScheme.primaryVariant,
-            ),
             insideMargin = PaddingValues(16.dp),
-            pressFeedbackType = PressFeedbackType.None,
-            showIndication = true,
         ) {
             Text(
-                color = MiuixTheme.colorScheme.onPrimaryVariant,
                 text = "Card",
                 fontSize = 19.sp,
                 fontWeight = FontWeight.SemiBold,
+                color = MiuixTheme.colorScheme.onSurface,
             )
             Text(
-                color = MiuixTheme.colorScheme.onPrimaryVariant,
-                text = "ShowIndication: true",
+                text = "COUI G2 corner, 16dp",
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Normal,
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
             )
         }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -65,105 +57,63 @@ fun LazyListScope.cardSection() {
                 .padding(bottom = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Card(
+            CouiCard(
                 modifier = Modifier.weight(1f),
                 insideMargin = PaddingValues(16.dp),
-                pressFeedbackType = PressFeedbackType.Sink,
                 onClick = { println("Card click") },
-                content = {
-                    Text(
-                        color = MiuixTheme.colorScheme.onSurface,
-                        text = "Card",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Text(
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                        text = "PressFeedback\nType: Sink",
-                        style = MiuixTheme.textStyles.paragraph,
-                    )
-                },
-            )
-            Card(
-                modifier = Modifier.weight(1f),
-                insideMargin = PaddingValues(16.dp),
-                pressFeedbackType = PressFeedbackType.Tilt,
-                onLongPress = { println("Card long press") },
-                content = {
-                    Text(
-                        color = MiuixTheme.colorScheme.onSurface,
-                        text = "Card",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Text(
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                        text = "PressFeedback\nType: Tilt",
-                        style = MiuixTheme.textStyles.paragraph,
-                    )
-                },
-            )
-        }
-        LongPressHoldDownCardDemo()
-    }
-}
-
-@Composable
-private fun LongPressHoldDownCardDemo() {
-    var showDialog by rememberSaveable { mutableStateOf(false) }
-    var holdDown by rememberSaveable { mutableStateOf(false) }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp)
-            .padding(bottom = 12.dp),
-        insideMargin = PaddingValues(16.dp),
-        pressFeedbackType = PressFeedbackType.Sink,
-        showIndication = true,
-        holdDownState = holdDown,
-        onLongPress = {
-            showDialog = true
-            holdDown = true
-        },
-        content = {
-            Text(
-                color = MiuixTheme.colorScheme.onSurface,
-                text = "Card",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
-            )
-            Text(
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                text = "Long press to show dialog",
-                style = MiuixTheme.textStyles.paragraph,
-            )
-        },
-    )
-
-    OverlayDialog(
-        show = showDialog,
-        title = "Long Press Action",
-        summary = "Triggered by long pressing the card.",
-        onDismissRequest = { showDialog = false },
-        onDismissFinished = { holdDown = false },
-        content = {
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                TextButton(
-                    text = "Cancel",
-                    onClick = { showDialog = false },
-                    modifier = Modifier.weight(1f),
+                Text(
+                    text = "Clickable",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MiuixTheme.colorScheme.onSurface,
                 )
-                Spacer(Modifier.width(20.dp))
-                TextButton(
-                    text = "Confirm",
-                    onClick = { showDialog = false },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.textButtonColorsPrimary(),
+                Text(
+                    text = "Pressed fill",
+                    style = MiuixTheme.textStyles.paragraph,
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
             }
-        },
-    )
+            CouiCard(
+                modifier = Modifier.weight(1f),
+                cornerRadius = 24.dp,
+                insideMargin = PaddingValues(16.dp),
+            ) {
+                Text(
+                    text = "24dp",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MiuixTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = "Bigger corner,\nsame curve family",
+                    style = MiuixTheme.textStyles.paragraph,
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                )
+            }
+        }
+
+        // The card defaults are worth showing off: on ColorOS the radius is a themed token, and
+        // the fill is `couiColorCardBackground` rather than the surrounding surface colour.
+        CouiCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp)
+                .padding(bottom = 12.dp),
+            cornerRadius = CouiCardDefaults.CornerRadius,
+            insideMargin = PaddingValues(16.dp),
+        ) {
+            Text(
+                text = "Defaults",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                color = MiuixTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = "CouiCardDefaults.CornerRadius = 16dp",
+                style = MiuixTheme.textStyles.paragraph,
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            )
+        }
+    }
 }

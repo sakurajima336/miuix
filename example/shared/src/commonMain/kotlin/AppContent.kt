@@ -339,6 +339,9 @@ private fun AppNavHost(
         entry<Route.OverscrollLoadMore>(swipeDismiss = swipeBackDirection) {
             OverscrollLoadMorePage(padding = padding)
         }
+        entry<Route.CouiTest>(swipeDismiss = swipeBackDirection) {
+            CouiCoreTestPage(padding = padding)
+        }
     }
 }
 

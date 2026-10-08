@@ -14,6 +14,7 @@ plugins {
 dependencies {
     implementation(projects.example.shared)
     implementation(libs.androidx.activity)
+    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.profileinstaller)
     "baselineProfile"(project(":baselineprofile"))
 }

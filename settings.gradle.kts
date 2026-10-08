@@ -40,6 +40,7 @@ plugins {
 
 includeBuild("build-logic")
 
+include(":coui-core")
 include(":miuix-core")
 include(":miuix-ui")
 include(":miuix-preference")

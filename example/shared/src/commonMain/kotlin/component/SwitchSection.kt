@@ -3,12 +3,16 @@
 
 package component
 
+import io.wfc35286.coui.kmp.component.CouiCard
+import io.wfc35286.coui.kmp.component.CouiSwitch
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,9 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.SmallTitle
-import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -33,10 +35,13 @@ fun LazyListScope.switchSection() {
         val superSwitchAnimState = remember { mutableStateOf(false) }
 
         SmallTitle(text = "Switch")
-        Card(
+        // Was `miuix.Card`; now the COUI card, so the switch sits on a genuine ColorOS G2
+        // surface instead of a Material-ish rounded rect.
+        CouiCard(
             modifier = Modifier
                 .padding(horizontal = 12.dp)
                 .padding(bottom = 12.dp),
+            insideMargin = PaddingValues(16.dp),
         ) {
             Row(
                 modifier = Modifier
@@ -44,22 +49,22 @@ fun LazyListScope.switchSection() {
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Switch(
+                CouiSwitch(
                     checked = switch.value,
                     onCheckedChange = { switch.value = it },
                 )
-                Switch(
+                CouiSwitch(
                     checked = switchTrue.value,
                     onCheckedChange = { switchTrue.value = it },
                     modifier = Modifier.padding(start = 6.dp),
                 )
-                Switch(
+                CouiSwitch(
                     checked = false,
                     onCheckedChange = { },
                     modifier = Modifier.padding(start = 6.dp),
                     enabled = false,
                 )
-                Switch(
+                CouiSwitch(
                     checked = true,
                     onCheckedChange = { },
                     modifier = Modifier.padding(start = 6.dp),

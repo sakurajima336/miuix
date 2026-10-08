@@ -333,6 +333,11 @@ private fun SettingsContent(
                         summary = "About this example App",
                         onClick = { navigator.push(Route.About) },
                     )
+                    ArrowPreference(
+                        title = "COUI Controls",
+                        summary = "ColorOS design system test page",
+                        onClick = { navigator.push(Route.CouiTest) },
+                    )
                 }
             }
             item { Spacer(modifier = Modifier.height(12.dp)) }
