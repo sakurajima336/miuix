@@ -11,6 +11,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -69,10 +70,14 @@ object CouiSeekBarDefaults {
     val ProgressRadius: Dp = 2.dp
 
     /**
-     * `coui_seekbar_progress_padding_horizontal` - the gap between the progress bar's ends and
-     * the track's ends, at rest.
+     * The gap between the progress bar's left end and the track's left end, at rest.
+     *
+     * The attr `coui_seekbar_progress_padding_horizontal` says 14dp, but **the device says 2dp**:
+     * on a 1240x2772 density-3 screenshot the track's left edge sits at x=108 and the blue starts
+     * at x=114. Whatever consumes the 14dp, it is not this inset - so the measured value is what
+     * ships here. Getting this wrong pushes the whole progress bar 36px to the right.
      */
-    val ProgressPadding: Dp = 14.dp
+    val ProgressPadding: Dp = 2.dp
 
     /**
      * `coui_seekbar_progress_pressed_padding_horizontal` - the same gap while the thumb is held.
@@ -234,6 +239,7 @@ fun CouiSeekBar(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     backgroundEnlargeScale: Float = CouiSeekBarDefaults.BackgroundEnlargeScale,
+    trackColor: Color? = null,
 ) {
     val density = LocalDensity.current
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
@@ -262,6 +268,11 @@ fun CouiSeekBar(
 
     var pressed by remember { mutableStateOf(false) }
     var dragging by remember { mutableStateOf(false) }
+    // Where the finger went down, in pixels. The press glow follows the **finger**, not the
+    // thumb - `COUISpotLightEffect.ensureFollowHandAnimation` drives the light's x from the
+    // touch point, which the device confirms: pressing at x=400 lights up x~410 while the thumb
+    // stays at x=700.
+    var pressX by remember { mutableFloatStateOf(0f) }
     var barWidth by remember { mutableIntStateOf(0) }
 
     val scope = rememberCoroutineScope()
@@ -303,7 +314,7 @@ fun CouiSeekBar(
     }
 
     val progressColor = CouiSeekBarDefaults.progressColor(enabled)
-    val trackColor = CouiSeekBarDefaults.trackColor()
+    val resolvedTrackColor = trackColor ?: CouiSeekBarDefaults.trackColor()
     val thumbColor = CouiSeekBarDefaults.thumbColor(enabled)
 
     Canvas(
@@ -312,7 +323,8 @@ fun CouiSeekBar(
             .pointerInput(enabled, barWidth) {
                 if (!enabled || barWidth <= 0) return@pointerInput
                 detectTapGestures(
-                    onPress = {
+                    onPress = { offset ->
+                        pressX = offset.x
                         pressed = true
                         tryAwaitRelease()
                         pressed = false
@@ -322,7 +334,8 @@ fun CouiSeekBar(
             .pointerInput(enabled, barWidth) {
                 if (!enabled || barWidth <= 0) return@pointerInput
                 detectHorizontalDragGestures(
-                    onDragStart = {
+                    onDragStart = { offset ->
+                        pressX = offset.x
                         pressed = true
                         dragging = true
                     },
@@ -370,32 +383,65 @@ fun CouiSeekBar(
         val radius = height / 2f
         val trackTop = centreY - height / 2f
         drawRoundRect(
-            color = trackColor,
+            color = resolvedTrackColor,
             topLeft = Offset(0f, trackTop),
             size = Size(size.width, height),
             cornerRadius = CornerRadius(radius, radius),
         )
 
-        // The progress bar. Its inset springs from 14dp to 4dp on press (`progress_padding_horizontal`
-        // -> `progress_pressed_padding_horizontal`), so the bar grows towards both ends.
+        // The thumb's centre rides the fraction; its radius grows 6dp -> 8dp while pressed.
+        val thumbRadius = thumbRadiusRest + (thumbRadiusPressed - thumbRadiusRest) * enlarge.value
+        val thumbCentreX = paddingRest + (size.width - 2 * paddingRest) * fraction
+
+        // The progress bar.
+        //
+        // Its left inset springs from 2dp to 4dp on press, and - per
+        // `HorizontalOrientationHandler.calculateProgressRect` - the rect runs from that inset to
+        // `thumbPosition`, then is widened by half its height on **both** ends when
+        // `extendProgressRectForRoundCorner` is set. On device that reproduces the screenshot:
+        // the blue starts 6px after the track's left edge and ends 28px past the thumb's centre.
         val padding = paddingRest + (paddingPressed - paddingRest) * enlarge.value
-        val progressWidth = (size.width * fraction - padding).coerceAtLeast(0f)
+        val progressH = progressHeight + (trackHeight * backgroundEnlargeScale - progressHeight) * enlarge.value
+        val progressTop = centreY - progressH / 2f
+        // `StandardProgressRenderer.drawProgress` uses the same `height / 2` radius.
+        val progressR = progressH / 2f
+        val rectStart = padding - progressR
+        val rectEnd = thumbCentreX + progressR
+        val progressWidth = (rectEnd - rectStart).coerceAtLeast(0f)
         if (progressWidth > 0f) {
-            val progressH = progressHeight + (trackHeight * backgroundEnlargeScale - progressHeight) * enlarge.value
-            val progressTop = centreY - progressH / 2f
-            // `StandardProgressRenderer.drawProgress` uses the same `height / 2` radius.
-            val progressR = progressH / 2f
             drawRoundRect(
                 color = progressColor,
-                topLeft = Offset(padding, progressTop),
+                topLeft = Offset(rectStart, progressTop),
                 size = Size(progressWidth, progressH),
                 cornerRadius = CornerRadius(progressR, progressR),
             )
-        }
 
-        // The thumb. Its radius grows 6dp -> 8dp while pressed, and its centre rides the fraction.
-        val thumbRadius = thumbRadiusRest + (thumbRadiusPressed - thumbRadiusRest) * enlarge.value
-        val thumbCentreX = paddingRest + (size.width - 2 * paddingRest) * fraction
+            // Press glow - the stand-in for `SpotLightEffectRenderer`.
+            //
+            // The real thing clips a `COUISpotLightEffectDrawable` (AGSL point light,
+            // `SpotLightType.TYPE_OPAQUE_MEDIUM_1`) to the track's rounded rect and lets the light
+            // follow the finger. Measured on device: the progress bar's green channel rises from
+            // 128 to 190 at the touch point and falls to ~146 at the far ends, while the grey
+            // track is untouched. A radial white gradient over the progress rect reproduces that
+            // shape. A real RuntimeShader is still TODO.
+            val glow = textureAlpha.value
+            if (glow > 0f) {
+                drawRoundRect(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.55f * glow),
+                            Color.White.copy(alpha = 0.20f * glow),
+                            Color.White.copy(alpha = 0.12f * glow),
+                        ),
+                        center = Offset(pressX, centreY),
+                        radius = size.width * 0.5f,
+                    ),
+                    topLeft = Offset(rectStart, progressTop),
+                    size = Size(progressWidth, progressH),
+                    cornerRadius = CornerRadius(progressR, progressR),
+                )
+            }
+        }
 
         drawTexturedThumb(
             centreX = thumbCentreX,
@@ -548,6 +594,16 @@ object CouiStatusBarToggleSlider {
 
     /** `couiSeekBarThumbShadowSize="0dp"`. */
     val ThumbShadowSize: Dp = 0.dp
+
+    /**
+     * `app:couiSeekBarBackgroundColor="@color/status_bar_qs_brightness_slider_bg_color"`.
+     *
+     * `#0f000000` - a **lighter** grey than the default `#1f000000`. Over the white card this
+     * renders as `#F0F0F0`, whereas the sibling `ScreenMinBrightnessPreference` row's track
+     * renders as `#E0E0E0`. Both values were read off the same screenshot, which is how the
+     * difference was caught.
+     */
+    val TrackColor: Color = Color(0x0F000000)
 }
 
 /** Whether the given travel should be treated as a tap rather than a drag, mirroring the

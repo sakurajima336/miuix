@@ -205,6 +205,7 @@ fun CouiCoreTestPage(
                         value = brightness,
                         onValueChange = { brightness = it },
                         backgroundEnlargeScale = CouiStatusBarToggleSlider.EnlargeScale,
+                        trackColor = CouiStatusBarToggleSlider.TrackColor,
                         modifier = Modifier.fillMaxWidth().height(CouiStatusBarToggleSlider.Height),
                     )
                 }
