@@ -6,12 +6,11 @@ package io.wfc35286.coui.kmp.component
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -173,6 +172,29 @@ object CouiSeekBarDefaults {
     val EnlargeSpec: SpringSpec<Float> = CouiSpringData(bounce = 0f, response = 0.5f).toSpringSpec()
 
     /**
+     * `StandardAnimationHandler.startThumbScaleAnimation(true)`'s spring - `bounce 0.3f`,
+     * `response 0.5f`.
+     *
+     * The thumb grows `curThumbRadius` -> `thumbMaxRadius` (6dp -> 8dp) on this spring, which is
+     * **bouncier** than the track's. Driving both from one spring, as this component first did,
+     * loses the overshoot you see on the thumb.
+     */
+    val ThumbScaleInSpec: SpringSpec<Float> = CouiSpringData(bounce = 0.3f, response = 0.5f).toSpringSpec()
+
+    /** `startThumbScaleAnimation(false)` - the same spring with `bounce` dropped to `0f`. */
+    val ThumbScaleOutSpec: SpringSpec<Float> = CouiSpringData(bounce = 0f, response = 0.5f).toSpringSpec()
+
+    /**
+     * `COUISpotLightEffect.ensureFollowHandAnimation` - `bounce 0.15f, response 0.35f`, with a
+     * minimum visible change of `1e-4f`.
+     *
+     * The press glow rides this spring towards the finger, and the touch handler retargets it on
+     * every move, so the light lags the finger slightly instead of snapping to it.
+     */
+    val FollowHandSpec: SpringSpec<Float> = CouiSpringData(bounce = 0.15f, response = 0.35f)
+        .toSpringSpec(visibilityThreshold = 1e-4f)
+
+    /**
      * The progress bar's colour - `res/color-v23/coui_seekbar_progress_selector.xml`, which is
      * `?attr/couiColorDisable` when disabled and `?attr/couiColorContainerTheme` otherwise.
      */
@@ -268,12 +290,22 @@ fun CouiSeekBar(
 
     var pressed by remember { mutableStateOf(false) }
     var dragging by remember { mutableStateOf(false) }
-    // Where the finger went down, in pixels. The press glow follows the **finger**, not the
-    // thumb - `COUISpotLightEffect.ensureFollowHandAnimation` drives the light's x from the
-    // touch point, which the device confirms: pressing at x=400 lights up x~410 while the thumb
-    // stays at x=700.
-    var pressX by remember { mutableFloatStateOf(0f) }
     var barWidth by remember { mutableIntStateOf(0) }
+
+    // The press glow's x, in pixels. It follows the **finger**, not the thumb, and it keeps
+    // following for as long as the finger is down:
+    // `COUISpotLightEffect.ensureFollowHandAnimation` runs a dedicated `COUISpringAnimation` per
+    // axis with `SpringForce(bounce = 0.15f, response = 0.35f)` and a minimum visible change of
+    // 1e-4f, and the touch handler retargets it on every move. The device confirms both halves:
+    // pressing at x=400 lights up x~410 while the thumb stays at x=700, and the light keeps
+    // tracking the finger until release.
+    val glowX = remember { Animatable(0f) }
+
+    // The thumb's own scale, 0..1. `StandardAnimationHandler.startThumbScaleAnimation` drives it
+    // on a **separate** spring from the track's height: `bounce = 0.3f` when enlarging, `0f` when
+    // releasing, `response = 0.5f` either way. Sharing one spring (as this component first did)
+    // loses the bouncy overshoot on press.
+    val thumbScale = remember { Animatable(0f) }
 
     val scope = rememberCoroutineScope()
 
@@ -312,6 +344,14 @@ fun CouiSeekBar(
             layerCAlpha.animateTo(1f, CouiSeekBarDefaults.LayerCOutSpec)
         }
     }
+    // The thumb's scale runs on its own spring - see [CouiSeekBarDefaults.ThumbScaleInSpec].
+    LaunchedEffect(pressed) {
+        if (pressed) {
+            thumbScale.animateTo(1f, CouiSeekBarDefaults.ThumbScaleInSpec)
+        } else {
+            thumbScale.animateTo(0f, CouiSeekBarDefaults.ThumbScaleOutSpec)
+        }
+    }
 
     val progressColor = CouiSeekBarDefaults.progressColor(enabled)
     val resolvedTrackColor = trackColor ?: CouiSeekBarDefaults.trackColor()
@@ -320,48 +360,51 @@ fun CouiSeekBar(
     Canvas(
         modifier = modifier
             .onSizeChanged { barWidth = it.width }
-            .pointerInput(enabled, barWidth) {
+            // One gesture loop for both press and drag.
+            //
+            // The first version used `detectTapGestures` and `detectHorizontalDragGestures` in two
+            // separate `pointerInput` blocks. When the finger went down and then moved, the drag
+            // block consumed the pointer and the tap block's `tryAwaitRelease` returned, which
+            // reset `pressed` to false mid-drag - every press effect (track enlarge, progress
+            // inset, thumb glow, thumb scale) snapped back to rest and only the plain progress
+            // movement survived. `COUISeekBarAdvanced` has a single `onTouchEvent`; so does this.
+            .pointerInput(enabled, barWidth, rtl) {
                 if (!enabled || barWidth <= 0) return@pointerInput
-                detectTapGestures(
-                    onPress = { offset ->
-                        pressX = offset.x
-                        pressed = true
-                        tryAwaitRelease()
-                        pressed = false
-                    },
-                )
-            }
-            .pointerInput(enabled, barWidth) {
-                if (!enabled || barWidth <= 0) return@pointerInput
-                detectHorizontalDragGestures(
-                    onDragStart = { offset ->
-                        pressX = offset.x
-                        pressed = true
-                        dragging = true
-                    },
-                    onDragEnd = {
-                        dragging = false
-                        pressed = false
-                    },
-                    onDragCancel = {
-                        dragging = false
-                        pressed = false
-                    },
-                    onHorizontalDrag = { change, _ ->
-                        // The bar spans `paddingRest` .. `width - paddingRest` at rest, and the
-                        // thumb travels between the two ends of that span. `snapScaleToFingerPosition`
-                        // in the original uses the same span regardless of the pressed padding.
-                        val start = paddingRest
-                        val end = barWidth - paddingRest
-                        val span = (end - start).coerceAtLeast(1f)
-                        val raw = ((change.position.x - start) / span).coerceIn(0f, 1f)
-                        val target = if (rtl) 1f - raw else raw
-                        onValueChange(target)
-                        scope.launch {
-                            thumbFraction.animateTo(target, CouiSeekBarDefaults.EnlargeSpec)
+                val start = paddingRest
+                val span = (barWidth - 2 * paddingRest).coerceAtLeast(1f)
+                val touchSlop = viewConfiguration.touchSlop
+                awaitEachGesture {
+                    val down = awaitFirstDown()
+                    pressed = true
+                    dragging = false
+                    scope.launch {
+                        glowX.animateTo(down.position.x, CouiSeekBarDefaults.FollowHandSpec)
+                    }
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        val change = event.changes.firstOrNull() ?: break
+                        if (!change.pressed) break // finger lifted
+                        if (!dragging && abs(change.position.x - down.position.x) > touchSlop) {
+                            dragging = true
                         }
-                    },
-                )
+                        if (dragging) {
+                            // The light keeps following the finger for as long as it is down.
+                            scope.launch {
+                                glowX.animateTo(change.position.x, CouiSeekBarDefaults.FollowHandSpec)
+                            }
+                            val raw = ((change.position.x - start) / span).coerceIn(0f, 1f)
+                            val target = if (rtl) 1f - raw else raw
+                            onValueChange(target)
+                            scope.launch {
+                                thumbFraction.animateTo(target, CouiSeekBarDefaults.EnlargeSpec)
+                            }
+                            change.consume()
+                        }
+                    }
+                    // Only the lift ends the press effects.
+                    dragging = false
+                    pressed = false
+                }
             },
     ) {
         if (barWidth <= 0) return@Canvas
@@ -389,8 +432,9 @@ fun CouiSeekBar(
             cornerRadius = CornerRadius(radius, radius),
         )
 
-        // The thumb's centre rides the fraction; its radius grows 6dp -> 8dp while pressed.
-        val thumbRadius = thumbRadiusRest + (thumbRadiusPressed - thumbRadiusRest) * enlarge.value
+        // The thumb's centre rides the fraction; its radius grows 6dp -> 8dp on its **own** spring
+        // (`thumbScale`), not the track's.
+        val thumbRadius = thumbRadiusRest + (thumbRadiusPressed - thumbRadiusRest) * thumbScale.value
         val thumbCentreX = paddingRest + (size.width - 2 * paddingRest) * fraction
 
         // The progress bar.
@@ -433,7 +477,7 @@ fun CouiSeekBar(
                             Color.White.copy(alpha = 0.20f * glow),
                             Color.White.copy(alpha = 0.12f * glow),
                         ),
-                        center = Offset(pressX, centreY),
+                        center = Offset(glowX.value, centreY),
                         radius = size.width * 0.5f,
                     ),
                     topLeft = Offset(rectStart, progressTop),
