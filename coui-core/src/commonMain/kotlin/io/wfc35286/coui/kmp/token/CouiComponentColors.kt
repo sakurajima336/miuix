@@ -38,6 +38,27 @@ data class CouiComponentColors(
 
     /** `switch_outer_circle_disable_color`. */
     val switchThumbDisabled: Color,
+
+    /**
+     * `coui_seekbar_background_selector.xml` - the seek bar's track.
+     *
+     * Both states resolve to `?attr/couiColorContainer12`, so the track does not change when the
+     * bar is disabled; only the progress bar and thumb do.
+     */
+    val seekBarTrack: Color,
+
+    /** `coui_color_white` - the seek bar's thumb. Has no `-night` variant. */
+    val seekBarThumb: Color,
+
+    /** `coui_seekbar_thumb_disable_color`. */
+    val seekBarThumbDisabled: Color,
+
+    /**
+     * `coui_seekbar_thumb_shadow_color`.
+     *
+     * Only used by the gradient/shadow layers of `TexturedThumbRenderer`, i.e. while pressed.
+     */
+    val seekBarThumbShadow: Color,
 ) {
     companion object {
         /** The light values. */
@@ -46,6 +67,11 @@ data class CouiComponentColors(
             switchTrackOffDisabled = Color(0x14000000),
             switchThumb = Color(0xFFFFFFFF),
             switchThumbDisabled = Color(0x8AFFFFFF),
+            // `coui_color_container12` - 12% black.
+            seekBarTrack = Color(0x1F000000),
+            seekBarThumb = Color(0xFFFFFFFF),
+            seekBarThumbDisabled = Color(0x8AFFFFFF),
+            seekBarThumbShadow = Color(0x1A000000),
         )
 
         /** The `-night` values. */
@@ -54,6 +80,13 @@ data class CouiComponentColors(
             switchTrackOffDisabled = Color(0x26FFFFFF),
             switchThumb = Color(0xFFFFFFFF),
             switchThumbDisabled = Color(0x29FFFFFF),
+            // `coui_color_container12_dark` - 20% white.
+            seekBarTrack = Color(0x33FFFFFF),
+            // `coui_color_white` has no night variant.
+            seekBarThumb = Color(0xFFFFFFFF),
+            seekBarThumbDisabled = Color(0x8AFFFFFF),
+            // `coui_seekbar_thumb_shadow_color_dark`.
+            seekBarThumbShadow = Color(0x33FFFFFF),
         )
     }
 }

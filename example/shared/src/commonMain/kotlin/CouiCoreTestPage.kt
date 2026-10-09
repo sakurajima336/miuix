@@ -32,6 +32,9 @@ import io.wfc35286.coui.kmp.component.CouiPreferenceDefaults
 import io.wfc35286.coui.kmp.component.CouiPreferenceItem
 import io.wfc35286.coui.kmp.component.CouiPreferencePosition
 import io.wfc35286.coui.kmp.component.CouiSmallTitle
+import io.wfc35286.coui.kmp.component.CouiSeekBar
+import io.wfc35286.coui.kmp.component.CouiSeekBarBrightness
+import io.wfc35286.coui.kmp.component.CouiSeekBarDefaults
 import io.wfc35286.coui.kmp.component.CouiSwitch
 import io.wfc35286.coui.kmp.component.CouiText
 import io.wfc35286.coui.kmp.theme.CouiTheme
@@ -52,6 +55,8 @@ fun CouiCoreTestPage(
     var bluetooth by remember { mutableStateOf(false) }
     var airplane by remember { mutableStateOf(false) }
     var autoRotate by remember { mutableStateOf(true) }
+    var brightness by remember { mutableStateOf(0.65f) }
+    var minBrightness by remember { mutableStateOf(0.35f) }
 
     CouiTheme {
         Column(
@@ -172,6 +177,36 @@ fun CouiCoreTestPage(
                     onClick = { autoRotate = !autoRotate },
                     trailing = { CouiSwitch(checked = autoRotate, onCheckedChange = { autoRotate = it }) },
                 )
+            }
+
+            CouiSmallTitle("SeekBar")
+
+            CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                    CouiText("最低自动亮度", CouiTypography.body)
+                    Spacer(Modifier.height(4.dp))
+                    // The real settings row: an unattributed COUISeekBar, so the track swells to
+                    // 1.4x and the progress bar's inset springs 14dp -> 4dp while held.
+                    CouiSeekBar(
+                        value = minBrightness,
+                        onValueChange = { minBrightness = it },
+                        modifier = Modifier.fillMaxWidth().height(CouiSeekBarDefaults.MinHeight),
+                    )
+                }
+            }
+
+            CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                    CouiText("亮度", CouiTypography.body)
+                    Spacer(Modifier.height(4.dp))
+                    // status_bar_toggle_slider.xml: enlarge 1.0, 18dp radius, no progress padding.
+                    CouiSeekBar(
+                        value = brightness,
+                        onValueChange = { brightness = it },
+                        backgroundEnlargeScale = CouiSeekBarBrightness.EnlargeScale,
+                        modifier = Modifier.fillMaxWidth().height(CouiSeekBarBrightness.Height),
+                    )
+                }
             }
 
             Spacer(Modifier.height(48.dp))
