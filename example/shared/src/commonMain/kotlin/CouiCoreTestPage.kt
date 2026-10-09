@@ -33,7 +33,7 @@ import io.wfc35286.coui.kmp.component.CouiPreferenceItem
 import io.wfc35286.coui.kmp.component.CouiPreferencePosition
 import io.wfc35286.coui.kmp.component.CouiSmallTitle
 import io.wfc35286.coui.kmp.component.CouiSeekBar
-import io.wfc35286.coui.kmp.component.CouiSeekBarBrightness
+import io.wfc35286.coui.kmp.component.CouiStatusBarToggleSlider
 import io.wfc35286.coui.kmp.component.CouiSeekBarDefaults
 import io.wfc35286.coui.kmp.component.CouiSwitch
 import io.wfc35286.coui.kmp.component.CouiText
@@ -181,12 +181,12 @@ fun CouiCoreTestPage(
 
             CouiSmallTitle("SeekBar")
 
+            // ScreenMinBrightnessPreference - hosts a SettingsSeekBar, which extends COUISeekBar
+            // with no attributes at all, so it gets the plain defaults.
             CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                 Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    CouiText("最低自动亮度", CouiTypography.body)
+                    CouiText("ScreenMinBrightnessPreference", CouiTypography.body)
                     Spacer(Modifier.height(4.dp))
-                    // The real settings row: an unattributed COUISeekBar, so the track swells to
-                    // 1.4x and the progress bar's inset springs 14dp -> 4dp while held.
                     CouiSeekBar(
                         value = minBrightness,
                         onValueChange = { minBrightness = it },
@@ -195,16 +195,17 @@ fun CouiCoreTestPage(
                 }
             }
 
+            // SettingsBrightnessPreference - hosts an OplusToggleSliderView, which inflates
+            // status_bar_toggle_slider.xml.
             CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                 Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    CouiText("亮度", CouiTypography.body)
+                    CouiText("SettingsBrightnessPreference", CouiTypography.body)
                     Spacer(Modifier.height(4.dp))
-                    // status_bar_toggle_slider.xml: enlarge 1.0, 18dp radius, no progress padding.
                     CouiSeekBar(
                         value = brightness,
                         onValueChange = { brightness = it },
-                        backgroundEnlargeScale = CouiSeekBarBrightness.EnlargeScale,
-                        modifier = Modifier.fillMaxWidth().height(CouiSeekBarBrightness.Height),
+                        backgroundEnlargeScale = CouiStatusBarToggleSlider.EnlargeScale,
+                        modifier = Modifier.fillMaxWidth().height(CouiStatusBarToggleSlider.Height),
                     )
                 }
             }

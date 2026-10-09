@@ -50,13 +50,22 @@ object CouiSeekBarDefaults {
     /** `coui_seekbar_background_height` - the track height at rest. */
     val TrackHeight: Dp = 20.dp
 
-    /** `coui_seekbar_background_radius` / `coui_seekbar_progress_radius`. */
+    /**
+     * `coui_seekbar_background_radius`.
+     *
+     * **Not used for drawing.** `COUISeekBarCore.getBackgroundRadiusForDraw()` returns
+     * `curBackgroundHeight / 2`, and that is the value that reaches `drawRoundRect`; this attr
+     * only feeds the G2 path adapter (`COUISeekBarCore$SmoothRoundCornerHelper`) when
+     * `smoothStyleType == 1`. Kept here because it is part of the public attr surface - but do
+     * not pass it to `drawRoundRect`, which is how this component first shipped an almost square
+     * track.
+     */
     val TrackRadius: Dp = 2.dp
 
     /** `coui_seekbar_progress_height`. */
     val ProgressHeight: Dp = 20.dp
 
-    /** `coui_seekbar_progress_radius`. */
+    /** `coui_seekbar_progress_radius`. Not used for drawing - see [TrackRadius]. */
     val ProgressRadius: Dp = 2.dp
 
     /**
@@ -109,10 +118,12 @@ object CouiSeekBarDefaults {
     internal const val LayerABottomAlpha: Int = 0x8c
 
     /**
-     * `TexturedThumbRenderer.LAYER_B_*` - the ring drawn under the gradient.
+     * `TexturedThumbRenderer` LayerB's bitmap margin.
      *
-     * The smali builds it as a cached bitmap: a `#77FFFFFF` fill plus a `STROKE` paint of width
-     * 10dp carrying `setShadowLayer(radius = 5dp, dx = 0, dy = 0.4dp, color = 0)`.
+     * The smali allocates a `(2r + 2 * 12dp)²` ARGB bitmap and draws the disc inset by 12dp on
+     * every side. Because the glow is clipped to the disc, this margin ends up **fully
+     * transparent** - it is not a halo around the thumb. Kept for documentation; nothing in the
+     * drawing path reads it.
      */
     val LayerBInset: Dp = 12.dp
 
@@ -183,7 +194,13 @@ object CouiSeekBarDefaults {
         return if (enabled) componentColors.seekBarThumb else componentColors.seekBarThumbDisabled
     }
 
-    /** `coui_seekbar_thumb_shadow_color` - `#1a000000` light, `#33ffffff` dark. */
+    /**
+     * `coui_seekbar_thumb_shadow_color` - `#1a000000` light, `#33ffffff` dark.
+     *
+     * Note this is **not** the colour `TexturedThumbRenderer` uses for its glow: that one calls
+     * `setShadowLayer(5dp, 0, 0.4dp, -1)`, i.e. opaque **white**. This value belongs to the base
+     * `StandardThumbRenderer.drawThumbRoundRect`, which `TexturedThumbRenderer` overrides.
+     */
     @Composable
     fun thumbShadowColor(): Color = CouiTheme.componentColors.seekBarThumbShadow
 }
@@ -222,16 +239,12 @@ fun CouiSeekBar(
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
 
     val trackHeight = with(density) { CouiSeekBarDefaults.TrackHeight.toPx() }
-    val trackRadius = with(density) { CouiSeekBarDefaults.TrackRadius.toPx() }
     val progressHeight = with(density) { CouiSeekBarDefaults.ProgressHeight.toPx() }
-    val progressRadius = with(density) { CouiSeekBarDefaults.ProgressRadius.toPx() }
     val paddingRest = with(density) { CouiSeekBarDefaults.ProgressPadding.toPx() }
     val paddingPressed = with(density) { CouiSeekBarDefaults.ProgressPaddingPressed.toPx() }
     val thumbRadiusRest = with(density) { CouiSeekBarDefaults.ThumbRadius.toPx() }
     val thumbRadiusPressed = with(density) { CouiSeekBarDefaults.ThumbMaxRadius.toPx() }
-    val layerBInset = with(density) { CouiSeekBarDefaults.LayerBInset.toPx() }
     val layerBShadowRadius = with(density) { CouiSeekBarDefaults.LayerBShadowRadius.toPx() }
-    val layerBShadowDy = with(density) { CouiSeekBarDefaults.LayerBShadowOffsetY.toPx() }
     val layerBStrokeWidth = with(density) { CouiSeekBarDefaults.LayerBShadowStrokeWidth.toPx() }
 
     // The three animated quantities of the press interaction, each with the spring its smali
@@ -292,7 +305,6 @@ fun CouiSeekBar(
     val progressColor = CouiSeekBarDefaults.progressColor(enabled)
     val trackColor = CouiSeekBarDefaults.trackColor()
     val thumbColor = CouiSeekBarDefaults.thumbColor(enabled)
-    val thumbShadowColor = CouiSeekBarDefaults.thumbShadowColor()
 
     Canvas(
         modifier = modifier
@@ -345,10 +357,17 @@ fun CouiSeekBar(
         val centreY = size.height / 2f
 
         // The track: `mMaxBackgroundHeight = backgroundHeight * backgroundEnlargeScale`, lerped by
-        // the enlarge spring. `SmoothRoundCornerHelper` then clamps the radius to half the height,
-        // which is what turns the 2dp radius into a capsule.
+        // the enlarge spring.
+        //
+        // The corner radius is **always half the height**:
+        // `COUISeekBarCore.getBackgroundRadiusForDraw()` returns exactly `curBackgroundHeight / 2`,
+        // and `drawInactiveTrack` feeds that straight into
+        // `canvas.drawRoundRect(rect, r, r, paint)` - or into the G2 `OplusPathAdapter` when
+        // `smoothStyleType == 1`. The `coui_seekbar_background_radius` attr (2dp) never reaches
+        // the draw call, so reading it as the radius yields an almost square track. That was this
+        // component's first-pass bug, caught on device.
         val height = trackHeight + (trackHeight * backgroundEnlargeScale - trackHeight) * enlarge.value
-        val radius = trackRadius.coerceAtMost(height / 2f)
+        val radius = height / 2f
         val trackTop = centreY - height / 2f
         drawRoundRect(
             color = trackColor,
@@ -364,7 +383,8 @@ fun CouiSeekBar(
         if (progressWidth > 0f) {
             val progressH = progressHeight + (trackHeight * backgroundEnlargeScale - progressHeight) * enlarge.value
             val progressTop = centreY - progressH / 2f
-            val progressR = progressRadius.coerceAtMost(progressH / 2f)
+            // `StandardProgressRenderer.drawProgress` uses the same `height / 2` radius.
+            val progressR = progressH / 2f
             drawRoundRect(
                 color = progressColor,
                 topLeft = Offset(padding, progressTop),
@@ -382,14 +402,11 @@ fun CouiSeekBar(
             centreY = centreY,
             radius = thumbRadius,
             layerAAlpha = textureAlpha.value,
-            layerBInset = layerBInset,
             layerBShadowRadius = layerBShadowRadius,
-            layerBShadowDy = layerBShadowDy,
             layerBStrokeWidth = layerBStrokeWidth,
             layerBFill = CouiSeekBarDefaults.LayerBFill,
             layerCAlpha = layerCAlpha.value,
             layerCColor = thumbColor,
-            shadowColor = thumbShadowColor,
         )
     }
 }
@@ -411,14 +428,11 @@ private fun DrawScope.drawTexturedThumb(
     centreY: Float,
     radius: Float,
     layerAAlpha: Float,
-    layerBInset: Float,
     layerBShadowRadius: Float,
-    layerBShadowDy: Float,
     layerBStrokeWidth: Float,
     layerBFill: Color,
     layerCAlpha: Float,
     layerCColor: Color,
-    shadowColor: Color,
 ) {
     val left = centreX - radius
     val top = centreY - radius
@@ -447,39 +461,38 @@ private fun DrawScope.drawTexturedThumb(
             alpha = groupAlpha / 255f,
         )
 
-        // LayerB - the cached bitmap: a `#77FFFFFF` fill, plus the blurred outline of a 10dp
-        // STROKE ring, drawn into a rect inset by 12dp on every side.
+        // LayerB - `getOrCreateLayerBBitmap`: a `size x size` ARGB bitmap (`size = 2r + 24dp`)
+        // holding a `#77FFFFFF` disc plus the **inner** half of a white glow.
         //
-        // Compose's common API has no `Paint#setShadowLayer`, so the outline is approximated with
-        // concentric strokes whose alpha falls off with distance. The visual target is a soft halo
-        // hugging the disc; it is the one place in this component that is an approximation rather
-        // than a port.
-        val outerLeft = left - layerBInset
-        val outerTop = top - layerBInset
-        val outerSize = Size(rectSize.width + layerBInset * 2f, rectSize.height + layerBInset * 2f)
-        val outerCorner = CornerRadius(radius + layerBInset, radius + layerBInset)
-        drawRoundRect(
+        // The glow is built by clipping to the disc and then drawing a 10dp STROKE oval whose
+        // paint carries `setShadowLayer(radius = 5dp, dx = 0, dy = 0.4dp, color = -1)` - and `-1`
+        // is opaque **white**, not black. Clipping discards the outer half of the stroke, so what
+        // survives is a soft white ring hugging the inside of the disc. Outside the disc there is
+        // nothing at all; the bitmap's 12dp margin stays fully transparent.
+        //
+        // Compose's common API has no `Paint#setShadowLayer`, so the blurred ring is approximated
+        // with concentric strokes whose alpha tapers inwards. This is the one place in this
+        // component that is an approximation rather than a port.
+        drawCircle(
             color = layerBFill,
-            topLeft = Offset(outerLeft, outerTop),
-            size = outerSize,
-            cornerRadius = outerCorner,
+            radius = radius,
+            center = Offset(centreX, centreY),
             alpha = groupAlpha / 255f,
         )
-        val haloSteps = 4
-        for (step in 0 until haloSteps) {
-            val t = (step + 1) / haloSteps.toFloat()
-            val spread = layerBShadowRadius * t
-            val stepAlpha = (1f - t) * 0.5f * (groupAlpha / 255f)
-            if (stepAlpha <= 0f) continue
-            drawRoundRect(
-                color = shadowColor.copy(alpha = stepAlpha),
-                topLeft = Offset(outerLeft + spread, outerTop + spread + layerBShadowDy),
-                size = Size(outerSize.width - spread * 2f, outerSize.height - spread * 2f),
-                cornerRadius = CornerRadius(
-                    (radius + layerBInset - spread).coerceAtLeast(0f),
-                    (radius + layerBInset - spread).coerceAtLeast(0f),
-                ),
-                style = Stroke(width = layerBStrokeWidth * (1f - t) + 1f),
+        // The stroke is 10dp wide and sits centred on the rim, so 5dp of it lands inside; the
+        // shadow layer blurs a further 5dp inwards. That 10dp is how deep the glow reaches.
+        val glowDepth = layerBStrokeWidth / 2f + layerBShadowRadius
+        val glowSteps = 6
+        for (step in 0 until glowSteps) {
+            val t = (step + 1) / glowSteps.toFloat()
+            val ringRadius = radius - glowDepth * (1f - t)
+            val ringAlpha = 0.55f * t * (groupAlpha / 255f)
+            if (ringRadius <= 0f || ringAlpha <= 0f) continue
+            drawCircle(
+                color = Color.White.copy(alpha = ringAlpha),
+                radius = ringRadius,
+                center = Offset(centreX, centreY),
+                style = Stroke(width = layerBStrokeWidth / glowSteps),
             )
         }
     }
@@ -498,22 +511,29 @@ private fun DrawScope.drawTexturedThumb(
 }
 
 /**
- * Convenience preset for the settings "亮度" row.
+ * The `SettingsBrightnessPreference` slider, named after the layout it inflates.
  *
- * `status_bar_toggle_slider.xml` pins an unattributed [CouiSeekBar] down to a very different look
- * from the default: an 18dp radius (a capsule rather than the 2dp default), no progress padding
- * (the bar starts flush with the track), no enlarge, no thumb shadow, plus a custom thumb
- * drawable. Those are exactly the values below.
+ * On ColorOS 17 that row is:
  *
- * ```kotlin
- * CouiSeekBar(
- *     value = brightness,
- *     onValueChange = { brightness = it },
- *     backgroundEnlargeScale = CouiSeekBarBrightness.EnlargeScale,
- * )
  * ```
+ * com.oplus.settings.feature.display.SettingsBrightnessPreference   (the preference)
+ *   → com.oplus.settings.widget.OplusToggleSliderView               (RelativeLayout + ToggleSlider)
+ *       → res/layout/status_bar_toggle_slider.xml                   (inflated in its constructor)
+ *           → com.coui.appcompat.seekbar.COUISeekBar                (the actual bar)
+ * ```
+ *
+ * `status_bar_toggle_slider.xml` pins that [CouiSeekBar] to values well away from the
+ * unattributed default: no enlarge (`1.0`), no progress padding, no thumb shadow, an 18dp
+ * radius, and a custom `android:thumb` drawable - which decodes to a **fully transparent
+ * placeholder** (see `COUI-菜单弹窗与进度条深扒.md` §7.1), so the thumb is drawn entirely by
+ * `TexturedThumbRenderer`. Those are the values below.
+ *
+ * Its sibling row, `ScreenMinBrightnessPreference`, hosts a `SettingsSeekBar` (which extends
+ * `COUISeekBar` with **no** attributes at all) and therefore uses the plain
+ * [CouiSeekBarDefaults]. The two differ most visibly on touch-down: this one stays put, that one
+ * swells to 1.4x.
  */
-object CouiSeekBarBrightness {
+object CouiStatusBarToggleSlider {
     /** `brightness_toggle_slider_height`. */
     val Height: Dp = 36.dp
 
