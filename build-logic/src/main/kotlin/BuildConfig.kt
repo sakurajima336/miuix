@@ -14,6 +14,16 @@ object BuildConfig {
     const val MIN_SDK = 24
     const val BUILD_TOOLS_VERSION = "37.0.0"
     const val JDK_VERSION = 21
+
+    /**
+     * Coordinates of the independent COUI library.
+     *
+     * Deliberately separate from [LIBRARY_ID]: COUI is its own product that happens to live in
+     * this repository, not a Miuix module, so it must not inherit Miuix's group or version.
+     */
+    const val COUI_LIBRARY_ID = "io.wfc35286.coui.kmp"
+    const val COUI_LIBRARY_VERSION = "0.1.0"
+    const val COUI_APPLICATION_NAME = "COUI"
 }
 
 fun org.gradle.api.Project.getGitVersionCode(): Int {
