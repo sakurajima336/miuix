@@ -67,8 +67,10 @@ kotlin {
 }
 ```
 
-JitPack builds on Linux, so the Apple (iOS/macOS) variants of these modules are not produced by
-that build - Android, Desktop/JVM, JS and WasmJs are.
+JitPack builds every target the tag publishes: Android (`aar`), Desktop/JVM, JS, WasmJs and the
+Apple klibs (iOS arm64/simulator arm64, macOS arm64). The first request for a brand-new tag
+triggers the build (~5 min); a `Read timed out` from `jitpack.io` is their CDN and just needs a
+retry.
 
 ### Getting Started
 
