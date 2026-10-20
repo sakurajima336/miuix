@@ -1,6 +1,9 @@
-## Miuix
+## COUI
+ColorOS 17 (COUI) design-system components for Compose Multiplatform.
 
-A UI library for Compose Multiplatform.
+This repository started from the Miuix codebase: the `miuix-*` modules are the upstream
+foundation kept for parity/reference, while all COUI work lives in `coui-core`
+(`io.github.wfc35286.coui.kmp`).
 
 > This library is experimental. APIs may change without notice.
 
@@ -28,6 +31,7 @@ A UI library for Compose Multiplatform.
 
 | Module             | Description                                          |
 | ------------------ | ---------------------------------------------------- |
+| `coui-core`        | COUI (ColorOS) design system: tokens, shape, motion, components |
 | `miuix-ui`         | Core UI component library                            |
 | `miuix-preference` | Preference components library, depends on `miuix-ui` |
 | `miuix-icons`      | Extended icon library, can be used independently     |

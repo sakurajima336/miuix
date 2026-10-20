@@ -3,7 +3,7 @@
 
 @file:Suppress("UnstableApiUsage")
 
-rootProject.name = "compose-miuix-ui"
+rootProject.name = "COUI"
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
@@ -41,6 +41,7 @@ plugins {
 includeBuild("build-logic")
 
 include(":coui-core")
+include(":coui-blur")
 include(":miuix-core")
 include(":miuix-ui")
 include(":miuix-preference")

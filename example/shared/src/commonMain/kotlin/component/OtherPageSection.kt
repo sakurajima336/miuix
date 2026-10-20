@@ -49,6 +49,16 @@ fun LazyListScope.otherPageSection() {
                 summary = "Fling to the bottom, then fling again",
                 onClick = { navigator.push(Route.OverscrollLoadMore) },
             )
+            ArrowPreference(
+                title = "COUI 实验室",
+                summary = "任意组件 + 自定义背景图 / 亮度 / 明暗",
+                onClick = { navigator.push(Route.CouiLab) },
+            )
+            ArrowPreference(
+                title = "COUI 悬浮导航栏",
+                summary = "直达悬浮胶囊测试页（材质 / 触摸 / 返回手势）",
+                onClick = { navigator.push(Route.CouiBottomNavBar) },
+            )
         }
     }
 }

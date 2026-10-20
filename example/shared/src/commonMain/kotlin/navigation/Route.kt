@@ -38,4 +38,16 @@ sealed interface Route : NavKey {
 
     @Serializable
     data object CouiTest : Route
+
+    /**
+     * The dedicated floating-navigation-bar page. Kept separate from [CouiTest] on purpose: the
+     * showcase stacks every component in one list, which makes it impossible to judge a floating
+     * bar (nothing meaningful sits behind the pill, and the pill covers unrelated rows).
+     */
+    @Serializable
+    data object CouiBottomNavBar : Route
+
+    /** The neutral component stage: pick any COUI component, with a user-chosen backdrop. */
+    @Serializable
+    data object CouiLab : Route
 }

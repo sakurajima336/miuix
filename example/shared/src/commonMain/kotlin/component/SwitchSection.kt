@@ -1,10 +1,13 @@
 // Copyright 2025, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
-
 package component
-
-import io.wfc35286.coui.kmp.component.CouiCard
-import io.wfc35286.coui.kmp.component.CouiSwitch
+import io.github.wfc35286.coui.kmp.component.CouiCard
+import io.github.wfc35286.coui.kmp.component.CouiPreferenceItem
+import io.github.wfc35286.coui.kmp.component.CouiPreferencePosition
+import io.github.wfc35286.coui.kmp.component.CouiSwitch
+import io.github.wfc35286.coui.kmp.component.CouiText
+import io.github.wfc35286.coui.kmp.token.CouiTextEmphasis
+import io.github.wfc35286.coui.kmp.token.CouiTypography
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -17,14 +20,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import top.yukonga.miuix.kmp.basic.SmallTitle
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.preference.SwitchPreference
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 fun LazyListScope.switchSection() {
     item(key = "switch") {
@@ -33,15 +33,12 @@ fun LazyListScope.switchSection() {
         val superSwitch = remember { mutableStateOf("false") }
         val superSwitchState = remember { mutableStateOf(false) }
         val superSwitchAnimState = remember { mutableStateOf(false) }
-
-        SmallTitle(text = "Switch")
-        // Was `miuix.Card`; now the COUI card, so the switch sits on a genuine ColorOS G2
-        // surface instead of a Material-ish rounded rect.
+        // CouiSmallTitle is the `Widget.COUI.List.Category.Title` port (32dp start margin).
+        io.github.wfc35286.coui.kmp.component.CouiSmallTitle(text = "Switch")
         CouiCard(
             modifier = Modifier
                 .padding(horizontal = 12.dp)
                 .padding(bottom = 12.dp),
-            insideMargin = PaddingValues(16.dp),
         ) {
             Row(
                 modifier = Modifier
@@ -71,40 +68,48 @@ fun LazyListScope.switchSection() {
                     enabled = false,
                 )
             }
-            SwitchPreference(
+            CouiPreferenceItem(
                 title = "Switch",
                 summary = "Click to expand a Switch",
-                checked = superSwitchAnimState.value,
-                onCheckedChange = {
-                    superSwitchAnimState.value = it
+                position = CouiPreferencePosition.First,
+                trailing = {
+                    CouiSwitch(
+                        checked = superSwitchAnimState.value,
+                        onCheckedChange = { superSwitchAnimState.value = it },
+                    )
                 },
             )
-
             AnimatedVisibility(
                 visible = superSwitchAnimState.value,
                 enter = fadeIn() + expandVertically(),
                 exit = fadeOut() + shrinkVertically(),
             ) {
-                SwitchPreference(
+                CouiPreferenceItem(
                     title = "Switch",
-                    checked = superSwitchState.value,
-                    endActions = {
-                        Text(
-                            text = superSwitch.value,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                    position = CouiPreferencePosition.First,
+                    trailing = {
+                        CouiSwitch(
+                            checked = superSwitchState.value,
+                            onCheckedChange = {
+                                superSwitchState.value = it
+                                superSwitch.value = "$it"
+                            },
                         )
                     },
-                    onCheckedChange = {
-                        superSwitchState.value = it
-                        superSwitch.value = "$it"
-                    },
+                    // The state text the miuix demo showed next to the switch.
+                    summary = superSwitch.value,
                 )
             }
-            SwitchPreference(
+            CouiPreferenceItem(
                 title = "Disabled Switch",
-                checked = true,
                 enabled = false,
-                onCheckedChange = {},
+                trailing = {
+                    CouiSwitch(
+                        checked = true,
+                        onCheckedChange = { },
+                        enabled = false,
+                    )
+                },
             )
         }
     }

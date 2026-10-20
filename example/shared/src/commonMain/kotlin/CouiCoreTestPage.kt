@@ -1,10 +1,11 @@
-// Copyright 2026, compose-miuix-ui contributors
+// Copyright 2026, COUI contributors
 // SPDX-License-Identifier: Apache-2.0
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
@@ -30,29 +32,43 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import io.wfc35286.coui.kmp.component.CouiCard
-import io.wfc35286.coui.kmp.component.CouiCardDefaults
-import io.wfc35286.coui.kmp.component.CouiMenuPreference
-import io.wfc35286.coui.kmp.component.CouiPopupItemType
-import io.wfc35286.coui.kmp.component.CouiPopupListItem
-import io.wfc35286.coui.kmp.component.CouiPopupListWindow
-import io.wfc35286.coui.kmp.component.CouiPreferenceDefaults
-import io.wfc35286.coui.kmp.component.CouiPreferenceItem
-import io.wfc35286.coui.kmp.component.CouiPreferencePosition
-import io.wfc35286.coui.kmp.component.CouiSectionSeekBar
-import io.wfc35286.coui.kmp.component.CouiSeekBar
-import io.wfc35286.coui.kmp.component.CouiSeekBarDefaults
-import io.wfc35286.coui.kmp.component.CouiSeekBarMoveType
-import io.wfc35286.coui.kmp.component.CouiSmallTitle
-import io.wfc35286.coui.kmp.component.CouiStatusBarToggleSlider
-import io.wfc35286.coui.kmp.component.CouiSwitch
-import io.wfc35286.coui.kmp.component.CouiText
-import io.wfc35286.coui.kmp.theme.CouiTheme
-import io.wfc35286.coui.kmp.token.CouiTextEmphasis
-import io.wfc35286.coui.kmp.token.CouiTypography
+import component.CouiBlurSection
+import io.github.wfc35286.coui.kmp.component.CouiBottomFloatingNavigationBar
+import io.github.wfc35286.coui.kmp.component.couiBackdrop
+import io.github.wfc35286.coui.kmp.component.rememberCouiBackdrop
+import io.github.wfc35286.coui.kmp.component.CouiBottomFloatingNavigationBarDefaults
+import io.github.wfc35286.coui.kmp.component.CouiBottomFloatingNavigationBarItem
+import io.github.wfc35286.coui.kmp.component.CouiButton
+import io.github.wfc35286.coui.kmp.component.CouiButtonSize
+import io.github.wfc35286.coui.kmp.component.CouiButtonType
+import io.github.wfc35286.coui.kmp.component.CouiCard
+import io.github.wfc35286.coui.kmp.component.CouiCardDefaults
+import io.github.wfc35286.coui.kmp.component.CouiMenuPreference
+import io.github.wfc35286.coui.kmp.component.CouiPopupItemType
+import io.github.wfc35286.coui.kmp.component.CouiPopupListItem
+import io.github.wfc35286.coui.kmp.component.CouiPopupListWindow
+import io.github.wfc35286.coui.kmp.component.CouiPreferenceDefaults
+import io.github.wfc35286.coui.kmp.component.CouiPreferenceItem
+import io.github.wfc35286.coui.kmp.component.CouiPreferencePosition
+import io.github.wfc35286.coui.kmp.component.CouiRedDotType
+import io.github.wfc35286.coui.kmp.component.CouiSectionSeekBar
+import io.github.wfc35286.coui.kmp.component.CouiSeekBar
+import io.github.wfc35286.coui.kmp.component.CouiSeekBarDefaults
+import io.github.wfc35286.coui.kmp.component.CouiSeekBarMoveType
+import io.github.wfc35286.coui.kmp.component.CouiSmallTitle
+import io.github.wfc35286.coui.kmp.component.CouiStatusBarToggleSlider
+import io.github.wfc35286.coui.kmp.component.CouiSwitch
+import io.github.wfc35286.coui.kmp.component.CouiText
+import io.github.wfc35286.coui.kmp.effect.CouiSpotLightDefaults
+import io.github.wfc35286.coui.kmp.effect.couiSpotLight
+import io.github.wfc35286.coui.kmp.theme.CouiTheme
+import io.github.wfc35286.coui.kmp.token.CouiTextEmphasis
+import io.github.wfc35286.coui.kmp.token.CouiTypography
 
 /**
  * A component gallery with neutral placeholder content.
@@ -74,197 +90,317 @@ fun CouiCoreTestPage(
     var clickValue by remember { mutableFloatStateOf(0.35f) }
     var fixedTrackValue by remember { mutableFloatStateOf(0.65f) }
     var sectionValue by remember { mutableIntStateOf(2) }
-
+    var barIndex by remember { mutableIntStateOf(0) }
+    var barVisible by remember { mutableStateOf(true) }
+    val barIcon = rememberVectorPainter(CouiDemoIcons.Placeholder)
+    // The official never tints the icon itself - it hands `setSelected` to the ImageView and
+    // lets the caller's Drawable decide. The demo expresses the same thing with `iconTint`.
     CouiTheme {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                // Settings pages that host cards sit on couiColorBackgroundWithCard (#F0F1F2);
-                // couiColorCardBackground is the white fill on top of it.
-                .background(CouiTheme.colors.backgroundWithCard)
-                .verticalScroll(rememberScrollState())
-                .padding(padding)
-                .padding(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()),
-        ) {
-            CouiSmallTitle("Menu")
-            CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = CouiCardDefaults.HorizontalMargin)) {
-                CouiMenuPreference(
-                    title = "Title",
-                    entries = menuEntries,
-                    selectedIndex = menuIndex,
-                    onSelectedIndexChange = { menuIndex = it },
-                )
-            }
-            CouiSmallTitle("Mixed menu")
-
-            CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = CouiCardDefaults.HorizontalMargin)) {
-                CouiMixedMenuDemo()
-            }
-            CouiSmallTitle("List")
-
-            CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = CouiCardDefaults.HorizontalMargin)) {
-                CouiPreferenceItem(
-                    title = "Title 1",
-                    position = CouiPreferencePosition.First,
-                    onClick = { thirdChecked = !thirdChecked },
-                    minHeight = CouiPreferenceDefaults.HomepageMinHeight,
-                    leading = { Image(CouiDemoIcons.Placeholder, contentDescription = null, colorFilter = ColorFilter.tint(CouiTheme.colors.labelPrimary)) },
-                    trailing = { CouiSwitch(checked = thirdChecked, onCheckedChange = { thirdChecked = it }) },
-                    showDivider = true,
-                )
-                CouiPreferenceItem(
-                    title = "Title 2",
-                    position = CouiPreferencePosition.Middle,
-                    onClick = { firstChecked = !firstChecked },
-                    minHeight = CouiPreferenceDefaults.HomepageMinHeight,
-                    leading = { Image(CouiDemoIcons.Placeholder, contentDescription = null, colorFilter = ColorFilter.tint(CouiTheme.colors.labelPrimary)) },
-                    trailing = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            CouiText(if (firstChecked) "Value A" else "Value B", CouiTypography.body, emphasis = CouiTextEmphasis.Secondary)
-                            Spacer(Modifier.width(4.dp))
-                            Image(CouiDemoIcons.Chevron, contentDescription = null, colorFilter = ColorFilter.tint(CouiTheme.colors.labelTertiary))
-                        }
-                    },
-                    showDivider = true,
-                )
-                CouiPreferenceItem(
-                    title = "Title 3",
-                    position = CouiPreferencePosition.Middle,
-                    onClick = { secondChecked = !secondChecked },
-                    minHeight = CouiPreferenceDefaults.HomepageMinHeight,
-                    leading = { Image(CouiDemoIcons.Placeholder, contentDescription = null, colorFilter = ColorFilter.tint(CouiTheme.colors.labelPrimary)) },
-                    trailing = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            CouiText(if (secondChecked) "Value A" else "Value B", CouiTypography.body, emphasis = CouiTextEmphasis.Secondary)
-                            Spacer(Modifier.width(4.dp))
-                            Image(CouiDemoIcons.Chevron, contentDescription = null, colorFilter = ColorFilter.tint(CouiTheme.colors.labelTertiary))
-                        }
-                    },
-                    showDivider = true,
-                )
-                CouiPreferenceItem(
-                    title = "Title 4",
-                    position = CouiPreferencePosition.Last,
-                    onClick = { fourthChecked = !fourthChecked },
-                    minHeight = CouiPreferenceDefaults.HomepageMinHeight,
-                    leading = { Image(CouiDemoIcons.Placeholder, contentDescription = null, colorFilter = ColorFilter.tint(CouiTheme.colors.labelPrimary)) },
-                    trailing = { Image(CouiDemoIcons.Chevron, contentDescription = null, colorFilter = ColorFilter.tint(CouiTheme.colors.labelTertiary)) },
-                )
-            }
-
-            CouiSmallTitle("Switch")
-
-            CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                // Row taps and control taps exercise the same local state.
-                CouiPreferenceItem(
-                    title = "Title 1",
-                    position = CouiPreferencePosition.First,
-                    summary = "Summary",
-                    onClick = { firstChecked = !firstChecked },
-                    trailing = { CouiSwitch(checked = firstChecked, onCheckedChange = { firstChecked = it }) },
-                    showDivider = true,
-                )
-                CouiPreferenceItem(
-                    title = "Title 2",
-                    position = CouiPreferencePosition.Middle,
-                    onClick = { secondChecked = !secondChecked },
-                    trailing = { CouiSwitch(checked = secondChecked, onCheckedChange = { secondChecked = it }) },
-                    showDivider = true,
-                )
-                CouiPreferenceItem(
-                    title = "Title 3",
-                    position = CouiPreferencePosition.Last,
-                    onClick = { thirdChecked = !thirdChecked },
-                    trailing = { CouiSwitch(checked = thirdChecked, onCheckedChange = { thirdChecked = it }) },
-                )
-            }
-
-            CouiSmallTitle("Disabled")
-
-            CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                CouiPreferenceItem(
-                    title = "Title 1",
-                    position = CouiPreferencePosition.First,
-                    summary = "Summary",
-                    enabled = false,
-                    trailing = { CouiSwitch(checked = true, onCheckedChange = {}, enabled = false) },
-                    showDivider = true,
-                )
-                CouiPreferenceItem(
-                    title = "Title 2",
-                    position = CouiPreferencePosition.Last,
-                    enabled = false,
-                    trailing = { CouiSwitch(checked = false, onCheckedChange = {}, enabled = false) },
-                )
-            }
-
-            CouiSmallTitle("Switch")
-
-            CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                CouiPreferenceItem(
-                    title = "Title",
-                    position = CouiPreferencePosition.Single,
-                    summary = "Summary",
-                    onClick = { fourthChecked = !fourthChecked },
-                    trailing = { CouiSwitch(checked = fourthChecked, onCheckedChange = { fourthChecked = it }) },
-                )
-            }
-
-            CouiSmallTitle("SeekBar")
-
-            // Variant parameters stay in code; the component gallery uses placeholder copy.
-            // Keep all four examples in one group, with independent values for direct comparison.
-            CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = CouiCardDefaults.HorizontalMargin)) {
-                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    CouiText("Title 1", CouiTypography.body)
-                    CouiText("Summary", CouiTypography.body, emphasis = CouiTextEmphasis.Secondary)
-                    Spacer(Modifier.height(4.dp))
-                    CouiSeekBar(
-                        value = distanceValue,
-                        onValueChange = { distanceValue = it },
-                        moveType = CouiSeekBarMoveType.ByDistance,
-                        moveDamping = 1f,
-                        modifier = Modifier.fillMaxWidth().height(CouiSeekBarDefaults.MinHeight),
-                    )
-                    Spacer(Modifier.height(16.dp))
-                    CouiText("Title 2", CouiTypography.body)
-                    CouiText("Summary", CouiTypography.body, emphasis = CouiTextEmphasis.Secondary)
-                    Spacer(Modifier.height(4.dp))
-                    CouiSeekBar(
-                        value = clickValue,
-                        onValueChange = { clickValue = it },
-                        moveType = CouiSeekBarMoveType.Default,
-                        modifier = Modifier.fillMaxWidth().height(CouiSeekBarDefaults.MinHeight),
-                    )
-                    Spacer(Modifier.height(16.dp))
-                    CouiText("Title 3", CouiTypography.body)
-                    CouiText("Summary", CouiTypography.body, emphasis = CouiTextEmphasis.Secondary)
-                    Spacer(Modifier.height(4.dp))
-                    CouiSeekBar(
-                        value = fixedTrackValue,
-                        onValueChange = { fixedTrackValue = it },
-                        moveType = CouiSeekBarMoveType.Default,
-                        backgroundEnlargeScale = CouiStatusBarToggleSlider.EnlargeScale,
-                        trackColor = CouiStatusBarToggleSlider.TrackColor,
-                        thumbShadowSize = CouiStatusBarToggleSlider.ThumbShadowSize,
-                        touchPaddingVertical = 6.dp,
-                        modifier = Modifier.fillMaxWidth().height(CouiStatusBarToggleSlider.Height),
-                    )
-                    Spacer(Modifier.height(16.dp))
-                    CouiText("Title 4", CouiTypography.body)
-                    CouiText("Summary", CouiTypography.body, emphasis = CouiTextEmphasis.Secondary)
-                    Spacer(Modifier.height(4.dp))
-                    CouiSectionSeekBar(
-                        value = sectionValue,
-                        onValueChange = { sectionValue = it },
-                        min = 0,
-                        max = 4,
-                        modifier = Modifier.fillMaxWidth().height(CouiSeekBarDefaults.MinHeight),
+        val pageBackdrop = rememberCouiBackdrop()
+        val barItems = listOf("首页", "游戏", "软件", "榜单", "我的").mapIndexed { index, title ->
+            CouiBottomFloatingNavigationBarItem(
+                id = index,
+                title = title,
+                icon = barIcon,
+                iconTint = CouiBottomFloatingNavigationBarDefaults.titleColor(index == barIndex),
+                redDotType = if (index == 4) CouiRedDotType.Number else CouiRedDotType.None,
+                redDotNumber = 15,
+            )
+        }
+        // The page is captured (drawn content recorded once per frame) and the bar samples that
+        // recording behind the pill - no second composition of the page.
+        val scrollState = rememberScrollState()
+        val pageContent: @Composable () -> Unit = {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    // Settings pages that host cards sit on couiColorBackgroundWithCard (#F0F1F2);
+                    // couiColorCardBackground is the white fill on top of it.
+                    .background(CouiTheme.colors.backgroundWithCard)
+                    .verticalScroll(scrollState)
+                    // Only the top inset is applied: the page has to run *under* the floating bar,
+                    // otherwise there is nothing behind the pill to blur and the material reads as a
+                    // flat colour no matter what.
+                    .padding(
+                        top = padding.calculateTopPadding() +
+                            WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
+                    ),
+            ) {
+                CouiSmallTitle("Menu")
+                CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = CouiCardDefaults.HorizontalMargin)) {
+                    CouiMenuPreference(
+                        title = "Title",
+                        entries = menuEntries,
+                        selectedIndex = menuIndex,
+                        onSelectedIndexChange = { menuIndex = it },
                     )
                 }
-            }
+                CouiSmallTitle("Mixed menu")
 
-            Spacer(Modifier.height(48.dp))
+                CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = CouiCardDefaults.HorizontalMargin)) {
+                    CouiMixedMenuDemo()
+                }
+                CouiSmallTitle("List")
+
+                CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = CouiCardDefaults.HorizontalMargin)) {
+                    CouiPreferenceItem(
+                        title = "Title 1",
+                        position = CouiPreferencePosition.First,
+                        onClick = { thirdChecked = !thirdChecked },
+                        minHeight = CouiPreferenceDefaults.HomepageMinHeight,
+                        leading = { Image(CouiDemoIcons.Placeholder, contentDescription = null, colorFilter = ColorFilter.tint(CouiTheme.colors.labelPrimary)) },
+                        trailing = { CouiSwitch(checked = thirdChecked, onCheckedChange = { thirdChecked = it }) },
+                        showDivider = true,
+                    )
+                    CouiPreferenceItem(
+                        title = "Title 2",
+                        position = CouiPreferencePosition.Middle,
+                        onClick = { firstChecked = !firstChecked },
+                        minHeight = CouiPreferenceDefaults.HomepageMinHeight,
+                        leading = { Image(CouiDemoIcons.Placeholder, contentDescription = null, colorFilter = ColorFilter.tint(CouiTheme.colors.labelPrimary)) },
+                        trailing = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                CouiText(if (firstChecked) "Value A" else "Value B", CouiTypography.body, emphasis = CouiTextEmphasis.Secondary)
+                                Spacer(Modifier.width(4.dp))
+                                Image(CouiDemoIcons.Chevron, contentDescription = null, colorFilter = ColorFilter.tint(CouiTheme.colors.labelTertiary))
+                            }
+                        },
+                        showDivider = true,
+                    )
+                    CouiPreferenceItem(
+                        title = "Title 3",
+                        position = CouiPreferencePosition.Middle,
+                        onClick = { secondChecked = !secondChecked },
+                        minHeight = CouiPreferenceDefaults.HomepageMinHeight,
+                        leading = { Image(CouiDemoIcons.Placeholder, contentDescription = null, colorFilter = ColorFilter.tint(CouiTheme.colors.labelPrimary)) },
+                        trailing = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                CouiText(if (secondChecked) "Value A" else "Value B", CouiTypography.body, emphasis = CouiTextEmphasis.Secondary)
+                                Spacer(Modifier.width(4.dp))
+                                Image(CouiDemoIcons.Chevron, contentDescription = null, colorFilter = ColorFilter.tint(CouiTheme.colors.labelTertiary))
+                            }
+                        },
+                        showDivider = true,
+                    )
+                    CouiPreferenceItem(
+                        title = "Title 4",
+                        position = CouiPreferencePosition.Last,
+                        onClick = { fourthChecked = !fourthChecked },
+                        minHeight = CouiPreferenceDefaults.HomepageMinHeight,
+                        leading = { Image(CouiDemoIcons.Placeholder, contentDescription = null, colorFilter = ColorFilter.tint(CouiTheme.colors.labelPrimary)) },
+                        trailing = { Image(CouiDemoIcons.Chevron, contentDescription = null, colorFilter = ColorFilter.tint(CouiTheme.colors.labelTertiary)) },
+                    )
+                }
+
+                CouiSmallTitle("Switch")
+
+                CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                    // Row taps and control taps exercise the same local state.
+                    CouiPreferenceItem(
+                        title = "Title 1",
+                        position = CouiPreferencePosition.First,
+                        summary = "Summary",
+                        onClick = { firstChecked = !firstChecked },
+                        trailing = { CouiSwitch(checked = firstChecked, onCheckedChange = { firstChecked = it }) },
+                        showDivider = true,
+                    )
+                    CouiPreferenceItem(
+                        title = "Title 2",
+                        position = CouiPreferencePosition.Middle,
+                        onClick = { secondChecked = !secondChecked },
+                        trailing = { CouiSwitch(checked = secondChecked, onCheckedChange = { secondChecked = it }) },
+                        showDivider = true,
+                    )
+                    CouiPreferenceItem(
+                        title = "Title 3",
+                        position = CouiPreferencePosition.Last,
+                        onClick = { thirdChecked = !thirdChecked },
+                        trailing = { CouiSwitch(checked = thirdChecked, onCheckedChange = { thirdChecked = it }) },
+                    )
+                }
+
+                CouiSmallTitle("Disabled")
+
+                CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                    CouiPreferenceItem(
+                        title = "Title 1",
+                        position = CouiPreferencePosition.First,
+                        summary = "Summary",
+                        enabled = false,
+                        trailing = { CouiSwitch(checked = true, onCheckedChange = {}, enabled = false) },
+                        showDivider = true,
+                    )
+                    CouiPreferenceItem(
+                        title = "Title 2",
+                        position = CouiPreferencePosition.Last,
+                        enabled = false,
+                        trailing = { CouiSwitch(checked = false, onCheckedChange = {}, enabled = false) },
+                    )
+                }
+
+                CouiSmallTitle("Switch")
+
+                CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                    CouiPreferenceItem(
+                        title = "Title",
+                        position = CouiPreferencePosition.Single,
+                        summary = "Summary",
+                        onClick = { fourthChecked = !fourthChecked },
+                        trailing = { CouiSwitch(checked = fourthChecked, onCheckedChange = { fourthChecked = it }) },
+                    )
+                }
+
+                CouiSmallTitle("SeekBar")
+
+                // Variant parameters stay in code; the component gallery uses placeholder copy.
+                // Keep all four examples in one group, with independent values for direct comparison.
+                CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = CouiCardDefaults.HorizontalMargin)) {
+                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                        CouiText("Title 1", CouiTypography.body)
+                        CouiText("Summary", CouiTypography.body, emphasis = CouiTextEmphasis.Secondary)
+                        Spacer(Modifier.height(4.dp))
+                        CouiSeekBar(
+                            value = distanceValue,
+                            onValueChange = { distanceValue = it },
+                            moveType = CouiSeekBarMoveType.ByDistance,
+                            moveDamping = 1f,
+                            modifier = Modifier.fillMaxWidth().height(CouiSeekBarDefaults.MinHeight),
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        CouiText("Title 2", CouiTypography.body)
+                        CouiText("Summary", CouiTypography.body, emphasis = CouiTextEmphasis.Secondary)
+                        Spacer(Modifier.height(4.dp))
+                        CouiSeekBar(
+                            value = clickValue,
+                            onValueChange = { clickValue = it },
+                            moveType = CouiSeekBarMoveType.Default,
+                            modifier = Modifier.fillMaxWidth().height(CouiSeekBarDefaults.MinHeight),
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        CouiText("Title 3", CouiTypography.body)
+                        CouiText("Summary", CouiTypography.body, emphasis = CouiTextEmphasis.Secondary)
+                        Spacer(Modifier.height(4.dp))
+                        CouiSeekBar(
+                            value = fixedTrackValue,
+                            onValueChange = { fixedTrackValue = it },
+                            moveType = CouiSeekBarMoveType.Default,
+                            backgroundEnlargeScale = CouiStatusBarToggleSlider.EnlargeScale,
+                            trackColor = CouiStatusBarToggleSlider.TrackColor,
+                            thumbShadowSize = CouiStatusBarToggleSlider.ThumbShadowSize,
+                            touchPaddingVertical = 6.dp,
+                            modifier = Modifier.fillMaxWidth().height(CouiStatusBarToggleSlider.Height),
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        CouiText("Title 4", CouiTypography.body)
+                        CouiText("Summary", CouiTypography.body, emphasis = CouiTextEmphasis.Secondary)
+                        Spacer(Modifier.height(4.dp))
+                        CouiSectionSeekBar(
+                            value = sectionValue,
+                            onValueChange = { sectionValue = it },
+                            min = 0,
+                            max = 4,
+                            modifier = Modifier.fillMaxWidth().height(CouiSeekBarDefaults.MinHeight),
+                        )
+                    }
+                }
+
+                CouiSmallTitle("Button")
+
+                CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = CouiCardDefaults.HorizontalMargin)) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 32.dp, vertical = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        CouiButton(
+                            text = "Button 1",
+                            onClick = {},
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        CouiButton(
+                            text = "Button 2",
+                            onClick = {},
+                            modifier = Modifier.fillMaxWidth(),
+                            type = CouiButtonType.Secondary,
+                        )
+                        CouiButton(
+                            text = "Button 3",
+                            onClick = {},
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = false,
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            CouiButton(text = "Small 1", onClick = {}, size = CouiButtonSize.Small)
+                            CouiButton(
+                                text = "Small 2",
+                                onClick = {},
+                                size = CouiButtonSize.Small,
+                                type = CouiButtonType.Secondary,
+                            )
+                            CouiButton(
+                                text = "Small 3",
+                                onClick = {},
+                                size = CouiButtonSize.Small,
+                                enabled = false,
+                            )
+                        }
+                    }
+                }
+
+                CouiSmallTitle("Bottom navigation bar")
+
+                CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = CouiCardDefaults.HorizontalMargin)) {
+                    CouiPreferenceItem(
+                        title = "Bottom navigation bar",
+                        position = CouiPreferencePosition.Single,
+                        summary = if (barVisible) "Shown" else "Hidden",
+                        onClick = { barVisible = !barVisible },
+                        trailing = { CouiSwitch(checked = barVisible, onCheckedChange = { barVisible = it }) },
+                    )
+                }
+
+                CouiBlurSection()
+                CouiSmallTitle("Spot light")
+                CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = CouiCardDefaults.HorizontalMargin)) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                                .height(72.dp)
+                                .couiSpotLight(
+                                    spec = CouiSpotLightDefaults.Capsule2Light,
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(percent = 50),
+                                )
+                                .background(Color(0xFF2B2B2B), androidx.compose.foundation.shape.RoundedCornerShape(percent = 50)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CouiText("按住拖动", CouiTypography.body, color = Color.White)
+                    }
+                }
+                Spacer(Modifier.height(48.dp))
+            }
+        }
+        Box(modifier = Modifier.fillMaxSize()) {
+            // The page is captured into `pageBackdrop`; the bar samples it for the material blur.
+            // The bar itself is outside this layer so it can never sample itself.
+            Box(modifier = Modifier.fillMaxSize().couiBackdrop(pageBackdrop)) {
+                pageContent()
+            }
+            if (barVisible) {
+                // A real app floats the bar over its content at the bottom of the window; the gallery
+                // shows the same placement, above whatever the host Scaffold already inset for the
+                // system navigation bar.
+                CouiBottomFloatingNavigationBar(
+                    items = barItems,
+                    selectedIndex = barIndex,
+                    onSelected = { barIndex = it },
+                    // The material's background blur: the bar samples the captured page by
+                    // reference in its own draw pass, so scrolling and the predictive-back scene
+                    // transform stay in lockstep with the pill - no frozen slice possible.
+                    backdrop = pageBackdrop,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+            }
         }
     }
 }

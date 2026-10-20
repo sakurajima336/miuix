@@ -1,8 +1,6 @@
 // Copyright 2025, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
-
 package component
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -10,14 +8,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import io.wfc35286.coui.kmp.component.CouiCard
-import io.wfc35286.coui.kmp.component.CouiCardDefaults
-import top.yukonga.miuix.kmp.basic.SmallTitle
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import io.github.wfc35286.coui.kmp.component.CouiCard
+import io.github.wfc35286.coui.kmp.component.CouiCardDefaults
+import io.github.wfc35286.coui.kmp.component.CouiSmallTitle
+import io.github.wfc35286.coui.kmp.component.CouiText
+import io.github.wfc35286.coui.kmp.token.CouiTextEmphasis
+import io.github.wfc35286.coui.kmp.token.CouiTypography
 
 /**
  * Card, drawn with COUI's own corner geometry instead of `miuix.Card`.
@@ -28,7 +25,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
  */
 fun LazyListScope.cardSection() {
     item(key = "card") {
-        SmallTitle(text = "Card")
+        CouiSmallTitle(text = "Card")
         CouiCard(
             modifier = Modifier
                 .fillMaxWidth()
@@ -36,20 +33,16 @@ fun LazyListScope.cardSection() {
                 .padding(bottom = 12.dp),
             insideMargin = PaddingValues(16.dp),
         ) {
-            Text(
+            CouiText(
                 text = "Card",
-                fontSize = 19.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MiuixTheme.colorScheme.onSurface,
+                style = CouiTypography.listTitle,
             )
-            Text(
+            CouiText(
                 text = "COUI G2 corner, 16dp",
-                fontSize = 17.sp,
-                fontWeight = FontWeight.Normal,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                style = CouiTypography.body,
+                emphasis = CouiTextEmphasis.Secondary,
             )
         }
-
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -62,16 +55,14 @@ fun LazyListScope.cardSection() {
                 insideMargin = PaddingValues(16.dp),
                 onClick = { println("Card click") },
             ) {
-                Text(
+                CouiText(
                     text = "Clickable",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MiuixTheme.colorScheme.onSurface,
+                    style = CouiTypography.listTitle,
                 )
-                Text(
+                CouiText(
                     text = "Pressed fill",
-                    style = MiuixTheme.textStyles.paragraph,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    style = CouiTypography.body,
+                    emphasis = CouiTextEmphasis.Secondary,
                 )
             }
             CouiCard(
@@ -79,20 +70,17 @@ fun LazyListScope.cardSection() {
                 cornerRadius = 24.dp,
                 insideMargin = PaddingValues(16.dp),
             ) {
-                Text(
+                CouiText(
                     text = "24dp",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MiuixTheme.colorScheme.onSurface,
+                    style = CouiTypography.listTitle,
                 )
-                Text(
+                CouiText(
                     text = "Bigger corner,\nsame curve family",
-                    style = MiuixTheme.textStyles.paragraph,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    style = CouiTypography.body,
+                    emphasis = CouiTextEmphasis.Secondary,
                 )
             }
         }
-
         // The card defaults are worth showing off: on ColorOS the radius is a themed token, and
         // the fill is `couiColorCardBackground` rather than the surrounding surface colour.
         CouiCard(
@@ -103,16 +91,14 @@ fun LazyListScope.cardSection() {
             cornerRadius = CouiCardDefaults.CornerRadius,
             insideMargin = PaddingValues(16.dp),
         ) {
-            Text(
+            CouiText(
                 text = "Defaults",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
-                color = MiuixTheme.colorScheme.onSurface,
+                style = CouiTypography.listTitle,
             )
-            Text(
+            CouiText(
                 text = "CouiCardDefaults.CornerRadius = 16dp",
-                style = MiuixTheme.textStyles.paragraph,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                style = CouiTypography.body,
+                emphasis = CouiTextEmphasis.Secondary,
             )
         }
     }

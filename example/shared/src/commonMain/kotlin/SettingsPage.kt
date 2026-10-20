@@ -338,6 +338,11 @@ private fun SettingsContent(
                         summary = "ColorOS design system test page",
                         onClick = { navigator.push(Route.CouiTest) },
                     )
+                    ArrowPreference(
+                        title = "Floating navigation bar",
+                        summary = "Dedicated page for the floating pill (material, touch, tabs)",
+                        onClick = { navigator.push(Route.CouiBottomNavBar) },
+                    )
                 }
             }
             item { Spacer(modifier = Modifier.height(12.dp)) }

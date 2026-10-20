@@ -342,6 +342,19 @@ private fun AppNavHost(
         entry<Route.CouiTest>(swipeDismiss = swipeBackDirection) {
             CouiCoreTestPage(padding = padding)
         }
+
+        entry<Route.CouiLab>(swipeDismiss = swipeBackDirection) {
+            CouiLabPage(
+                padding = padding,
+                onBack = { navigator.pop() },
+            )
+        }
+        entry<Route.CouiBottomNavBar>(swipeDismiss = swipeBackDirection) {
+            CouiBottomNavBarTestPage(
+                padding = padding,
+                onBack = { navigator.pop() },
+            )
+        }
     }
 }
 

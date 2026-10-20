@@ -4,6 +4,7 @@
 @file:OptIn(ExperimentalScrollBarApi::class)
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -22,12 +23,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import component.arrowSection
+import LocalNavigator
+import navigation.Route
 import component.badgeSection
 import component.basicComponentSection
 import component.blurSection
@@ -50,6 +55,12 @@ import component.switchSection
 import component.tabRowSection
 import component.textFieldSection
 import component.tooltipSection
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import io.github.wfc35286.coui.kmp.component.CouiPopupListWindow
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.DropdownEntry
 import top.yukonga.miuix.kmp.basic.DropdownItem
@@ -60,6 +71,7 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SearchBar
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.SnackbarHostState
+import top.yukonga.miuix.kmp.basic.TopAppBarDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TooltipBox
 import top.yukonga.miuix.kmp.basic.VerticalScrollBar
@@ -81,6 +93,29 @@ import utils.rememberBlurBackdrop
 
 @Composable
 fun MainPage(
+    snackbarHostState: SnackbarHostState,
+    padding: PaddingValues,
+) {
+    val appState = LocalAppState.current
+    val isWideScreen = LocalIsWideScreen.current
+    var searchValue by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+
+    // The COUI sections on this page read their palette from `CouiTheme`; mirror the app's
+    // color mode (AppTheme's `isInDarkTheme`) so both design systems stay in the same mode.
+    val dark = ui.isInDarkTheme()
+    io.github.wfc35286.coui.kmp.theme.CouiTheme(
+        colors = if (dark) io.github.wfc35286.coui.kmp.token.CouiColorTokens.Dark
+        else io.github.wfc35286.coui.kmp.token.CouiColorTokens.Light,
+        componentColors = if (dark) io.github.wfc35286.coui.kmp.token.CouiComponentColors.Dark
+        else io.github.wfc35286.coui.kmp.token.CouiComponentColors.Light,
+    ) {
+        MainPageContent(snackbarHostState, padding)
+    }
+}
+
+@Composable
+private fun MainPageContent(
     snackbarHostState: SnackbarHostState,
     padding: PaddingValues,
 ) {
@@ -264,37 +299,196 @@ fun MainPage(
                     scrollBehavior = topAppBarScrollBehavior,
                     color = barColor,
                     actions = {
+                        // The three COUI menus below keep the original demo semantics, mapped onto
+                        // `CouiPopupListItem`: miuix `selected` -> `checked + checkable` (checkmark),
+                        // miuix `children` -> `subItems` (the COUI sub menu), and multi-select items
+                        // keep their checked state instead of closing the menu.
                         TooltipBox(text = "Options") {
-                            OverlayIconCascadingDropdownMenu(
-                                entries = cascadingEntries,
-                                collapseOnSelection = cascadingCollapseOnSelection,
-                            ) {
+                            var menuExpanded by remember { mutableStateOf(false) }
+                            var menuAnchor by remember { mutableStateOf<Offset?>(null) }
+                            Box(Modifier.pointerInput(Unit) {
+                                awaitEachGesture {
+                                    menuAnchor = awaitFirstDown(requireUnconsumed = false).position
+                                }
+                            }) {
                                 Icon(
                                     imageVector = MiuixIcons.Tune,
                                     contentDescription = "Tune",
+                                    modifier = Modifier.clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                    ) { menuExpanded = true },
                                 )
+                                if (menuAnchor != null) {
+                                    // One COUI menu per original entry; the cascading second entry
+                                    // becomes a main menu whose "View mode"/"Filter" rows carry the
+                                    // sub menus as `subItems` (the COUI cascading equivalent).
+                                    val sortItems = cascadingEntries[0].items.map { item ->
+                                        io.github.wfc35286.coui.kmp.component.CouiPopupListItem(
+                                            title = item.text,
+                                            checkable = true,
+                                            checked = item.selected,
+                                        )
+                                    }
+                                    val cascade = cascadingEntries[1].items
+                                    val collapseItem = io.github.wfc35286.coui.kmp.component.CouiPopupListItem(
+                                        title = cascade[0].text,
+                                        checkable = true,
+                                        checked = cascade[0].selected,
+                                    )
+                                    val viewItem = io.github.wfc35286.coui.kmp.component.CouiPopupListItem(
+                                        title = cascade[1].text,
+                                        subItems = cascade[1].children.orEmpty().map { child ->
+                                            io.github.wfc35286.coui.kmp.component.CouiPopupListItem(
+                                                title = child.text,
+                                                checkable = true,
+                                                checked = child.selected,
+                                            )
+                                        },
+                                    )
+                                    val filterItem = io.github.wfc35286.coui.kmp.component.CouiPopupListItem(
+                                        title = cascade[2].text,
+                                        subItems = cascade[2].children.orEmpty().map { child ->
+                                            io.github.wfc35286.coui.kmp.component.CouiPopupListItem(
+                                                title = child.text,
+                                                checkable = true,
+                                                checked = child.selected,
+                                            )
+                                        },
+                                    )
+                                    val menuItems = buildList {
+                                        add(sortItems.first())
+                                        add(sortItems.last())
+                                        add(viewItem)
+                                        add(filterItem)
+                                        add(collapseItem)
+                                    }
+                                    CouiPopupListWindow(
+                                        expanded = menuExpanded,
+                                        items = menuItems,
+                                        selectedIndex = -1,
+                                        onSubItemClick = { _, subIndex ->
+                                            if (menuItems.getOrNull(subIndex)?.title == cascade[1].text) {
+                                                cascadingViewIndex = subIndex
+                                            } else {
+                                                cascadingFilterIndex = subIndex
+                                            }
+                                        },
+                                        onItemClick = { index ->
+                                            when (menuItems.getOrNull(index)?.title) {
+                                                sortItems.first().title -> cascadingSortIndex = 0
+                                                sortItems.last().title -> cascadingSortIndex = 1
+                                                collapseItem.title -> {
+                                                    cascadingCollapseOnSelection = !cascadingCollapseOnSelection
+                                                    if (cascadingCollapseOnSelection) menuExpanded = false
+                                                }
+                                            }
+                                        },
+                                        onDismissRequest = { menuExpanded = false },
+                                        touchPoint = menuAnchor,
+                                    )
+                                }
                             }
                         }
                         TooltipBox(text = "Sort") {
-                            OverlayIconDropdownMenu(
-                                entries = optionItems,
-                                collapseOnSelection = false,
-                            ) {
+                            var sortExpanded by remember { mutableStateOf(false) }
+                            var sortAnchor by remember { mutableStateOf<Offset?>(null) }
+                            Box(Modifier.pointerInput(Unit) {
+                                awaitEachGesture {
+                                    sortAnchor = awaitFirstDown(requireUnconsumed = false).position
+                                }
+                            }) {
                                 Icon(
                                     imageVector = MiuixIcons.Sort,
                                     contentDescription = "Sort",
+                                    modifier = Modifier.clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                    ) { sortExpanded = true },
                                 )
+                                if (sortAnchor != null) {
+                                    // The original popup shows the three selections as one list
+                                    // where the chosen row carries a checkmark; group ids keep the
+                                    // divider between the A / B / C groups.
+                                    var group = 0
+                                    val menuItems = optionItems.flatMapIndexed { groupId, entry ->
+                                        group = groupId
+                                        entry.items.map { item ->
+                                            io.github.wfc35286.coui.kmp.component.CouiPopupListItem(
+                                                title = item.text,
+                                                checkable = true,
+                                                checked = item.selected,
+                                                groupId = groupId,
+                                            )
+                                        }
+                                    }
+                                    val clickTargets = optionItems.flatMap { entry ->
+                                        entry.items.mapNotNull { it.onClick }
+                                    }
+                                    CouiPopupListWindow(
+                                        expanded = sortExpanded,
+                                        items = menuItems,
+                                        selectedIndex = -1,
+                                        onItemClick = { index ->
+                                            // The display list adds dividers; map back by title.
+                                            menuItems.getOrNull(index)?.let { clicked ->
+                                                optionItems.forEach { entry ->
+                                                    entry.items.firstOrNull { it.text == clicked.title }?.onClick?.invoke()
+                                                }
+                                            }
+                                        },
+                                        onDismissRequest = { sortExpanded = false },
+                                        touchPoint = sortAnchor,
+                                    )
+                                }
                             }
                         }
                         TooltipBox(text = "Select all") {
-                            OverlayIconDropdownMenu(
-                                entries = multiSelectItems,
-                                collapseOnSelection = false,
-                            ) {
+                            var selectExpanded by remember { mutableStateOf(false) }
+                            var selectAnchor by remember { mutableStateOf<Offset?>(null) }
+                            Box(Modifier.pointerInput(Unit) {
+                                awaitEachGesture {
+                                    selectAnchor = awaitFirstDown(requireUnconsumed = false).position
+                                }
+                            }) {
                                 Icon(
                                     imageVector = MiuixIcons.SelectAll,
                                     contentDescription = "SelectAll",
+                                    modifier = Modifier.clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                    ) { selectExpanded = true },
                                 )
+                                if (selectAnchor != null) {
+                                    val menuItems = multiSelectItems.flatMap { entry ->
+                                        entry.items.map { item ->
+                                            io.github.wfc35286.coui.kmp.component.CouiPopupListItem(
+                                                title = item.text,
+                                                checkable = true,
+                                                checked = item.selected,
+                                            )
+                                        }
+                                    }
+                                    CouiPopupListWindow(
+                                        expanded = selectExpanded,
+                                        items = menuItems,
+                                        selectedIndex = -1,
+                                        onItemClick = { index ->
+                                            // Multi-select: toggle and keep the menu open, like the
+                                            // original dropdown.
+                                            menuItems.getOrNull(index)?.let { item ->
+                                                multiSelectedItems =
+                                                    if (item.title in multiSelectedItems) {
+                                                        multiSelectedItems - item.title
+                                                    } else {
+                                                        multiSelectedItems + item.title
+                                                    }
+                                            }
+                                        },
+                                        onDismissRequest = { selectExpanded = false },
+                                        touchPoint = selectAnchor,
+                                    )
+                                }
                             }
                         }
                     },

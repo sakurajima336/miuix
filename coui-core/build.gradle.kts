@@ -33,7 +33,7 @@ kotlin {
                 }
         }
         minSdk = BuildConfig.MIN_SDK
-        namespace = "io.wfc35286.coui.kmp.core"
+        namespace = "io.github.wfc35286.coui.kmp.core"
     }
     jvm("desktop")
     iosArm64()
@@ -52,6 +52,15 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.jetbrains.compose.foundation)
             api(libs.capsule)
+        }
+        // Predictive back for the COUI menu. The official `com.coui.appcompat.poplist` classes have
+        // no back handling at all (no `BackInvokedCallback` anywhere in the package), so this is our
+        // own adaptation: Android attaches to the popup window's `OnBackInvokedDispatcher` (framework
+        // API, no dependency), while the other targets use the Navigation Event API the rest of the
+        // project already uses (`NavigationBackHandler` + `NavigationEventState`).
+        // `skikoMain` is a custom source set, so it has no typed accessor here.
+        getByName("skikoMain").dependencies {
+            implementation(libs.androidx.navigationevent)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))

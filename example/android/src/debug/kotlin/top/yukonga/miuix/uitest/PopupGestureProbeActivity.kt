@@ -23,10 +23,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import io.wfc35286.coui.kmp.component.*
-import io.wfc35286.coui.kmp.theme.CouiTheme
-import io.wfc35286.coui.kmp.token.CouiColorTokens
-import io.wfc35286.coui.kmp.token.CouiComponentColors
+import io.github.wfc35286.coui.kmp.component.*
+import io.github.wfc35286.coui.kmp.theme.CouiTheme
+import io.github.wfc35286.coui.kmp.token.CouiColorTokens
+import io.github.wfc35286.coui.kmp.token.CouiComponentColors
 
 /** Debug-only official COUIPopupListWindow / independent CouiPopupListWindow comparison. */
 class PopupGestureProbeActivity : ComponentActivity() {
@@ -52,7 +52,7 @@ class PopupGestureProbeActivity : ComponentActivity() {
         started=true
         epoch=android.os.SystemClock.uptimeMillis()
         val handler=android.os.Handler(mainLooper)
-        val debug=Class.forName("io.wfc35286.coui.kmp.component.CouiPopupDebug32").getField("INSTANCE").get(null)
+        val debug=Class.forName("io.github.wfc35286.coui.kmp.component.CouiPopupDebug32").getField("INSTANCE").get(null)
         fun port(action:String) { (debug.javaClass.getMethod("get"+action.replaceFirstChar {it.uppercase()}).invoke(debug) as Function0<*>).invoke() }
         fun officialRoot():View? = officialPopup?.let {field(it,"mContentView") as? View}
         fun open() {
@@ -141,7 +141,7 @@ class PopupGestureProbeActivity : ComponentActivity() {
         enableEdgeToEdge()
         // Debug: stretch the enter/exit springs so a recording can be stepped frame by frame.
         runCatching {
-            val c = Class.forName("io.wfc35286.coui.kmp.component.CouiPopupDebug32")
+            val c = Class.forName("io.github.wfc35286.coui.kmp.component.CouiPopupDebug32")
             val inst = c.getField("INSTANCE").get(null)
             c.getMethod("setSlowMotion", Boolean::class.javaPrimitiveType)
                 .invoke(inst, intent.getBooleanExtra("slow", false))

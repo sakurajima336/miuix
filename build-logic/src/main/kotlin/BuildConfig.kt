@@ -4,7 +4,7 @@
 object BuildConfig {
     const val LIBRARY_VERSION = "0.9.4"
     const val LIBRARY_ID = "top.yukonga.miuix.kmp"
-    const val APPLICATION_NAME = "Miuix"
+    const val APPLICATION_NAME = "COUI"
     const val APPLICATION_VERSION_NAME = "1.0.9"
     const val APPLICATION_ID = "top.yukonga.miuix.uitest"
     const val APPLICATION_SHARED_ID = "top.yukonga.miuix.shared"
@@ -21,9 +21,9 @@ object BuildConfig {
      * Deliberately separate from [LIBRARY_ID]: COUI is its own product that happens to live in
      * this repository, not a Miuix module, so it must not inherit Miuix's group or version.
      */
-    const val COUI_LIBRARY_ID = "io.wfc35286.coui.kmp"
+    const val COUI_LIBRARY_ID = "io.github.wfc35286.coui.kmp"
     const val COUI_LIBRARY_VERSION = "0.1.0"
-    const val COUI_APPLICATION_NAME = "COUI"
+    const val COUI_APPLICATION_NAME = APPLICATION_NAME
 }
 
 fun org.gradle.api.Project.getGitVersionCode(): Int {

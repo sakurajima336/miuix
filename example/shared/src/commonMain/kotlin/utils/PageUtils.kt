@@ -73,7 +73,6 @@ fun pageContentPadding(
         )
     }
 }
-
 @Composable
 fun AdaptiveTopAppBar(
     title: String,

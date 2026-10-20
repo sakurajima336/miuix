@@ -39,20 +39,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import component.BackNavigationIcon
-import io.wfc35286.coui.kmp.example.CouiButton
-import io.wfc35286.coui.kmp.example.CouiCard
-import io.wfc35286.coui.kmp.example.CouiCategoryHeader
-import io.wfc35286.coui.kmp.example.CouiCheckBox
-import io.wfc35286.coui.kmp.example.CouiChevron
-import io.wfc35286.coui.kmp.example.CouiChipRow
-import io.wfc35286.coui.kmp.example.CouiDivider
-import io.wfc35286.coui.kmp.example.CouiPreferenceItem
-import io.wfc35286.coui.kmp.example.CouiRadioButton
-import io.wfc35286.coui.kmp.example.CouiSearchBar
-import io.wfc35286.coui.kmp.example.CouiSeekBar
-import io.wfc35286.coui.kmp.example.CouiSwitch
-import io.wfc35286.coui.kmp.example.CouiTabRow
-import io.wfc35286.coui.kmp.example.CouiTheme
+import io.github.wfc35286.coui.kmp.component.CouiButton
+import io.github.wfc35286.coui.kmp.component.CouiButtonSize
+import io.github.wfc35286.coui.kmp.component.CouiButtonType
+import io.github.wfc35286.coui.kmp.example.CouiCard
+import io.github.wfc35286.coui.kmp.example.CouiCategoryHeader
+import io.github.wfc35286.coui.kmp.example.CouiCheckBox
+import io.github.wfc35286.coui.kmp.example.CouiChevron
+import io.github.wfc35286.coui.kmp.example.CouiChipRow
+import io.github.wfc35286.coui.kmp.example.CouiDivider
+import io.github.wfc35286.coui.kmp.example.CouiPreferenceItem
+import io.github.wfc35286.coui.kmp.example.CouiRadioButton
+import io.github.wfc35286.coui.kmp.example.CouiSearchBar
+import io.github.wfc35286.coui.kmp.example.CouiSeekBar
+import io.github.wfc35286.coui.kmp.example.CouiSwitch
+import io.github.wfc35286.coui.kmp.example.CouiTabRow
+import io.github.wfc35286.coui.kmp.example.CouiTheme
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
@@ -372,12 +374,43 @@ private fun CouiButtonSection() {
     CouiCategoryHeader(title = "Buttons")
     CouiCard(modifier = Modifier.padding(horizontal = 16.dp)) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(horizontal = 32.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            CouiButton(text = "Button 1", onClick = {})
-            CouiButton(text = "Button 2", onClick = {}, primary = false)
-            CouiButton(text = "Title 3", onClick = {}, enabled = false)
+            CouiButton(
+                text = "Primary",
+                onClick = {},
+                modifier = Modifier.fillMaxWidth(),
+            )
+            CouiButton(
+                text = "Primary disabled",
+                onClick = {},
+                modifier = Modifier.fillMaxWidth(),
+                enabled = false,
+            )
+            CouiButton(
+                text = "Secondary",
+                onClick = {},
+                modifier = Modifier.fillMaxWidth(),
+                type = CouiButtonType.Secondary,
+            )
+            CouiButton(
+                text = "Secondary disabled",
+                onClick = {},
+                modifier = Modifier.fillMaxWidth(),
+                type = CouiButtonType.Secondary,
+                enabled = false,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                CouiButton(text = "Small", onClick = {}, size = CouiButtonSize.Small)
+                CouiButton(
+                    text = "Small 2nd",
+                    onClick = {},
+                    size = CouiButtonSize.Small,
+                    type = CouiButtonType.Secondary,
+                )
+                CouiButton(text = "Small off", onClick = {}, size = CouiButtonSize.Small, enabled = false)
+            }
         }
     }
 }
