@@ -22,7 +22,7 @@ object BuildConfig {
      * this repository, not a Miuix module, so it must not inherit Miuix's group or version.
      */
     const val COUI_LIBRARY_ID = "io.github.wfc35286.coui.kmp"
-    const val COUI_LIBRARY_VERSION = "0.1.0"
+    const val COUI_LIBRARY_VERSION = "0.1.0-alpha01"
     const val COUI_APPLICATION_NAME = APPLICATION_NAME
 }
 

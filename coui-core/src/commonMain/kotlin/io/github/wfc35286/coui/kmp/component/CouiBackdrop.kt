@@ -41,6 +41,15 @@ import kotlin.math.roundToInt
  * Use [Modifier.couiBackdrop] on the container whose content should be visible through the pill and
  * pass the instance to components that accept one (for example
  * `CouiBottomFloatingNavigationBar(backdrop = ...)`).
+ *
+ * **Ordering matters: the capture has to sit outside every background/border/scrim that should be
+ * visible through the pill.** A modifier's `drawContent()` only reaches the nodes *inner* to it, so
+ * `Modifier.background(page) then Modifier.couiBackdrop(capture)` records a layer that contains the
+ * page's *content* but **not** its background - the layer is transparent wherever the bare page
+ * shows. The material's shaders only touch RGB and hand the sample's alpha straight through, so the
+ * blurred pill ends up exactly as transparent as that capture: a clear glass window with a blurred
+ * ghost of the content in it, instead of an opaque panel. Write
+ * `Modifier.couiBackdrop(capture).background(page)`, or put the background on a child composable.
  */
 @Stable
 class CouiBackdrop internal constructor(
@@ -90,7 +99,11 @@ private class CouiBackdropElement(
 
     override fun equals(other: Any?): Boolean = other is CouiBackdropElement && other.backdrop === backdrop
 
-    override fun hashCode(): Int = System.identityHashCode(backdrop)
+    // `System.identityHashCode` is JVM-only and this file is `commonMain`, which broke the whole
+    // non-Android publication (`compileKotlinJs` / `compileCommonMainKotlinMetadata`:
+    // "Unresolved reference 'System'"). `Any.hashCode()` is the platform default, i.e. identity
+    // based, and `equals` above already compares with `===`, so equality stays referential.
+    override fun hashCode(): Int = backdrop.hashCode()
 }
 
 private class CouiBackdropNode(

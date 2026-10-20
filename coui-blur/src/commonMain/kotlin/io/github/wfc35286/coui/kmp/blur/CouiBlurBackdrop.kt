@@ -35,6 +35,12 @@ import androidx.compose.ui.unit.IntSize
  *
  * Put [Modifier.couiBlurSource] on the container whose content should be visible through the blur,
  * then hand the instance to [CouiBlurSurface].
+ *
+ * **Ordering matters: the source has to sit outside every background/border/scrim that should show
+ * through.** `drawContent()` only reaches the nodes *inner* to the modifier, so
+ * `Modifier.background(page) then Modifier.couiBlurSource(capture)` records a transparent layer, and
+ * the material passes the sample's alpha through unchanged - the surface then reads as clear glass
+ * rather than as a panel. Use `Modifier.couiBlurSource(capture).background(page)`.
  */
 @Stable
 class CouiBlurBackdrop internal constructor(
@@ -73,7 +79,9 @@ private class CouiBlurSourceElement(
 
     override fun equals(other: Any?): Boolean = other is CouiBlurSourceElement && other.backdrop === backdrop
 
-    override fun hashCode(): Int = System.identityHashCode(backdrop)
+    // `System.identityHashCode` is JVM-only; in `commonMain` it breaks every non-Android target.
+    // `Any.hashCode()` is identity based by default and `equals` above already uses `===`.
+    override fun hashCode(): Int = backdrop.hashCode()
 }
 
 private class CouiBlurSourceNode(

@@ -40,6 +40,36 @@ foundation kept for parity/reference, while all COUI work lives in `coui-core`
 | `miuix-nav`        | Navigation library, can be used independently        |
 | `miuix-shader`     | Low-level runtime shader / render effect abstraction |
 
+### COUI via JitPack
+`coui-core` (and `coui-blur`) are published from this repository through
+[JitPack](https://jitpack.io/#sakurajima336/miuix). Add the repository and the sub-module
+coordinates (multi-module JitPack form is `com.github.<user>.<repo>:<module>:<tag>`):
+
+```kotlin
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositories {
+        maven("https://jitpack.io")
+        // Other repositories...
+    }
+}
+```
+
+```kotlin
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation("com.github.sakurajima336.miuix:coui-core:0.1.0-alpha01")
+            // Optional: the ColorOS material blur on its own
+            implementation("com.github.sakurajima336.miuix:coui-blur:0.1.0-alpha01")
+        }
+    }
+}
+```
+
+JitPack builds on Linux, so the Apple (iOS/macOS) variants of these modules are not produced by
+that build - Android, Desktop/JVM, JS and WasmJs are.
+
 ### Getting Started
 
 ```diff

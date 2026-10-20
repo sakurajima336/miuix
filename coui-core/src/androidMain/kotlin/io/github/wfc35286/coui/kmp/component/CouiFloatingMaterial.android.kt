@@ -15,6 +15,7 @@ import android.view.View
 import android.view.ViewOutlineProvider
 import android.widget.FrameLayout
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.layout.layout
@@ -281,6 +282,22 @@ internal actual fun CouiFloatingMaterialSurface(
                     // both darkens the edge and starves the kernel of the pixels just outside the
                     // silhouette.
                     Box(modifier = Modifier.matchParentSize().clip(CouiCapsuleShape)) {
+                        // The official's backdrop filter always samples an **opaque** window (the
+                        // page is painted underneath), so its mix output is opaque too. Our capture
+                        // can be transparent - e.g. when the caller's `Modifier.couiBackdrop` sits
+                        // *inside* the page background, or when the page has holes - and both
+                        // shaders pass the sample's alpha straight through to the result. That made
+                        // the capsule exactly as transparent as the capture: a glass window instead
+                        // of a panel. Painting the material's own second tint layer first gives the
+                        // panel the minimum fill the official always has; under an opaque capture it
+                        // is completely covered and therefore invisible, so it only shows up as a
+                        // safety net. Clipped to the capsule, so it can never square off a corner.
+                        Box(
+                            modifier =
+                                Modifier
+                                    .matchParentSize()
+                                    .background(Color(spec.layer2Color)),
+                        )
                         // Expansion done with an explicit `layout`: `offset { } + requiredSize`
                         // reported a placement that did not match the child's actual origin (the
                         // sampling ended up one margin off), and `size()` is coerced back to the

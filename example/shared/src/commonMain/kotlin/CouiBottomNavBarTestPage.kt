@@ -212,8 +212,17 @@ fun CouiBottomNavBarTestPage(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(pageBackground)
+                    // The capture node has to sit OUTSIDE the page background. A modifier's
+                    // `drawContent()` only reaches the nodes *inner* to it, so with
+                    // `.background(pageBackground)` first the recorded layer came out fully
+                    // transparent wherever the page showed its bare background. The material's
+                    // shaders only touch RGB and pass the alpha through unchanged, so the pill's
+                    // fill was exactly as transparent as the capture: a glass window instead of a
+                    // panel. (Same mistake in `CouiNavBarProbe` / `CouiLabPage`; `CouiCoreTestPage`
+                    // puts its background inside `pageContent`, which is why the gallery's bar
+                    // looked right.)
                     .then(Modifier.couiBackdrop(backdrop))
+                    .background(pageBackground)
                     .verticalScroll(scrollState)
                     .padding(
                         top = padding.calculateTopPadding() +

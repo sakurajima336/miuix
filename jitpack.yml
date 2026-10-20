@@ -1,0 +1,15 @@
+# JitPack build recipe.
+#
+# Only the two COUI modules are published; the Miuix modules and the example apps are left
+# untouched, so a JitPack build does not need the whole project (or a working aapt2).
+#
+# Coordinates (multi-module repo):
+#   com.github.sakurajima336.miuix:coui-core:<tag>
+#   com.github.sakurajima336.miuix:coui-blur:<tag>
+#
+# `-Prelease` is what pins the published version to `COUI_LIBRARY_VERSION` verbatim; without it
+# `module.coui-publication` appends `-<githash>-SNAPSHOT`.
+jdk:
+  - openjdk21
+install:
+  - ./gradlew -Prelease :coui-core:publishToMavenLocal :coui-blur:publishToMavenLocal -x test

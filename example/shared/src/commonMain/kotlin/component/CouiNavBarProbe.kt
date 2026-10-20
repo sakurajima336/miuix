@@ -94,7 +94,9 @@ fun CouiNavBarProbe(largeIconItems: Boolean = false) {
             }
         Box(modifier = Modifier.fillMaxSize().background(Color(0xFF1A1A1A))) {
             // The captured page is a sibling, never a parent, of the pill.
-            Box(modifier = Modifier.fillMaxSize().background(Color(0xFF1A1A1A)).couiBackdrop(backdrop)) {
+            // Capture before the background: `drawContent()` only sees inner nodes, and the
+            // material passes the sample's alpha straight through.
+            Box(modifier = Modifier.fillMaxSize().couiBackdrop(backdrop).background(Color(0xFF1A1A1A))) {
                 BackdropPattern()
             }
             CouiBottomFloatingNavigationBar(

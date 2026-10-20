@@ -133,8 +133,11 @@ fun CouiLabPage(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(themeBackground)
-                    .couiBackdrop(stageBackdrop),
+                    // Capture outside the background: `drawContent()` only sees the nodes inner to
+                    // it, and the material passes the sample's alpha straight through - with the
+                    // background upstream the pill's fill came out transparent.
+                    .couiBackdrop(stageBackdrop)
+                    .background(themeBackground),
         ) {
             if (background != null) {
                 Image(
