@@ -51,6 +51,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import io.github.wfc35286.coui.kmp.component.CouiBottomFloatingNavigationBar
+import io.github.wfc35286.coui.kmp.component.CouiBottomFloatingNavigationBarItem
+import io.github.wfc35286.coui.kmp.component.couiBackdrop
+import io.github.wfc35286.coui.kmp.component.rememberCouiBackdrop
+import io.github.wfc35286.coui.kmp.theme.CouiTheme
+import io.github.wfc35286.coui.kmp.token.CouiColorTokens
+import io.github.wfc35286.coui.kmp.token.CouiComponentColors
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
@@ -488,15 +496,19 @@ private fun CompactScreenLayout(
         drawRect(surfaceColor)
         drawContent()
     }
+    val couiCapture = rememberCouiBackdrop()
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            NavigationBar(
-                navigationItems = navigationItems,
-                mainPagerState = mainPagerState,
-                backdrop = backdrop,
-                modifier = Modifier.padding(bottom = padding.calculateBottomPadding()),
-            )
+            // The COUI bar floats over the content, so it must not occupy the bottom-bar slot.
+            if (!appState.useFloatingNavigationBar) {
+                NavigationBar(
+                    navigationItems = navigationItems,
+                    mainPagerState = mainPagerState,
+                    backdrop = backdrop,
+                    modifier = Modifier.padding(bottom = padding.calculateBottomPadding()),
+                )
+            }
         },
         floatingActionButton = {
             FloatingActionButton(show = appState.showFloatingActionButton)
@@ -513,17 +525,59 @@ private fun CompactScreenLayout(
             SnackbarHost(state = snackbarHostState)
         },
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize().layerBackdrop(backdrop)) {
-            pagerContent(
-                innerPadding,
-                Modifier
-                    .padding(
-                        top = padding.calculateTopPadding(),
-                        start = padding.calculateStartPadding(LocalLayoutDirection.current),
-                        end = padding.calculateEndPadding(LocalLayoutDirection.current),
+        // Outer box hosts the bar; the inner one is what the blur sees through. The bar must stay
+        // outside the captured subtree: the material samples that layer, and a bar inside it made the
+        // RenderNode tree reference itself (prepareTreeImpl recursed until the stack died).
+        Box(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .couiBackdrop(couiCapture)
+                        .layerBackdrop(backdrop),
+            ) {
+                pagerContent(
+                    innerPadding,
+                    Modifier
+                        .padding(
+                            top = padding.calculateTopPadding(),
+                            start = padding.calculateStartPadding(LocalLayoutDirection.current),
+                            end = padding.calculateEndPadding(LocalLayoutDirection.current),
+                        )
+                        .imePadding(),
+                )
+            }
+            if (appState.useFloatingNavigationBar) {
+                val couiDark = isInDarkTheme()
+                CouiTheme(
+                    colors = if (couiDark) CouiColorTokens.Dark else CouiColorTokens.Light,
+                    componentColors = if (couiDark) CouiComponentColors.Dark else CouiComponentColors.Light,
+                ) {
+                    CouiBottomFloatingNavigationBar(
+                        items =
+                            navigationItems.mapIndexed { index, item ->
+                                CouiBottomFloatingNavigationBarItem(
+                                    id = index,
+                                    title = item.label,
+                                    icon = rememberVectorPainter(item.icon),
+                                    iconTint =
+                                        if (index == mainPagerState.selectedPage) {
+                                            CouiTheme.colors.labelPrimary
+                                        } else {
+                                            CouiTheme.colors.labelPrimaryVariant
+                                        },
+                                )
+                            },
+                        selectedIndex = mainPagerState.selectedPage,
+                        onSelected = { mainPagerState.animateToPage(it) },
+                        backdrop = couiCapture,
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = innerPadding.calculateBottomPadding() + 8.dp),
                     )
-                    .imePadding(),
-            )
+                }
+            }
         }
     }
 }

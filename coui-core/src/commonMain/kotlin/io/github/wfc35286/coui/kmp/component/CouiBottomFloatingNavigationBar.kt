@@ -29,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
@@ -39,18 +40,13 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.layout.onSizeChanged
@@ -320,6 +316,14 @@ object CouiBottomFloatingNavigationBarDefaults {
  * @param shadowEnabled Whether the material's inner shadow (`setShadowParams`) and the caustic drop
  *   shadow (`setCausticShadowEffect`) are applied.
  * @param enabled Whether the bar can be interacted with.
+ * @param dragSelectEnabled Hold the pill and slide left/right to move the selection
+ *   (`COUIBottomFloatingNavigationBarMenuView#onMenuTouchMove`). The visual selection follows the
+ *   finger frame by frame, but [onSelected] is only called **once**, when the finger lifts - the
+ *   official never switches a page while the finger is still down.
+ * @param dispatchClickWhenAlreadySelected `MenuView#setDispatchItemClickWhenAlreadySelected`:
+ *   whether a tap on the **already selected** tab still reports through [onSelected]. The official
+ *   defaults to `false` (a re-tap is swallowed); the market turns it on so a re-tap can scroll the
+ *   current list back to the top.
  */
 @Composable
 fun CouiBottomFloatingNavigationBar(
@@ -330,6 +334,8 @@ fun CouiBottomFloatingNavigationBar(
     materialEnabled: Boolean = true,
     shadowEnabled: Boolean = true,
     enabled: Boolean = true,
+    dragSelectEnabled: Boolean = true,
+    dispatchClickWhenAlreadySelected: Boolean = false,
     /**
      * Optional Compose-side capture of the page behind the bar (see [rememberCouiBackdrop]).
      *
@@ -354,6 +360,21 @@ fun CouiBottomFloatingNavigationBar(
     // The bar tracks its own press state instead of the items' `interactionSource`: the official
     // `COUITouchMotionAnimator` reacts to a touch anywhere on the pill, including its padding.
     var barPressed by remember { mutableStateOf(false) }
+    // `MenuView#mSelectedItemId` is the only selection the official view keeps, and
+    // `onMenuTouchMove` writes it **immediately**: the pill highlights the tab under the finger
+    // while the finger is still down, and the callback (i.e. the page switch) is deferred to
+    // ACTION_UP. `selectedIndex` is the caller's controlled value here, so the transient drag
+    // selection needs its own slot - [dragIndex] wins while a drag is in flight and is dropped as
+    // soon as the caller's value catches up.
+    var dragIndex by remember { mutableIntStateOf(-1) }
+    val selectedIndexState = rememberUpdatedState(selectedIndex)
+    val onSelectedState = rememberUpdatedState(onSelected)
+    val visualSelected = if (dragIndex in items.indices) dragIndex else selectedIndex
+    // Drop the transient selection once the controlled value agrees, so a programmatic page change
+    // (or a host that ignores the drag) always wins over a stale drag.
+    LaunchedEffect(selectedIndex, dragIndex) {
+        if (dragIndex >= 0 && dragIndex == selectedIndex) dragIndex = -1
+    }
     val density = LocalDensity.current
     // `COUIMaterialBlurEffect.FRAMEWORK_BOTTOM_BAR_PARAMS_*` (blur 25 raw px) +
     // `COUIMaterialStrokeEffect.FRAMEWORK_CAPSULE_PARAMS_12_*` (the stroke params).
@@ -490,87 +511,6 @@ fun CouiBottomFloatingNavigationBar(
             motionTick
             Offset(rubberXAxis.value, rubberYAxis.value)
         }
-        CouiFloatingMaterialSurface(
-            spec = materialSpec,
-            enabled = materialEnabled,
-            backdrop = backdrop,
-            translation = barTranslation,
-            // The material has to travel and deform with the content, otherwise the blurred
-            // surface tears away from the pill while the finger drags. Same two layers as the
-            // content: press centred, deformation anchored.
-            pressScale = { pressScale.value },
-            scaleX = {
-                motionTick
-                deformXAxis.value
-            },
-            scaleY = {
-                motionTick
-                deformYAxis.value
-            },
-            // Centre pivot, exactly like the official (`pivotX/pivotY` stay at the middle).
-            transformOrigin = { Offset(0.5f, 0.5f) },
-            shadowEnabled = shadowEnabled,
-            dark = isDark,
-            modifier =
-                Modifier
-                    .width(pillWidth)
-                    .height(CouiBottomFloatingNavigationBarDefaults.Height),
-            fallback = {
-                // `applyPanelBackground()`: a flat `ColorDrawable` - the official's own fallback.
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            // No `shadowElevation`: the official fallback is a bare
-                            // `ColorDrawable` and draws no shadow of its own, and a Compose
-                            // elevation here paints a grey halo *outside* the capsule - the
-                            // "一圈灰蒙蒙的包裹" the probe kept showing.
-                            .graphicsLayer {
-                                shape = pillShape
-                                shadowElevation = 0f
-                                clip = false
-                            }
-                            .background(
-                                color = CouiBottomFloatingNavigationBarDefaults.fallbackPanelColor(),
-                                shape = pillShape,
-                            ),
-                )
-            },
-        ) {
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        // **All** transform (translation / press scale / deformation) is applied by
-                        // `CouiFloatingMaterialSurface`, once, so the material and the content can
-                        // never drift apart. Applying it here as well doubled the rubber-band
-                        // travel and squared the deformation scale - which is exactly the "two
-                        // layers" the pill showed while being dragged.
-                        .onSizeChanged { barSize = Size(it.width.toFloat(), it.height.toFloat()) }
-                        .drawWithContent {
-                            // `BaseBottomFloatingMenuView.onDraw`: the spotlight is painted by the
-                            // view itself, i.e. **under** its children, clipped to the pill.
-                            drawCouiSpotLight(spotLight, spotLightSpec, pillShape)
-                            this@drawWithContent.drawContent()
-                        }
-                        .padding(horizontal = CouiBottomFloatingNavigationBarDefaults.InnerPadding),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                items.forEachIndexed { index, item ->
-                    if (index > 0) {
-                        Spacer(Modifier.width(CouiBottomFloatingNavigationBarDefaults.ItemSpace))
-                    }
-                    CouiBottomFloatingNavigationBarItemView(
-                        item = item,
-                        selected = index == selectedIndex,
-                        enabled = enabled,
-                        width = itemWidth,
-                        onClick = { onSelected(index) },
-                        interactionSource = interactionSource,
-                    )
-                }
-            }
-        }
         // The gesture layer deliberately sits **outside** the material's transform. It used to
         // live on the `Row` inside it, where `change.position` is mapped through the press scale,
         // the deformation and the layout offset - so a slow drag fed the deformation back into
@@ -581,8 +521,8 @@ fun CouiBottomFloatingNavigationBar(
         Box(
             modifier =
                 Modifier
-                    .matchParentSize()
-                    .pointerInput(enabled, pillWidth, itemWidth, items.size) {
+                    .fillMaxSize()
+                    .pointerInput(enabled, dragSelectEnabled, pillWidth, itemWidth, items.size) {
                         if (!enabled) return@pointerInput
                         awaitEachGesture {
                             val down = awaitFirstDown(requireUnconsumed = false)
@@ -595,21 +535,34 @@ fun CouiBottomFloatingNavigationBar(
                                 downPos.x >= left && downPos.x <= left + pillWidthPx &&
                                     downPos.y >= top && downPos.y <= top + pillHeightPx
                             if (!inside) return@awaitEachGesture
-                            // `BaseBottomFloatingMenuView` only reacts inside the capsule. A touch
-                            // on an item belongs to that item's `clickable`, so the container only
-                            // swallows the capsule's own empty space.
+                            // `BaseBottomFloatingMenuView#findChildViewUnder`: a raw geometric hit
+                            // test against the item rects - closed intervals, **no** touchSlop, no
+                            // velocity, no snapping. The very same routine decides "which item was
+                            // pressed" and "which item is under the finger now".
                             val inner = CouiBottomFloatingNavigationBarDefaults.InnerPadding.toPx()
                             val space = CouiBottomFloatingNavigationBarDefaults.ItemSpace.toPx()
                             val itemW = itemWidth.toPx()
-                            var onItem = false
-                            for (i in items.indices) {
-                                val x0 = left + inner + i * (itemW + space)
-                                if (downPos.x >= x0 && downPos.x <= x0 + itemW) {
-                                    onItem = true
-                                    break
+                            fun itemIndexAt(pos: Offset): Int {
+                                if (pos.y < top || pos.y > top + pillHeightPx) return -1
+                                for (i in items.indices) {
+                                    val x0 = left + inner + i * (itemW + space)
+                                    if (pos.x >= x0 && pos.x <= x0 + itemW) return i
                                 }
+                                return -1
                             }
-                            if (!onItem && !down.isConsumed) down.consume()
+                            // `MenuView#dispatchTouchEvent(ACTION_DOWN)`: remember the pressed item
+                            // and clear the pending slide target. A press that lands on the capsule
+                            // but not on an item belongs to the container, so it is consumed; a press
+                            // on an item stays with that item's own `clickable` (taps).
+                            val downIndex = itemIndexAt(downPos)
+                            if (downIndex < 0 && !down.isConsumed) down.consume()
+                            // The selection the gesture starts from = the official's
+                            // `mSelectedItemId` before any MOVE.
+                            val downSelected =
+                                if (dragIndex in items.indices) dragIndex else selectedIndexState.value
+                            var pendingIndex = -1
+                            var lastPos = downPos
+                            var upChange: PointerInputChange? = null
                             // `COUISpotLightEffectDrawable.setLightPositionByPointerIndex`: the pill-local
                             // coordinates are **divided by the bounds** before they reach the effect,
                             // so the state (and hence the shader's `u_lightPosAndHeight`) works in
@@ -638,8 +591,23 @@ fun CouiBottomFloatingNavigationBar(
                                 val change = event.changes.firstOrNull()
                                 if (change?.pressed == true) {
                                     val pos = change.position
+                                    lastPos = pos
                                     spotLight.moveTo(pos.normalizeToPill())
                                     velocityTracker.addPosition(change.uptimeMillis, pos)
+                                    // `MenuView#onMenuTouchMove`: hit test on every frame and move
+                                    // the highlight **immediately** - the tab under the finger turns
+                                    // selected (icon state + label colour) while the finger is still
+                                    // down. MOVE never reports to the host; it only records the
+                                    // pending target (`mPendingSlideSelectItemId`) for ACTION_UP.
+                                    if (dragSelectEnabled) {
+                                        val hit = itemIndexAt(pos)
+                                        val current =
+                                            if (dragIndex in items.indices) dragIndex else downSelected
+                                        if (hit >= 0 && hit != current) {
+                                            pendingIndex = hit
+                                            dragIndex = hit
+                                        }
+                                    }
                                     // Travel from the touch-down point, exactly what
                                     // `COUIITouchMotionUnit.handleTouchMove` feeds `moveAnimate`.
                                     val dx = pos.x - downPos.x
@@ -679,7 +647,42 @@ fun CouiBottomFloatingNavigationBar(
                                             )
                                     }
                                 } else {
+                                    // ACTION_UP / ACTION_CANCEL: remember where the finger lifted -
+                                    // the dispatch decision is made right below.
+                                    lastPos = change?.position ?: lastPos
+                                    upChange = change
                                     break
+                                }
+                            }
+                            // `MenuView#dispatchTouchEvent(ACTION_UP)`:
+                            //   1. `performClickOnChildUnder(up)` - only when the item under the
+                            //      lifted finger is **not** the pressed one (a plain tap is still
+                            //      the item's own click);
+                            //   2. `dispatchPendingSlideItemClickIfNeeded` - then the pending slide
+                            //      target.
+                            // Exactly one `onItemClick` leaves the library per gesture, and only
+                            // here - that is why a drag switches the page on release, never while
+                            // the finger is moving.
+                            if (dragSelectEnabled) {
+                                val upIndex = itemIndexAt(lastPos)
+                                val target =
+                                    when {
+                                        upIndex >= 0 && upIndex != downIndex -> upIndex
+                                        upIndex < 0 && pendingIndex >= 0 -> pendingIndex
+                                        else -> -1
+                                    }
+                                if (target >= 0) {
+                                    // Consume the lift so the pressed item's own `clickable` cannot
+                                    // report a second time for the same gesture (`clickable` treats
+                                    // a consumed up as a cancelled tap).
+                                    upChange?.consume()
+                                    dragIndex = target
+                                    onSelectedState.value(target)
+                                } else {
+                                    // Back on the pressed tab (or no slide at all): hand the gesture
+                                    // back to that item's `clickable`, so a tap still reports and a
+                                    // single gesture can never report twice.
+                                    dragIndex = -1
                                 }
                             }
                             // `barOffsetX/Y` already hold the released position, and this spring
@@ -709,7 +712,100 @@ fun CouiBottomFloatingNavigationBar(
                             releaseAxis(rubberYAxis, 0f, lastVy)
                         }
                     },
-        )
+            contentAlignment = Alignment.Center,
+        ) {
+            CouiFloatingMaterialSurface(
+                spec = materialSpec,
+                enabled = materialEnabled,
+                backdrop = backdrop,
+                translation = barTranslation,
+                // The material has to travel and deform with the content, otherwise the blurred
+                // surface tears away from the pill while the finger drags. Same two layers as the
+                // content: press centred, deformation anchored.
+                pressScale = { pressScale.value },
+                scaleX = {
+                    motionTick
+                    deformXAxis.value
+                },
+                scaleY = {
+                    motionTick
+                    deformYAxis.value
+                },
+                // Centre pivot, exactly like the official (`pivotX/pivotY` stay at the middle).
+                transformOrigin = { Offset(0.5f, 0.5f) },
+                shadowEnabled = shadowEnabled,
+                dark = isDark,
+                modifier =
+                    Modifier
+                        .width(pillWidth)
+                        .height(CouiBottomFloatingNavigationBarDefaults.Height),
+                fallback = {
+                    // `applyPanelBackground()`: a flat `ColorDrawable` - the official's own fallback.
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                // No `shadowElevation`: the official fallback is a bare
+                                // `ColorDrawable` and draws no shadow of its own, and a Compose
+                                // elevation here paints a grey halo *outside* the capsule - the
+                                // "一圈灰蒙蒙的包裹" the probe kept showing.
+                                .graphicsLayer {
+                                    shape = pillShape
+                                    shadowElevation = 0f
+                                    clip = false
+                                }
+                                .background(
+                                    color = CouiBottomFloatingNavigationBarDefaults.fallbackPanelColor(),
+                                    shape = pillShape,
+                                ),
+                    )
+                },
+            ) {
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            // **All** transform (translation / press scale / deformation) is applied by
+                            // `CouiFloatingMaterialSurface`, once, so the material and the content can
+                            // never drift apart. Applying it here as well doubled the rubber-band
+                            // travel and squared the deformation scale - which is exactly the "two
+                            // layers" the pill showed while being dragged.
+                            .onSizeChanged { barSize = Size(it.width.toFloat(), it.height.toFloat()) }
+                            .drawWithContent {
+                                // `BaseBottomFloatingMenuView.onDraw`: the spotlight is painted by the
+                                // view itself, i.e. **under** its children, clipped to the pill.
+                                drawCouiSpotLight(spotLight, spotLightSpec, pillShape)
+                                this@drawWithContent.drawContent()
+                            }
+                            .padding(horizontal = CouiBottomFloatingNavigationBarDefaults.InnerPadding),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    items.forEachIndexed { index, item ->
+                        if (index > 0) {
+                            Spacer(Modifier.width(CouiBottomFloatingNavigationBarDefaults.ItemSpace))
+                        }
+                        CouiBottomFloatingNavigationBarItemView(
+                            item = item,
+                            // While a drag is in flight the tab under the finger is the selected one -
+                            // exactly what `MenuView#setSelectedItem` does on every MOVE.
+                            selected = index == visualSelected,
+                            enabled = enabled,
+                            width = itemWidth,
+                            // `MenuView$9#onClick` guards on `id != mSelectedItemId ||
+                            // mDispatchItemClickWhenAlreadySelected`. The drag path reports its own
+                            // target on release, so by default a re-tap of the selected tab is
+                            // swallowed, exactly like the official.
+                            onClick = {
+                                if (dispatchClickWhenAlreadySelected || index != visualSelected) {
+                                    onSelectedState.value(index)
+                                }
+                            },
+                            interactionSource = interactionSource,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -757,22 +853,7 @@ private fun CouiBottomFloatingNavigationBarItemView(
                         Modifier
                             .align(Alignment.TopCenter)
                             .offset(y = -CouiBottomFloatingNavigationBarDefaults.LargeIconOverflow)
-                            .size(CouiBottomFloatingNavigationBarDefaults.LargeIconSize)
-                            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-                            .drawWithContent {
-                                drawContent()
-                                drawRect(
-                                    brush =
-                                        Brush.radialGradient(
-                                            0f to Color(0x00FFFFFF),
-                                            1f to Color(0x33FFFFFF),
-                                            center = Offset(size.width / 2f, 0f),
-                                            radius = size.height,
-                                            tileMode = TileMode.Clamp,
-                                        ),
-                                    blendMode = BlendMode.DstIn,
-                                )
-                            },
+                            .size(CouiBottomFloatingNavigationBarDefaults.LargeIconSize),
                 ) {
                     Image(
                         painter = item.icon,
@@ -814,37 +895,21 @@ private fun CouiBottomFloatingNavigationBarItemView(
         Box(
             modifier =
                 Modifier
-                    .size(CouiBottomFloatingNavigationBarDefaults.IconSize)
-                    // `COUIFadeMaskImageView`: when the tab is selected the icon is multiplied by a
-                    // radial gradient whose centre is transparent and whose edge is 20% white, using
-                    // `PorterDuff.DST_IN`. Transcribed from the official `onSizeChanged`/`onDraw`:
+                    .size(CouiBottomFloatingNavigationBarDefaults.IconSize),
+                    // `COUIFadeMaskImageView` is deliberately **not** reproduced: re-reading the
+                    // official `onDraw` shows it is a no-op. It draws the icon first
+                    // (`invoke-super ... ImageView.onDraw`), then opens a *fresh* transparent layer
+                    // with `saveLayer(0, 0, w, h, null)` and only then paints the radial gradient
+                    // (`#00FFFFFF -> #33FFFFFF`) with `PorterDuff.DST_IN` - `DST_IN` composites
+                    // against an empty destination, so the result is fully transparent and the icon
+                    // is left untouched. To fade anything the order would have to be
+                    // `saveLayer -> draw the icon -> DST_IN -> restore`; both the market 26.9.4 and
+                    // the contacts 17.20.80 builds ship the same (ineffective) order.
                     //
-                    //   RadialGradient(centerX = width / 2f, centerY = 0f, radius = height,
-                    //                  centerColor = #00ffffff, edgeColor = #33ffffff, CLAMP)
-                    //
-                    // Both colours have exactly one value in the APK (no night variant).
-                    //
-                    // `CompositingStrategy.Offscreen` is **required**: any blend mode other than
-                    // SrcOver has to run on an isolated layer. Without it the `DstIn` blends against
-                    // the whole surface underneath, which turns the icon into a black block and
-                    // smears the composited band around it.
-                    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-                    .drawWithContent {
-                        drawContent()
-                        if (selected) {
-                            drawRect(
-                                brush =
-                                    Brush.radialGradient(
-                                        0f to Color(0x00FFFFFF),
-                                        1f to Color(0x33FFFFFF),
-                                        center = Offset(size.width / 2f, 0f),
-                                        radius = size.height,
-                                        tileMode = TileMode.Clamp,
-                                    ),
-                                blendMode = BlendMode.DstIn,
-                            )
-                        }
-                    },
+                    // So the selected tab changes **only** through `state_selected`: the caller's
+                    // [CouiBottomFloatingNavigationBarItem.iconTint] (or a stateful icon drawable) is
+                    // the whole "selected icon" treatment. The earlier `DstIn` overlay here is what
+                    // made our selected icon visibly fade - which the official never does.
         ) {
             Image(
                 painter = item.icon,

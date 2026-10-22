@@ -258,9 +258,10 @@ private val CouiSpotLightExtinguishSpring = CouiSpringData(bounce = 0f, response
 /**
  * The mutable state of one spot light: where the finger is, and how far the glow has progressed.
  *
- * Mirrors `COUISpotLightEffect`: [press] snaps the light to the touch point and springs the glow
- * up, [moveTo] lets each axis chase the finger on its own spring, [release] springs the glow back
- * down.
+ * Mirrors `COUISpotLightEffect`: [press] springs the glow up and either snaps the light to the
+ * touch point or lets it travel there from where the previous press left it, [moveTo] lets each
+ * axis chase the finger on its own spring, [release] springs the glow back down (and blooms it
+ * out).
  *
  * [position] is in **normalized** coordinates (0..1), exactly like
  * `COUISpotLightEffect.mPositionX/Y` - the official divides the `MotionEvent` coordinates by the
@@ -282,6 +283,16 @@ class CouiSpotLightState internal constructor(
     var pressed: Boolean by mutableStateOf(false)
         private set
 
+    /**
+     * True while the extinguish animation runs, i.e. between [release] and the next [press].
+     *
+     * `COUISpotLightEffect.mIsExtinguishAnimation`: while it is set the draw path adds
+     * `mDiffuseExtinguishExtraRadius` (`2 * endRadius`) scaled by `1 - f` to the radius, so the light
+     * **blooms outwards** as it fades instead of shrinking back. See `drawCouiSpotLight`.
+     */
+    var extinguishing: Boolean by mutableStateOf(false)
+        private set
+
     /** Current light position, normalized to the drawing surface (`0..1` on both axes). */
     val position: Offset
         get() = Offset(lightX.value, lightY.value)
@@ -291,14 +302,38 @@ class CouiSpotLightState internal constructor(
         get() = glow.value
 
     /**
-     * [at] is a **normalized** position (`0..1`), matching
-     * `COUISpotLightEffectDrawable.setLightPositionByPointerIndex`.
+     * [at] is a **normalized** position (0..1), matching
+     * COUISpotLightEffectDrawable.setLightPositionByPointerIndex.
+     *
+     * Whether the light snaps under the finger or travels to it is decided by progress, exactly
+     * like COUISpotLightEffect#setLightPosition:
+     *
+     *     if (mMoveAnimation && mProgress != 0f) animateToPosition(x, y);
+     *     else { mPositionX = x; mPositionY = y; shader.setLightPosition(x, y); }
+     *
+     * mProgress reaches exactly 0 only when the extinguish spring settles - COUISpringAnimation
+     * hard-assigns mValue = finalPosition at equilibrium - which takes about 0.8 s, while the light
+     * is already invisible after about 0.45 s (intensity drops below 1%). Pressing again inside
+     * that ~350 ms window makes the light fly over from where it was left; pressing later makes it
+     * light up in place. mPositionX/Y are never reset, and the follow spring starts from them.
+     *
+     * A Compose Animatable also lands on its target exactly, so testing progress != 0 reproduces
+     * both behaviours without an extra flag.
      */
     fun press(at: Offset) {
         pressed = true
-        scope.launch {
-            lightX.snapTo(at.x)
-            lightY.snapTo(at.y)
+        extinguishing = false
+        if (glow.value != 0f) {
+            // Still inside the extinguish animation: carry the light over with the follow spring
+            // (bounce 0.15 / response 0.35) instead of snapping it under the finger.
+            scope.launch { lightX.animateTo(at.x, CouiSpotLightFollowSpring) }
+            scope.launch { lightY.animateTo(at.y, CouiSpotLightFollowSpring) }
+        } else {
+            // progress == 0: a fresh light, placed straight under the finger.
+            scope.launch {
+                lightX.snapTo(at.x)
+                lightY.snapTo(at.y)
+            }
         }
         scope.launch { glow.animateTo(1f, CouiSpotLightGlowSpring) }
     }
@@ -312,6 +347,9 @@ class CouiSpotLightState internal constructor(
 
     fun release() {
         pressed = false
+        // `extinguish()`: the bloom radius below only applies while this flag is set; it is cleared
+        // by the next `press()` (which snaps the glow back up in 0.15s).
+        extinguishing = true
         scope.launch { glow.animateTo(0f, CouiSpotLightExtinguishSpring) }
     }
 }
@@ -427,7 +465,16 @@ internal fun DrawScope.drawCouiSpotLight(
     val shader = state.shader ?: return
     val progress = state.progress
     if (progress <= 0.001f) return
-    val radius = spec.startRadius + (spec.endRadius - spec.startRadius) * progress
+    // `COUISpotLightEffect#setProgress`:
+    //     radius = startRadius + (endRadius - startRadius) * f
+    //     if (mIsExtinguishAnimation && f > 0) radius += mDiffuseExtinguishExtraRadius * (1 - f)
+    // with `mDiffuseExtinguishExtraRadius = 2 * endRadius` (`setRadiusRange`). That is why the light
+    // keeps **expanding** while it fades: 500 px -> 1100 px for the bar's preset (100 -> 500 lerp
+    // plus 1000 * (1 - f)).
+    val extinguishingExtra =
+        if (state.extinguishing) spec.endRadius * 2f * (1f - progress) else 0f
+    val radius =
+        spec.startRadius + (spec.endRadius - spec.startRadius) * progress + extinguishingExtra
     val intensity = spec.startIntensity + (spec.endIntensity - spec.startIntensity) * progress
     shader.setLightColor(spec.color.red, spec.color.green, spec.color.blue)
     shader.setAmbientStrength(spec.ambientStrength)

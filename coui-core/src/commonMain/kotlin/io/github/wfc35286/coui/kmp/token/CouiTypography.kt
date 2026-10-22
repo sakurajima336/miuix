@@ -8,6 +8,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,7 +39,10 @@ sealed interface CouiFontSize {
 @Composable
 fun CouiFontSize.toTextUnit(): TextUnit = when (this) {
     is CouiFontSize.Scaled -> sp.sp
-    is CouiFontSize.Fixed -> with(LocalDensity.current) { dp.toSp() }
+    // `dp` is a Float here, and `Float.toSp()` is the **px -> sp** overload: on a 3x device it
+    // turned the bar's 10dp label into 3.3sp. Wrapping it in [Dp] picks `Density.toSp(Dp)`, the
+    // dp -> sp conversion the resource actually means.
+    is CouiFontSize.Fixed -> with(LocalDensity.current) { Dp(dp).toSp() }
 }
 
 /**
@@ -51,7 +55,10 @@ fun CouiFontSize.toRoundedTextUnit(): TextUnit = when (this) {
     is CouiFontSize.Scaled -> with(LocalDensity.current) {
         (sp * density * fontScale).roundToInt().toFloat().div(density * fontScale).sp
     }
-    is CouiFontSize.Fixed -> with(LocalDensity.current) { dp.toSp() }
+    // `dp` is a Float here, and `Float.toSp()` is the **px -> sp** overload: on a 3x device it
+    // turned the bar's 10dp label into 3.3sp. Wrapping it in [Dp] picks `Density.toSp(Dp)`, the
+    // dp -> sp conversion the resource actually means.
+    is CouiFontSize.Fixed -> with(LocalDensity.current) { Dp(dp).toSp() }
 }
 
 /**
