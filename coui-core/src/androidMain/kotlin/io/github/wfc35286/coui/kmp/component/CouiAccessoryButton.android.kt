@@ -140,7 +140,6 @@ internal actual fun Modifier.couiAccessoryMaterial(
     val marginPx = remember(spec) {
         kotlin.math.ceil(spec.blurRadiusPx * 1.4143f).toInt() + 1
     }
-    var surfaceSize by remember { mutableStateOf(IntSize.Zero) }
     var backdropOrigin by remember { mutableStateOf<androidx.compose.ui.layout.LayoutCoordinates?>(null) }
     // A circle is just a capsule whose corners meet, so the pill's shape maths applies unchanged.
     val circle = remember { androidx.compose.foundation.shape.RoundedCornerShape(percent = 50) }
@@ -148,11 +147,18 @@ internal actual fun Modifier.couiAccessoryMaterial(
         // The degradation the official *should* have: a flat panel instead of nothing at all.
         return this.background(color = CouiTheme.colors.bar, shape = circle)
     }
+    // The circle is a **fixed** 56dp square (`onMeasure` ignores the incoming spec), so its size is
+    // known without measuring. Reading it back from `onSizeChanged` instead fed the expanded size
+    // into the expansion, which grew the layer a little every frame until it covered the screen -
+    // and it recomposed the whole modifier chain on every measure pass, which is the stutter.
+    val surfaceSize = remember(density) {
+        val side = with(density) { CouiAccessoryButtonDefaults.Size.roundToPx() }
+        IntSize(side, side)
+    }
     val effect = remember(spec, surfaceSize, marginPx) { panelBlurEffect(spec, surfaceSize, marginPx) }
     val expandedWidth = surfaceSize.width + 2 * marginPx
     val expandedHeight = surfaceSize.height + 2 * marginPx
     return this
-        .onSizeChanged { surfaceSize = it }
         .then(
             if (effect == null) {
                 Modifier
