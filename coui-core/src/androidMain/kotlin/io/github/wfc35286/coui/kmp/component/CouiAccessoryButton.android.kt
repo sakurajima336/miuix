@@ -153,14 +153,15 @@ internal actual fun Modifier.couiAccessoryMaterial(
     val expandedHeight = surfaceSize.height + 2 * marginPx
     return this
         .onSizeChanged { surfaceSize = it }
-        .clip(circle)
-        // The material's minimum fill, exactly as the pill paints it: an opaque capture covers this
-        // completely, a transparent one would otherwise read as a glass window.
-        .background(Color(spec.layer2Color))
         .then(
             if (effect == null) {
                 Modifier
             } else {
+                // Order matters, and it is the pill's own order: the layer that carries the render
+                // effect is expanded by the kernel's reach so the blur has real pixels to average
+                // *outside* the silhouette, and only the layer *inside* it is clipped back to the
+                // circle. Clipping before expanding clips the expanded layer instead, which pushes
+                // the sampled page out from under the button.
                 Modifier
                     .layout { measurable, _ ->
                         val w = expandedWidth.coerceAtLeast(1)
@@ -178,4 +179,9 @@ internal actual fun Modifier.couiAccessoryMaterial(
                     }
             },
         )
+        // The material's minimum fill plus the final silhouette. The fill goes *inside* the
+        // expanded layer so it is blurred with it, and the clip comes last so the pixels the kernel
+        // produced outside the circle are discarded rather than shown.
+        .clip(circle)
+        .background(Color(spec.layer2Color))
 }
