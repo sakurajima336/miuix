@@ -338,6 +338,17 @@ fun CouiBottomFloatingNavigationBar(
     dragSelectEnabled: Boolean = true,
     dispatchClickWhenAlreadySelected: Boolean = false,
     /**
+     * The gap to the screen edges, i.e. `coui_bottom_floating_navigation_bar_padding_horizontal`
+     * (`changePadding`). It belongs to the **container**, not to the pill: the official
+     * `COUIBottomFloatingAccessoryNavigationBar` subtracts it once and then centres the whole
+     * three-slot row inside what is left (`layoutPositionsMediumScreen`, `:826-828`).
+     *
+     * A host that already owns that padding - [CouiBottomFloatingBar] does, because its accessory
+     * slots sit *outside* the pill but inside the same padded row - passes `0.dp` here so the
+     * inset is not applied twice.
+     */
+    horizontalPadding: Dp = CouiBottomFloatingNavigationBarDefaults.PaddingHorizontal,
+    /**
      * Optional Compose-side capture of the page behind the bar (see [rememberCouiBackdrop]).
      *
      * When provided, the material is rendered from that capture **inside Compose**, so the blur
@@ -490,7 +501,7 @@ fun CouiBottomFloatingNavigationBar(
     BoxWithConstraints(
         modifier =
             modifier
-                .padding(horizontal = CouiBottomFloatingNavigationBarDefaults.PaddingHorizontal)
+                .padding(horizontal = horizontalPadding)
                 // `coui_bottom_floating_navigation_bar_min_height_without_padding_vertical`: the
                 // space the bar reserves, with the 56dp pill centred inside it. The official gets
                 // the same result from the 72dp host container it is inflated into.
