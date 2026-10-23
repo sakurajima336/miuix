@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import component.CouiBlurSection
+import io.github.wfc35286.coui.kmp.component.CouiBottomFloatingBar
 import io.github.wfc35286.coui.kmp.component.CouiBottomFloatingNavigationBar
 import io.github.wfc35286.coui.kmp.component.couiBackdrop
 import io.github.wfc35286.coui.kmp.component.rememberCouiBackdrop
@@ -390,10 +391,24 @@ fun CouiCoreTestPage(
                 // A real app floats the bar over its content at the bottom of the window; the gallery
                 // shows the same placement, above whatever the host Scaffold already inset for the
                 // system navigation bar.
-                CouiBottomFloatingNavigationBar(
+                // The gallery's own bar is the three-slot variant: a pill plus a round button on
+                // each side. `COUIBottomFloatingAccessoryNavigationBar` builds exactly that, and
+                // its accessories are fixed slots rather than injectable views - so this mirrors
+                // it with `startAccessory` / `endAccessory` lambdas instead of accepting children.
+                CouiBottomFloatingBar(
                     items = barItems,
                     selectedIndex = barIndex,
-                    onSelected = { barIndex = it },
+                    onSelect = { barIndex = it },
+                    startAccessory = {
+                        icon(barIcon)
+                        contentDescription("图集")
+                        onClick { barIndex = 0 }
+                    },
+                    endAccessory = {
+                        icon(barIcon)
+                        contentDescription("更多")
+                        onClick { barIndex = 1 }
+                    },
                     // The material's background blur: the bar samples the captured page by
                     // reference in its own draw pass, so scrolling and the predictive-back scene
                     // transform stay in lockstep with the pill - no frozen slice possible.
