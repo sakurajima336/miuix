@@ -289,7 +289,13 @@ fun CouiBottomFloatingBar(
         val pillWidth = minOf((maxWidth - reserve).coerceAtLeast(0.dp), idealPillWidth)
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (startConfigured) {
-                CouiAccessorySlotView(state = start, enabled = enabled, spacing = accessorySpacing, leading = true)
+                CouiAccessorySlotView(
+                    state = start,
+                    enabled = enabled,
+                    spacing = accessorySpacing,
+                    leading = true,
+                    backdrop = backdrop,
+                )
                 Spacer(Modifier.width(accessorySpacing))
             }
             CouiBottomFloatingNavigationBar(
@@ -309,7 +315,13 @@ fun CouiBottomFloatingBar(
             )
             if (endConfigured) {
                 Spacer(Modifier.width(accessorySpacing))
-                CouiAccessorySlotView(state = end, enabled = enabled, spacing = accessorySpacing, leading = false)
+                CouiAccessorySlotView(
+                    state = end,
+                    enabled = enabled,
+                    spacing = accessorySpacing,
+                    leading = false,
+                    backdrop = backdrop,
+                )
             }
         }
     }
@@ -330,6 +342,7 @@ private fun CouiAccessorySlotView(
     enabled: Boolean,
     spacing: Dp,
     leading: Boolean,
+    backdrop: CouiBackdrop?,
 ) {
     val shown = state.shown
     val scale = remember { Animatable(if (shown) 1f else 0.5f) }
@@ -378,6 +391,9 @@ private fun CouiAccessorySlotView(
         enabled = enabled,
         backgroundColor = background,
         animateIconChange = state.animateIcon,
+        // The official accessory mounts its own `setBackgroundRenderEffect`, so the blur samples
+        // the page behind the button - not the bar's already-blurred pill.
+        backdrop = backdrop,
         modifier =
             Modifier.graphicsLayer {
                 scaleX = scale.value

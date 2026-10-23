@@ -3,9 +3,12 @@
 
 package io.github.wfc35286.coui.kmp.component
 
+import androidx.compose.foundation.background
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import io.github.wfc35286.coui.kmp.theme.CouiTheme
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -73,3 +76,17 @@ private fun DrawScope.drawCouiAccessoryCausticGlow(density: Float, dark: Boolean
  * fallback glow uses; `dark` does not change it because the caustic colour has no night variant.
  */
 private const val PEAK = 0.30f
+
+/**
+ * `TYPE_FRAMEWORK_BOTTOM_BAR` has no skiko equivalent: there is no backdrop filter and no
+ * `RenderEffect` chain to hang it on. Fall back to the material's flat fill - the same
+ * degradation the Android actual uses when it cannot get a backdrop.
+ */
+@Composable
+internal actual fun Modifier.couiAccessoryMaterial(
+    dark: Boolean,
+    backdrop: CouiBackdrop?,
+): Modifier {
+    val circle = remember { androidx.compose.foundation.shape.RoundedCornerShape(percent = 50) }
+    return this.background(color = CouiTheme.colors.bar, shape = circle)
+}

@@ -10,7 +10,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.requiredSize
@@ -205,6 +204,9 @@ object CouiAccessoryButtonDefaults {
  * @param backgroundColor The circle's fill. Defaults to `couiColorBar`.
  * @param contentDescription The accessibility label, i.e. `View.setContentDescription` (the
  *   official has no setter of its own for it either).
+ * @param backdrop The page behind the circle, for the `TYPE_FRAMEWORK_BOTTOM_BAR` blur the
+ *   official mounts through `setBackgroundRenderEffect`. Defaults to the subtree's
+ *   [LocalCouiBackdrop]; `null` falls back to the flat fill.
  * @param content The circle's content, centred.
  */
 @Composable
@@ -214,6 +216,7 @@ fun CouiAccessoryButton(
     enabled: Boolean = true,
     backgroundColor: Color = CouiAccessoryButtonDefaults.backgroundColor(),
     contentDescription: String? = null,
+    backdrop: CouiBackdrop? = LocalCouiBackdrop.current,
     content: @Composable BoxScope.() -> Unit,
 ) {
     CouiAccessoryButtonSurface(
@@ -222,6 +225,7 @@ fun CouiAccessoryButton(
         enabled = enabled,
         backgroundColor = backgroundColor,
         contentDescription = contentDescription,
+        backdrop = backdrop,
         content = content,
     )
 }
@@ -242,6 +246,9 @@ fun CouiAccessoryButton(
  * @param backgroundColor The circle's fill.
  * @param animateIconChange Whether to play the swap animation. `false` is
  *   `setIconDrawable(drawable)` / the deprecated overload, which applies the icon instantly.
+ * @param backdrop The page behind the circle, for the `TYPE_FRAMEWORK_BOTTOM_BAR` blur the
+ *   official mounts through `setBackgroundRenderEffect`. Defaults to the subtree's
+ *   [LocalCouiBackdrop]; `null` falls back to the flat fill.
  */
 @Composable
 fun CouiAccessoryButton(
@@ -252,6 +259,7 @@ fun CouiAccessoryButton(
     enabled: Boolean = true,
     backgroundColor: Color = CouiAccessoryButtonDefaults.backgroundColor(),
     animateIconChange: Boolean = true,
+    backdrop: CouiBackdrop? = LocalCouiBackdrop.current,
 ) {
     // `mIconDrawable` / `mOutgoingIconDrawable`: the incoming painter is swapped in immediately and
     // the previous one is kept alive only until its exit animation ends.
@@ -303,6 +311,7 @@ fun CouiAccessoryButton(
         enabled = enabled,
         backgroundColor = backgroundColor,
         contentDescription = contentDescription,
+        backdrop = backdrop,
     ) {
         outgoing?.let { painter ->
             Image(
@@ -364,18 +373,27 @@ private fun CouiAccessoryButtonSurface(
     enabled: Boolean,
     backgroundColor: Color,
     contentDescription: String?,
+    backdrop: CouiBackdrop?,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val dark = CouiTheme.colors.background.luminance() < 0.5f
     val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
+    // `COUIPressAnimatorUnit` is driven by `COUIITouchMotionUnit.handleTouchEvent`, **not** by the
+    // click recogniser: the official press scale has no MOVE handler at all
+    // (`COUIPressAnimatorUnit.moveAnimate` returns immediately), and the only place that releases
+    // it is `handleTouchUp`, reached from ACTION_UP / ACTION_CANCEL. Deriving the press from
+    // `clickable`'s interaction source instead makes the scale collapse the moment the finger
+    // travels past the touch slop - the button shrinks, then pops back to 1.0 as the drag starts,
+    // and only then does the deform kick in. Holding our own flag keeps the two channels
+    // independent, which is what lets it deform *while* it is shrunk.
+    var pressHeld by remember { mutableStateOf(false) }
     val spotLight = rememberCouiSpotLightState()
     val spotLightSpec = remember(dark) { CouiAccessoryButtonDefaults.spotLight(dark) }
     val density = LocalDensity.current
 
     // `COUIPressAnimatorUnit`: the press scale is a size-derived target, not a constant.
     val pressScale = remember { Animatable(1f) }
-    val scaleTarget = if (enabled && pressed) CouiAccessoryButtonDefaults.pressScale() else 1f
+    val scaleTarget = if (enabled && pressHeld) CouiAccessoryButtonDefaults.pressScale() else 1f
     // `PressParams.jellyPressSpring` on the way down; on the way up
     // `TouchMotionHandUpSpringResolver.resolve(56, 56)`, i.e. the small-area end of the tier.
     val pressSpring = CouiPressSprings.JellyPress
@@ -385,10 +403,10 @@ private fun CouiAccessoryButtonSurface(
             heightDp = CouiAccessoryButtonDefaults.Size.value,
         )
     }
-    LaunchedEffect(pressed, scaleTarget, enabled) {
+    LaunchedEffect(pressHeld, scaleTarget, enabled) {
         pressScale.animateTo(
             targetValue = scaleTarget,
-            animationSpec = (if (pressed) pressSpring else releaseSpring)
+            animationSpec = (if (pressHeld) pressSpring else releaseSpring)
                 .toSpringSpec(CouiMinVisibleChange.Scale),
         )
     }
@@ -446,6 +464,9 @@ private fun CouiAccessoryButtonSurface(
                         val h = size.height.toFloat().coerceAtLeast(1f)
                         // `setLightPositionByPointerIndex` normalises against the drawable bounds.
                         spotLight.press(Offset(down.position.x / w, down.position.y / h))
+                        // `handleTouchDown`: the press scale goes down here and stays down until
+                        // the gesture actually ends - see the `pressHeld` comment above.
+                        pressHeld = true
                         for (axis in listOf(deformXAxis, deformYAxis, rubberXAxis, rubberYAxis)) {
                             axis.spring = CouiTouchTiers.DragSpring
                             axis.target = axis.value
@@ -489,6 +510,9 @@ private fun CouiAccessoryButtonSurface(
                         }
                         val velocity = velocityTracker.calculateVelocity()
                         spotLight.release()
+                        // `handleTouchUp`: the single place the press scale is allowed to spring
+                        // back. Dragging never writes it.
+                        pressHeld = false
                         // `applyHandUpSpring`: `initial = clamp(pan / totalDist * |value - rest|, +-1000)`
                         // with the *per-unit* total distance (150dp for deform, 28dp for the rubber band).
                         fun releaseAxis(axis: PopupSpringAxis, rest: Float, pan: Float, rangePx: Float) {
@@ -524,6 +548,11 @@ private fun CouiAccessoryButtonSurface(
                 // the render node draws the outline shadow under the view's own content.
                 .couiAccessoryCaustic(dark)
                 .clip(CircleShape)
+                // `setViewBlurEffect(this, TYPE_FRAMEWORK_BOTTOM_BAR)`: the same blur preset the
+                // pill uses, applied to the circle and sampling the page behind it. When no
+                // backdrop is available it degrades to the flat fill, which is what a non-material
+                // device shows anyway.
+                .couiAccessoryMaterial(dark = dark, backdrop = backdrop)
                 .background(backgroundColor)
                 .drawWithContent {
                     // `onDraw`: the touch effect is drawn before the icon.
@@ -544,3 +573,30 @@ private fun CouiAccessoryButtonSurface(
  */
 @Composable
 internal expect fun Modifier.couiAccessoryCaustic(dark: Boolean): Modifier
+
+/**
+ * The circle's frosted material - the **same** `TYPE_FRAMEWORK_BOTTOM_BAR` blur the pill uses.
+ *
+ * `COUIBottomFloatingAccessoryView` calls `COUIMaterialEffect.setViewBlurEffect(this,
+ * TYPE_FRAMEWORK_BOTTOM_BAR)` on itself (`:2073-2075`, fanned out from `initMaterialAppearance`
+ * `:1161-1173` and refreshed by `onMaterialStateChange(type == 2)` `:2511-2535`) - it never goes
+ * through its parent, and a `setViewBlurEffect` call on the container is a zero hit. The preset is
+ * the pill's own (`MaterialBlurEffect.smali:178-188`): blur radius 25, `#B3666666` OVERLAY over
+ * `#99F5F5F5` LUMINOSITY, or `#80666666` / `#B3262626` in dark.
+ *
+ * The one thing that differs from a plain `RenderEffect` is **what it samples**: the official
+ * mounts it through `OplusViewBackgroundRenderEffect.setBackgroundRenderEffect(effect, view)`
+ * (`COUIMaterialEffect.smali:381`), i.e. it reads the *page behind* the view, not the view's own
+ * content. A Compose `graphicsLayer { renderEffect }` only sees its own layer, so the actual has
+ * to paint a captured [CouiBackdrop] into the layer first - that is why [backdrop] is a parameter.
+ *
+ * When no backdrop is supplied - or the version gates the official applies twice more
+ * (`isMaterialVersion()`, `canApplyBackgroundRenderEffect()`) are not met - the actual paints the
+ * flat `couiColorBar` fill instead. The official does **not** fall back (it just returns and
+ * draws nothing), which is a real defect there; a visible flat panel is the better degradation.
+ */
+@Composable
+internal expect fun Modifier.couiAccessoryMaterial(
+    dark: Boolean,
+    backdrop: CouiBackdrop?,
+): Modifier

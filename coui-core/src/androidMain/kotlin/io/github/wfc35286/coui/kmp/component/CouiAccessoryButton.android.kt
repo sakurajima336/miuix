@@ -6,13 +6,27 @@ package io.github.wfc35286.coui.kmp.component
 import android.graphics.BlendMode
 import android.graphics.Shader
 import android.os.Build
+import androidx.compose.foundation.background
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.IntSize
+import io.github.wfc35286.coui.kmp.theme.CouiTheme
 
 /**
  * `COUIBottomFloatingAccessoryView.setCausticShadowEffect()` - the round button's **level-5**
@@ -106,4 +120,62 @@ private fun DrawScope.drawCouiAccessoryCausticShadow(
         h + params.bottomPx + params.sdfPx + slack,
         paint,
     )
+}
+
+/**
+ * `TYPE_FRAMEWORK_BOTTOM_BAR` on a circle - see the expect for the evidence trail.
+ *
+ * The pipeline is the pill's own ([panelBlurEffect]) with the same spec, so the two surfaces can
+ * never drift apart. What is added here is the **backdrop capture** the official gets for free
+ * from `OplusViewBackgroundRenderEffect`: the effect is attached to a layer that first paints the
+ * captured page, so the blur reads the page and not the button.
+ */
+@Composable
+internal actual fun Modifier.couiAccessoryMaterial(
+    dark: Boolean,
+    backdrop: CouiBackdrop?,
+): Modifier {
+    val spec = if (dark) CouiFloatingMaterialDark else CouiFloatingMaterialLight
+    val density: androidx.compose.ui.unit.Density = LocalDensity.current
+    val marginPx = remember(spec) {
+        kotlin.math.ceil(spec.blurRadiusPx * 1.4143f).toInt() + 1
+    }
+    var surfaceSize by remember { mutableStateOf(IntSize.Zero) }
+    var backdropOrigin by remember { mutableStateOf<androidx.compose.ui.layout.LayoutCoordinates?>(null) }
+    // A circle is just a capsule whose corners meet, so the pill's shape maths applies unchanged.
+    val circle = remember { androidx.compose.foundation.shape.RoundedCornerShape(percent = 50) }
+    if (backdrop == null || Build.VERSION.SDK_INT < 33) {
+        // The degradation the official *should* have: a flat panel instead of nothing at all.
+        return this.background(color = CouiTheme.colors.bar, shape = circle)
+    }
+    val effect = remember(spec, surfaceSize, marginPx) { panelBlurEffect(spec, surfaceSize, marginPx) }
+    val expandedWidth = surfaceSize.width + 2 * marginPx
+    val expandedHeight = surfaceSize.height + 2 * marginPx
+    return this
+        .onSizeChanged { surfaceSize = it }
+        .clip(circle)
+        // The material's minimum fill, exactly as the pill paints it: an opaque capture covers this
+        // completely, a transparent one would otherwise read as a glass window.
+        .background(Color(spec.layer2Color))
+        .then(
+            if (effect == null) {
+                Modifier
+            } else {
+                Modifier
+                    .layout { measurable, _ ->
+                        val w = expandedWidth.coerceAtLeast(1)
+                        val h = expandedHeight.coerceAtLeast(1)
+                        val placeable = measurable.measure(Constraints.fixed(w, h))
+                        layout(w, h) { placeable.place(-marginPx, -marginPx) }
+                    }
+                    .graphicsLayer { renderEffect = effect }
+                    .onGloballyPositioned { backdropOrigin = it }
+                    .drawBehind {
+                        drawCouiBackdropLayer(
+                            backdrop = backdrop,
+                            origin = backdropOrigin,
+                        )
+                    }
+            },
+        )
 }
