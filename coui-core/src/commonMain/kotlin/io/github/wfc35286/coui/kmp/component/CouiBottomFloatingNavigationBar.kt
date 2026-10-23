@@ -67,6 +67,7 @@ import io.github.wfc35286.coui.kmp.motion.CouiSpringData
 import io.github.wfc35286.coui.kmp.motion.CouiTouchCommon
 import io.github.wfc35286.coui.kmp.motion.CouiTouchTiers
 import io.github.wfc35286.coui.kmp.motion.couiCalculateScaleWithK
+import io.github.wfc35286.coui.kmp.motion.couiHandUpSpring
 import io.github.wfc35286.coui.kmp.motion.couiDeformScales
 import io.github.wfc35286.coui.kmp.motion.couiPressScale
 import io.github.wfc35286.coui.kmp.motion.couiRubberBand
@@ -423,7 +424,17 @@ fun CouiBottomFloatingNavigationBar(
     // Using the engine defaults here made the press snap in roughly twice as fast as the official
     // - the "缩放过快" report - because response 0.13 is a much stiffer spring than 0.3.
     val pressSpring = CouiPressSprings.CandyPress
-    val releaseSpring = CouiPressSprings.CandyHandUp
+    // The release spring is **not** the jelly/candy constant: `TouchMotionHandUpSpringResolver`
+    // interpolates it by control size, and a 376dp pill sits past the large-area reference, so it
+    // gets `(0.65, 0.45)`. A 56dp round button gets `(0.65, 0.42)` instead - same bounce, faster
+    // response - which is why the small controls snap back slightly quicker than the bar.
+    val releaseSpring = remember(barSize) {
+        val density = density.density
+        couiHandUpSpring(
+            widthDp = barSize.width / density,
+            heightDp = barSize.height / density,
+        )
+    }
     LaunchedEffect(barPressed, scaleTarget, enabled) {
         pressScale.animateTo(
             targetValue = scaleTarget,
@@ -693,23 +704,36 @@ fun CouiBottomFloatingNavigationBar(
                             lastVy = releaseVelocity.y
                             spotLight.release()
                             barPressed = false
-                            // `backAnimation()` / `COUIRubberAnimatorUnit.handleTouchUp`: every
-                            // axis returns home with `iolHandUpSpringLargeArea`, carrying the
-                            // finger's velocity the way `applyHandUpSpring` does.
-                            fun releaseAxis(axis: PopupSpringAxis, rest: Float, speed: Float) {
-                                val initial =
-                                    (
-                                        speed * 0.0003f / max(1f, maxStretchPx) *
-                                            abs(axis.value - rest)
-                                        ).coerceIn(-1000f, 1000f)
-                                axis.velocity = initial
+                            // `backAnimation()` / `COUIRubberAnimatorUnit.handleTouchUp`.
+                            //
+                            // `TouchMotionHandUpHelper.computeInitialVelocity(pan, totalDist,
+                            // multiplier, clamp)` is
+                            //     initial = clamp(pan / totalDist * multiplier, +-clamp)
+                            // and, crucially, `totalDist` is **per unit**: the deform unit uses
+                            // `iolMaxDeformRubberDistance` (150dp) while the rubber unit uses
+                            // `iolMaxStretchDistance` (28dp). The multiplier is how far from rest
+                            // the axis currently sits - for deform that is `|scale - 1|`, confirmed
+                            // in `COUIDeformAnimatorUnit` (`sub-float p5, p2, 1.0f`).
+                            val panVx = lastVx
+                            val panVy = lastVy
+                            val deformRangePx = maxDeformPx
+                            fun releaseAxis(
+                                axis: PopupSpringAxis,
+                                rest: Float,
+                                pan: Float,
+                                rangePx: Float,
+                            ) {
+                                val denominator = rangePx.coerceAtLeast(1f)
+                                axis.velocity =
+                                    (pan / denominator * abs(axis.value - rest))
+                                        .coerceIn(-1000f, 1000f)
                                 axis.spring = CouiTouchTiers.HandUpSpringLargeArea
                                 axis.target = rest
                             }
-                            releaseAxis(deformXAxis, 1f, lastVx)
-                            releaseAxis(deformYAxis, 1f, lastVy)
-                            releaseAxis(rubberXAxis, 0f, lastVx)
-                            releaseAxis(rubberYAxis, 0f, lastVy)
+                            releaseAxis(deformXAxis, 1f, panVx, deformRangePx)
+                            releaseAxis(deformYAxis, 1f, panVy, deformRangePx)
+                            releaseAxis(rubberXAxis, 0f, panVx, maxStretchPx)
+                            releaseAxis(rubberYAxis, 0f, panVy, maxStretchPx)
                         }
                     },
             contentAlignment = Alignment.Center,

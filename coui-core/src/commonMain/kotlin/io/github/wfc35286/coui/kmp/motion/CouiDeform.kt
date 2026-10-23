@@ -7,6 +7,7 @@ import androidx.compose.ui.geometry.Offset
 import kotlin.math.abs
 import kotlin.math.exp
 import kotlin.math.ln
+import kotlin.math.max
 
 /**
  * `COUITouchMotionAnimator$DeformAnchor` - which edge stays put while the surface deforms.
@@ -118,3 +119,51 @@ fun couiDeformScales(
  * `TouchAnimatorParamProvider`, so the dead zone is 5px on every density.
  */
 const val CouiDeformDeadZonePx: Float = 5f
+
+/**
+ * How the press scale and the deform stretch combine into the final scale.
+ *
+ * `COUITouchMotionAnimator$TouchMotionCollector.put` accumulates about 1.0:
+ *
+ * ```
+ * mScaleX += value - 1.0f      // for both PRESS_SCALE and DEFORM_SCALE
+ * ```
+ *
+ * so the result is `1 + (press - 1) + (deform - 1)` - an **additive** mix of the two channels'
+ * deviations from 1.0. It is emphatically not `press * deform`: with a multiply, pressing shrinks
+ * the surface and a simultaneous drag stretch has to fight that shrink, so the deform barely shows
+ * up and the whole gesture reads as "shrink only". Verified against the smali at
+ * `TouchMotionCollector.smali` (`sub-float` then `add-float` on `mScaleX` / `mScaleY`).
+ *
+ * @param press The press channel's scale, `1.0` when not pressed.
+ * @param deform The deform channel's scale for this axis, `1.0` when not dragging.
+ */
+fun couiComposeScale(press: Float, deform: Float): Float = 1f + (press - 1f) + (deform - 1f)
+
+/**
+ * `TouchMotionHandUpSpringResolver.resolve(w, h)` - the release spring, picked by surface size.
+ *
+ * The bounce is always `0.65`; only the response moves, from `0.42` for a control narrower than
+ * `iolHandUpSmallAreaRefWidthDp` (56dp) to `0.45` at/after `iolHandUpLargeAreaRefWidthDp`
+ * (100dp). A 56dp round button therefore releases slightly faster than a 376dp pill does - one of
+ * the few places where the three controls in the gallery are genuinely not identical.
+ *
+ * @param widthDp The control's width, in dp.
+ * @param heightDp The control's height, in dp.
+ */
+fun couiHandUpSpring(widthDp: Float, heightDp: Float): CouiSpringData {
+    val reference = max(widthDp, heightDp)
+    val span = CouiTouchTiers.HandUpLargeAreaRefWidthDp - CouiTouchTiers.HandUpSmallAreaRefWidthDp
+    val t = if (span <= 0f) {
+        1f
+    } else {
+        ((reference - CouiTouchTiers.HandUpSmallAreaRefWidthDp) / span).coerceIn(0f, 1f)
+    }
+    // The official runs t through a bezier first; over a 0.03 response span that is within a
+    // rounding step of linear, so the interpolation is done directly here.
+    return CouiSpringData(
+        bounce = CouiTouchTiers.HandUpSpring.bounce,
+        response = CouiTouchTiers.HandUpSpring.response +
+            (CouiTouchTiers.HandUpSpringLargeArea.response - CouiTouchTiers.HandUpSpring.response) * t,
+    )
+}

@@ -47,6 +47,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.viewinterop.AndroidView
+import io.github.wfc35286.coui.kmp.motion.couiComposeScale
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -268,8 +269,13 @@ internal actual fun CouiFloatingMaterialSurface(
                                 IntOffset(t.x.roundToInt(), t.y.roundToInt())
                             }
                             .graphicsLayer {
-                                this.scaleX = pressScaleProvider() * scaleXProvider()
-                                this.scaleY = pressScaleProvider() * scaleYProvider()
+                                // The official does **not** multiply the two channels:
+                                // `TouchMotionCollector.put` accumulates `mScaleX += value - 1`,
+                                // so press and deform are summed about 1.0. Multiplying makes a
+                                // shrinking press fight a stretching deform - a drag barely
+                                // stretches because the pill is shrunk at the same time.
+                                this.scaleX = couiComposeScale(pressScaleProvider(), scaleXProvider())
+                                this.scaleY = couiComposeScale(pressScaleProvider(), scaleYProvider())
                                 this.transformOrigin = TransformOrigin(0.5f, 0.5f)
                             },
                 ) {
@@ -329,8 +335,8 @@ internal actual fun CouiFloatingMaterialSurface(
                                         drawCouiBackdropLayer(
                                             backdrop = backdrop,
                                             origin = backdropOrigin,
-                                            scaleX = pressScaleProvider() * scaleXProvider(),
-                                            scaleY = pressScaleProvider() * scaleYProvider(),
+                                            scaleX = couiComposeScale(pressScaleProvider(), scaleXProvider()),
+                                            scaleY = couiComposeScale(pressScaleProvider(), scaleYProvider()),
                                         )
                                     },
                         )
@@ -359,8 +365,8 @@ internal actual fun CouiFloatingMaterialSurface(
                         IntOffset(t.x.roundToInt(), t.y.roundToInt())
                     }
                     .graphicsLayer {
-                        this.scaleX = pressScaleProvider() * scaleXProvider()
-                        this.scaleY = pressScaleProvider() * scaleYProvider()
+                        this.scaleX = couiComposeScale(pressScaleProvider(), scaleXProvider())
+                        this.scaleY = couiComposeScale(pressScaleProvider(), scaleYProvider())
                         this.transformOrigin = TransformOrigin(0.5f, 0.5f)
                     },
         ) {
