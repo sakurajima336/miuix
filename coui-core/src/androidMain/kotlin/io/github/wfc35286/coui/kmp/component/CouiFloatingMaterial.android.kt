@@ -248,6 +248,12 @@ internal actual fun CouiFloatingMaterialSurface(
                 null
             }
         }
+        // The official shader reads the page under each fragment to decide how much of the glow
+        // survives (alpha *= (1 - gray)^2). Sampling a live backdrop costs a GPU readback per
+        // frame, so the fallback binds a 1x1 black shader: that is exactly the official's
+        // "dark page" case (gray = 0, full strength), which is the appearance the component is
+        // designed around. Passing a real backdrop shader is a drop-in upgrade.
+        val causticBackdrop = remember { blackCausticBackdrop() }
         if (effect != null) {
             // Where the sampling layer's drawing origin actually sits (measured, not derived); see
             // `drawCouiBackdropLayer`.
@@ -275,7 +281,11 @@ internal actual fun CouiFloatingMaterialSurface(
                         modifier =
                             Modifier
                                 .matchParentSize()
-                                .drawBehind { caustic?.let { drawCouiCausticShadow(it, densityScale, surfaceSize) } },
+                                .drawBehind {
+                                    caustic?.let {
+                                        drawCouiCausticShadow(it, causticBackdrop, densityScale, surfaceSize, dark)
+                                    }
+                                },
                     )
                     // The clip lives on **this** node and the effect on the child, in that order:
                     // a single merged layer would clip the content *before* blurring it, which
@@ -491,33 +501,75 @@ private fun CouiPanelEdgeOverlay(
 }
 
 /**
- * `setCausticShadowEffect()`: paints the outline glow over the (already scaled) caustic layer -
- * the layer is the pill box expanded by the SDF spill, so `size` here is the expanded size and
- * the pill outline sits centred inside it. `pillSize` is the un-expanded pill size, which is what
- * the SDF needs.
+ * A 1x1 opaque-black shader, used as the caustic's backdrop when no live capture is bound.
+ *
+ * The official effect multiplies its alpha by `(1 - gray)^2`, `gray = clamp((luma - 0.45) * 0.6,
+ * 0, 1)`, so a black backdrop means `gray = 0` and full strength - the dark-page case the
+ * component is designed for. Every APK that ships this effect draws it over a black or near-black
+ * page (gallery video tab, photo detail, store home), so this is the common path, not a downgrade.
+ */
+private fun blackCausticBackdrop(): Shader {
+    val pixel = android.graphics.Bitmap.createBitmap(1, 1, android.graphics.Bitmap.Config.ARGB_8888)
+    pixel.eraseColor(android.graphics.Color.BLACK)
+    return android.graphics.BitmapShader(pixel, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+}
+
+/**
+ * `BaseBottomFloatingMenuView.setCausticShadowEffect()` - the pill's level-4 caustic.
+ *
+ * The effect is painted **behind** the pill, exactly like the official (the render node draws the
+ * outline shadow under the view's own content). Only the part that spills below the pill's bottom
+ * edge survives - level 4's layout is `(0, 0, 0, 4.9dp)`, so the optics rect is the pill grown
+ * downwards by 4.9dp and nothing else, and the shader's bounding-box test drops everything outside
+ * it. That is why the glow never appears above or beside the pill.
+ *
+ * Blending is `BlendMode.PLUS`: the official composite is `rgb = bg + color*alpha`, a pure
+ * addition in sRGB, not a source-over.
  */
 private fun DrawScope.drawCouiCausticShadow(
     shader: android.graphics.RuntimeShader,
+    backdrop: Shader,
     density: Float,
     pillSize: IntSize,
+    dark: Boolean,
 ) {
     val w = pillSize.width.toFloat()
     val h = pillSize.height.toFloat()
     if (w <= 0f || h <= 0f) return
-    // Draw an explicit rect that extends past the pill on every side, so the glow's tail has
-    // somewhere to die: `spill = 3 * sdf + bottomOffset` puts the rect's edge ~3 sigma away from
-    // the lit outline, where `exp(-3) = 0.05` of the peak alpha is left - invisible. (The old
-    // 2 * sdf left 0.135 at the edge, i.e. a visible hard cut at the rect boundary.)
-    val sdfPx = CouiCausticShadow.SDF_WIDTH_DP * density
-    val bottomPx = CouiCausticShadow.BOTTOM_OFFSET_DP * density
-    val spill = sdfPx * 3f + bottomPx
-    shader.setFloatUniform("uPillCenter", w / 2f, h / 2f)
-    shader.setFloatUniform("uPillSize", w, h)
-    shader.setFloatUniform("uSdfPx", sdfPx)
-    shader.setFloatUniform("uAlpha", CouiCausticShadow.SHADER_ALPHA)
-    val paint = android.graphics.Paint().apply { this.shader = shader }
+    val params = CouiCausticShadow.level(
+        level = CouiCausticShadow.Level.Level4,
+        density = density,
+        color = if (dark) CouiCausticShadow.Colors.DARK_2 else CouiCausticShadow.Colors.LIGHT_2,
+    )
+    // Straight (non-premultiplied) RGBA; the shader premultiplies its own output.
+    val a = ((params.color ushr 24) and 0xFF) / 255f
+    val r = ((params.color shr 16) and 0xFF) / 255f
+    val g = ((params.color shr 8) and 0xFF) / 255f
+    val b = (params.color and 0xFF) / 255f
+    shader.setInputShader("uBackdrop", backdrop)
+    shader.setFloatUniform("uColor", r, g, b, a)
+    shader.setFloatUniform("uLayout", params.leftPx, params.topPx, params.rightPx, params.bottomPx)
+    shader.setFloatUniform("uParams", params.sdfPx, params.factor0, params.factor1, params.speed)
+    shader.setFloatUniform("uLum", params.luminanceThreshold, params.luminanceIntensity)
+    shader.setFloatUniform("uRectLT", 0f, 0f)
+    shader.setFloatUniform("uRectSize", w, h)
+    // The official passes the render node's outline corner radius; every COUI floating surface is
+    // a capsule, so this is the pill's half height.
+    shader.setFloatUniform("uCorner", h / 2f)
+    shader.setIntUniform("uOutlineType", 0)
+    // The shader's own bbox test clamps everything outside the optics rect to zero, so a hair of
+    // slack around it is all the draw rect needs.
+    val slack = 1f
+    val paint = android.graphics.Paint().apply {
+        this.shader = shader
+        blendMode = BlendMode.PLUS
+    }
     drawContext.canvas.nativeCanvas.drawRect(
-        -spill, -spill, w + spill, h + spill, paint,
+        -slack,
+        -slack,
+        w + slack,
+        h + params.bottomPx + params.sdfPx + slack,
+        paint,
     )
 }
 

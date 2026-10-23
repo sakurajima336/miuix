@@ -11,6 +11,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -19,24 +20,44 @@ import androidx.compose.ui.platform.LocalDensity
 /**
  * The caustic glow for the flat fallback panel.
  *
- * The official fallback (`applyPanelBackground()` + `updateOuterShadow()` without the material)
- * still carries the elevation caustic shadow, and that shadow is painted by the **native** HWUI
- * routine `SkCanvas::private_draw_oplus_caustic_shadow` - not by an AGSL string, so there is no
- * shader to port. A single soft capsule with the resource constants (`#42ffffff`, 4.9dp below,
- * 10.4dp softening) is the closest Compose equivalent.
+ * The real thing is a Skia runtime effect inside `libhwui.so` (see [CouiCausticShadow] for the
+ * recovered source); skiko has no AGSL, so this reproduces its *shape*: a band that is brightest
+ * at the pill's bottom edge and fades out over `sdf` below it, with nothing above or beside the
+ * pill (level 4's layout is `(0, 0, 0, 4.9dp)`, so the optics rect is the pill grown downwards
+ * only). The official's peak intensity at the bottom edge measures ~0.30 of the raw colour alpha
+ * on a black page, which is where [PEAK] comes from.
  */
 private fun DrawScope.drawCouiCausticGlow(density: Float) {
     val bottom = COUI_CAUSTIC_BOTTOM_DP * density
-    val blur = COUI_CAUSTIC_SDF_DP * density
-    val radius = size.height / 2f
+    val sdf = COUI_CAUSTIC_SDF_DP * density
+    val w = size.width
+    val h = size.height
+    val radius = h / 2f
     val base = Color(COUI_CAUSTIC_COLOR)
+    val peak = base.copy(alpha = base.alpha * PEAK)
+    val top = (h - sdf).coerceAtLeast(0f)
+    val end = h + bottom
+    if (end <= top || w <= 0f) return
+    // Stop positions are fractions of the drawn band; `edge` is where the pill's bottom sits.
+    val edge = ((h - top) / (end - top)).coerceIn(0.01f, 0.99f)
     drawRoundRect(
-        color = base,
-        topLeft = Offset(-blur * 0.5f, bottom - blur * 0.5f),
-        size = Size(size.width + blur, size.height + blur),
-        cornerRadius = CornerRadius(radius + blur * 0.5f),
+        brush =
+            Brush.verticalGradient(
+                0f to Color.Transparent,
+                edge * 0.5f to peak.copy(alpha = peak.alpha * 0.35f),
+                edge to peak,
+                1f to Color.Transparent,
+                startY = top,
+                endY = end,
+            ),
+        topLeft = Offset(0f, top),
+        size = Size(w, end - top),
+        cornerRadius = CornerRadius(radius),
     )
 }
+
+/** The official's band value at the pill's bottom edge, measured against a real screenshot. */
+private const val PEAK = 0.30f
 
 /**
  * The ColorOS material is an Oplus framework feature (`com.oplus.view.material.*`), so every
