@@ -7,10 +7,14 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -62,7 +66,22 @@ object CouiBottomSheetDefaults {
     val ScrimColor = Color(0x80000000)
 
     /** The radius of the sheet's top corners. */
-    val TopCornerRadius = 24.dp
+    val TopCornerRadius = 32.dp
+
+    /** The elevation the sheet floats at. */
+    val Elevation = 17.dp
+
+    /** The gap the sheet keeps below the top of the screen. */
+    val TopMargin = 40.dp
+
+    /** The width of the grab bar at the top of the sheet. */
+    val DragBarWidth = 28.dp
+
+    /** The height of the grab bar. */
+    val DragBarHeight = 4.dp
+
+    /** The gap between the sheet's top edge and the grab bar. */
+    val DragBarMarginTop = 8.dp
 }
 
 /**
@@ -119,7 +138,8 @@ fun CouiBottomSheet(
         onDismissRequest = onDismissRequest,
         properties = PopupProperties(focusable = true),
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val panelMaxHeight = maxHeight - CouiBottomSheetDefaults.TopMargin
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -130,6 +150,7 @@ fun CouiBottomSheet(
                 modifier = modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
+                    .heightIn(max = panelMaxHeight)
                     .onSizeChanged { panelHeightPx = it.height.toFloat() }
                     .graphicsLayer {
                         val p = progress.value
@@ -137,6 +158,12 @@ fun CouiBottomSheet(
                         val scale = CouiBottomSheetDefaults.CollapsedScale + (1f - CouiBottomSheetDefaults.CollapsedScale) * p
                         scaleX = scale
                         scaleY = scale
+                        shadowElevation = CouiBottomSheetDefaults.Elevation.toPx()
+                        shape = RoundedCornerShape(
+                            topStart = CouiBottomSheetDefaults.TopCornerRadius,
+                            topEnd = CouiBottomSheetDefaults.TopCornerRadius,
+                        )
+                        clip = true
                     }
                     .pointerInput(Unit) {
                         detectVerticalDragGestures(
@@ -161,10 +188,20 @@ fun CouiBottomSheet(
                             },
                         )
                     }
-                    .clip(RoundedCornerShape(topStart = CouiBottomSheetDefaults.TopCornerRadius, topEnd = CouiBottomSheetDefaults.TopCornerRadius))
                     .background(panelColor),
             ) {
-                Column(content = sheetContent)
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    // The grab bar: a 28x4dp capsule, 8dp below the sheet's top edge.
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(top = CouiBottomSheetDefaults.DragBarMarginTop)
+                            .size(width = CouiBottomSheetDefaults.DragBarWidth, height = CouiBottomSheetDefaults.DragBarHeight)
+                            .clip(RoundedCornerShape(CouiBottomSheetDefaults.DragBarHeight / 2))
+                            .background(CouiTheme.colors.divider),
+                    )
+                    Column(modifier = Modifier.fillMaxWidth(), content = sheetContent)
+                }
             }
         }
     }

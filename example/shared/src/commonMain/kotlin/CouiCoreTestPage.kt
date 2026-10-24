@@ -685,6 +685,7 @@ private fun CouiDialogDemo() {
         confirmText = "Delete",
         dismissText = "Cancel",
         onConfirm = { showDialog = false },
+        destructive = true,
         onDismissRequest = { showDialog = false },
     )
     CouiBottomSheet(

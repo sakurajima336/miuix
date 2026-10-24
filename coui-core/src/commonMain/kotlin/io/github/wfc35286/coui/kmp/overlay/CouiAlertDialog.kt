@@ -8,14 +8,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -29,20 +28,57 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import io.github.wfc35286.coui.kmp.basic.CouiText
-import io.github.wfc35286.coui.kmp.token.CouiTextEmphasis
 import io.github.wfc35286.coui.kmp.motion.CouiSpringData
 import io.github.wfc35286.coui.kmp.motion.toSpringSpec
 import io.github.wfc35286.coui.kmp.theme.CouiTheme
-import io.github.wfc35286.coui.kmp.token.CouiTypography
+import io.github.wfc35286.coui.kmp.token.CouiFontSize
+import io.github.wfc35286.coui.kmp.token.CouiTextEmphasis
+import io.github.wfc35286.coui.kmp.token.CouiTextStyle
 
-/** The chrome and motion values of the alert dialog. */
+/** The measured values of the alert dialog, from the ColorOS dialog resources. */
 object CouiAlertDialogDefaults {
+    /** The widest the dialog panel grows. */
+    val MaxWidth = 392.dp
+
+    /** The tallest the dialog panel grows. */
+    val MaxHeight = 632.dp
+
+    /** The panel corner radius. */
+    val CornerRadius = 16.dp
+
+    /** The gap above the title. */
+    val TitleMarginTop = 24.dp
+
+    /** The gap between the title and the message. */
+    val TitleMarginBottom = 6.dp
+
+    /** The horizontal padding of the title and message block. */
+    val HorizontalPadding = 24.dp
+
+    /** The shortest one dialog button row is. */
+    val ButtonMinHeight = 44.dp
+
+    /** The vertical padding inside one button row. */
+    val ButtonVerticalPadding = 4.dp
+
+    /** The horizontal padding inside one button row. */
+    val ButtonHorizontalPadding = 12.dp
+
+    /** The horizontal padding around the button stack. */
+    val ButtonAreaPaddingHorizontal = 16.dp
+
+    /** The gap between the button stack and the panel bottom. */
+    val ButtonAreaPaddingBottom = 16.dp
+
+    /** The dim the dialog casts on the content behind it. */
+    val ScrimColor = Color(0x33000000)
+
     /** The spring that shows the dialog: slow and heavy, no bounce. */
     val ShowSpring = CouiSpringData(bounce = 0f, response = 0.45f)
 
@@ -58,44 +94,39 @@ object CouiAlertDialogDefaults {
     /** The scale the dialog appears at; it grows to 1.0 as it settles in. */
     const val EnterScale = 0.8f
 
-    /** The dim the dialog casts on the content behind it, at full progress. */
-    val ScrimColor = Color(0x80000000)
+    /** The title style: 18sp semibold. */
+    val titleStyle = CouiTextStyle(CouiFontSize.Scaled(18f), FontWeight.SemiBold)
 
-    /** The radius of the dialog panel. */
-    val CornerRadius = 24.dp
+    /** The message style: 13sp. */
+    val messageStyle = CouiTextStyle(CouiFontSize.Scaled(13f))
 
-    /** The widest the dialog panel grows. */
-    val MaxWidth = 336.dp
-
-    /** The height of one button row. */
-    val ButtonHeight = 52.dp
-
-    /** The title style. */
-    val titleStyle = CouiTypography.toolbarTitle
-
-    /** The message style. */
-    val messageStyle = CouiTypography.body
+    /** The button style: 16sp medium. */
+    val buttonStyle = CouiTextStyle(CouiFontSize.Scaled(16f), FontWeight.Medium)
 }
 
 /**
  * A [CouiAlertDialog] component with COUI style.
  *
- * The centre-form confirmation dialog: a rounded panel over a dimmed page with a centred
- * title, a centred message, and a two-button footer row split by hairlines. The panel fades
- * in and scales from 0.8 to 1.0 on a 0.45s critically damped spring and dismisses on a drier
- * 0.18s one. The back gesture and a tap on the dimmed area both dismiss it through
+ * The centre confirmation dialog of ColorOS: a 392dp-wide rounded panel over a dimmed page,
+ * with a centred semibold title, a centred secondary-coloured message, and the actions as a
+ * vertical stack of full-width borderless text buttons - the dismissing action on top, the
+ * confirming action at the bottom, in the error colour when it is destructive. The panel
+ * fades in and scales from 0.8 to 1.0 on a 0.45s critically damped spring and dismisses on a
+ * drier 0.18s one. The back gesture and a tap on the dimmed area dismiss through
  * [onDismissRequest].
  *
  * @param visible Whether the dialog is shown. Setting it to `false` plays the dismiss travel
  *   and then removes the dialog.
  * @param title The dialog title.
  * @param onDismissRequest Called when the user dismisses the dialog without confirming.
- * @param confirmText The label of the confirming button.
+ * @param confirmText The label of the confirming button, at the bottom of the stack.
  * @param onConfirm Called when the confirming button is clicked.
  * @param modifier The modifier to apply to the dialog panel.
  * @param message The dialog message, shown under the title.
- * @param dismissText The label of the dismissing button; `null` hides the button and leaves a
- *   single full-width confirming button.
+ * @param dismissText The label of the dismissing button above the confirming one. `null`
+ *   leaves the confirming button alone.
+ * @param destructive Whether the confirming button is drawn in the error colour, for
+ *   destructive actions such as deleting.
  */
 @Composable
 fun CouiAlertDialog(
@@ -107,6 +138,7 @@ fun CouiAlertDialog(
     modifier: Modifier = Modifier,
     message: String? = null,
     dismissText: String? = null,
+    destructive: Boolean = false,
 ) {
     var composed by remember { mutableStateOf(visible) }
     val progress = remember { Animatable(0f) }
@@ -123,9 +155,6 @@ fun CouiAlertDialog(
     if (!composed) return
 
     val colors = CouiTheme.colors
-    val hairline = colors.divider
-    // One physical pixel, never a fractional dp: on a 3x screen 0.5dp renders as a blurry 2px band.
-    val hairlineDp = with(LocalDensity.current) { 1.toDp() }
 
     Popup(
         onDismissRequest = onDismissRequest,
@@ -142,6 +171,7 @@ fun CouiAlertDialog(
                 modifier = modifier
                     .align(Alignment.Center)
                     .widthIn(max = CouiAlertDialogDefaults.MaxWidth)
+                    .heightIn(max = CouiAlertDialogDefaults.MaxHeight)
                     .graphicsLayer {
                         val p = progress.value
                         alpha = p
@@ -150,11 +180,11 @@ fun CouiAlertDialog(
                         scaleY = scale
                     }
                     .clip(RoundedCornerShape(CouiAlertDialogDefaults.CornerRadius))
-                    .background(colors.backgroundWithCard),
+                    .background(colors.backgroundElevated),
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    Spacer(modifier = Modifier.height(28.dp))
-                    Box(modifier = Modifier.padding(horizontal = 24.dp)) {
+                    Spacer(modifier = Modifier.height(CouiAlertDialogDefaults.TitleMarginTop))
+                    Box(modifier = Modifier.padding(horizontal = CouiAlertDialogDefaults.HorizontalPadding)) {
                         CouiText(
                             text = title,
                             style = CouiAlertDialogDefaults.titleStyle,
@@ -162,9 +192,9 @@ fun CouiAlertDialog(
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
+                    Spacer(modifier = Modifier.height(CouiAlertDialogDefaults.TitleMarginBottom))
                     if (message != null) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Box(modifier = Modifier.padding(horizontal = 24.dp)) {
+                        Box(modifier = Modifier.padding(horizontal = CouiAlertDialogDefaults.HorizontalPadding)) {
                             CouiText(
                                 text = message,
                                 style = CouiAlertDialogDefaults.messageStyle,
@@ -174,47 +204,53 @@ fun CouiAlertDialog(
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Box(
+                    Spacer(modifier = Modifier.height(CouiAlertDialogDefaults.ButtonAreaPaddingBottom))
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 24.dp)
-                            .height(hairlineDp)
-                            .background(hairline),
-                    )
-                    Row(modifier = Modifier.fillMaxWidth().height(CouiAlertDialogDefaults.ButtonHeight)) {
+                            .padding(horizontal = CouiAlertDialogDefaults.ButtonAreaPaddingHorizontal),
+                    ) {
                         if (dismissText != null) {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxSize()
-                                    .clickable { onDismissRequest() },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                CouiText(
-                                    text = dismissText,
-                                    style = CouiAlertDialogDefaults.messageStyle,
-                                    emphasis = CouiTextEmphasis.Secondary,
-                                )
-                            }
-                            Box(modifier = Modifier.width(hairlineDp).fillMaxSize().background(hairline))
-                        }
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxSize()
-                                .clickable { onConfirm() },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            CouiText(
-                                text = confirmText,
-                                style = CouiAlertDialogDefaults.messageStyle,
+                            DialogButton(
+                                text = dismissText,
                                 color = colors.labelPrimary,
+                                onClick = onDismissRequest,
                             )
                         }
+                        DialogButton(
+                            text = confirmText,
+                            color = if (destructive) colors.error else colors.labelPrimary,
+                            onClick = onConfirm,
+                        )
                     }
                 }
             }
         }
+    }
+}
+
+/** One borderless action row of the dialog's button stack. */
+@Composable
+private fun DialogButton(
+    text: String,
+    color: Color,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = CouiAlertDialogDefaults.ButtonMinHeight)
+            .clickable(onClick = onClick)
+            .padding(
+                horizontal = CouiAlertDialogDefaults.ButtonHorizontalPadding,
+                vertical = CouiAlertDialogDefaults.ButtonVerticalPadding,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        CouiText(
+            text = text,
+            style = CouiAlertDialogDefaults.buttonStyle,
+            color = color,
+        )
     }
 }
