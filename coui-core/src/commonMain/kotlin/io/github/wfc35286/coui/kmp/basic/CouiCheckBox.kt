@@ -21,9 +21,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -44,16 +43,13 @@ enum class CouiCheckBoxState(val value: Int) {
     All(2),
 }
 
-/** The measured values of the check box. */
+/** The measured values of the check box, from the ColorOS check-box vectors. */
 object CouiCheckBoxDefaults {
-    /** The side of the box. */
-    val BoxSize = 20.dp
+    /** The side of the drawing canvas the 24-unit vector viewport maps onto. */
+    val CanvasSize = 20.dp
 
-    /** The corner radius of the box. */
-    val CornerRadius = 6.dp
-
-    /** The stroke width of the empty box's border and the glyph. */
-    val StrokeWidth = 2.dp
+    /** The viewport the vector paths are authored in. */
+    const val Viewport = 24f
 
     /** The radius of the press halo behind the box. */
     val RippleRadius = 20.dp
@@ -75,11 +71,11 @@ object CouiCheckBoxDefaults {
 /**
  * A [CouiCheckBox] component with COUI style.
  *
- * A rounded-square check box with the COUI three-state model: [CouiCheckBoxState.None] draws
- * only the border, [CouiCheckBoxState.All] fills the box and draws the check mark, and
- * [CouiCheckBoxState.Part] - the "some of the group is selected" state - fills the box and
- * draws a dash. The glyph cross-fades on a 200ms movement curve, and a 20dp-radius halo fades
- * in behind the box while it is held.
+ * A rounded-square check box with the COUI three-state model, drawn with the original vector
+ * geometry: the empty box is a 1.3-unit tertiary-coloured outline; the selected box is filled
+ * with the theme colour and carries the check mark, and the half-selected box the same fill
+ * with a 10x1.6-unit dash - the glyph cross-fading over 200ms on the standard COUI movement
+ * curve. A 20dp-radius halo fades in behind the box while it is held.
  *
  * @param state The selection state to show.
  * @param onStateChange Called with the state the user picked by tapping.
@@ -110,10 +106,9 @@ fun CouiCheckBox(
         label = "couiCheckBoxGlyph",
     )
 
-    val borderColor =
-        if (enabled) colors.labelSecondaryVariant else colors.labelTertiary
     val fillColor = if (enabled) colors.containerTheme else colors.labelTertiary
-    val glyphColor = if (enabled) colors.labelOnColor else colors.background
+    val outlineColor = colors.labelTertiary
+    val glyphColor = if (enabled) colors.labelOnColor else colors.labelTertiary
 
     Box(
         modifier = modifier
@@ -126,66 +121,65 @@ fun CouiCheckBox(
             ) { onStateChange(CouiCheckBoxDefaults.nextState(state)) },
         contentAlignment = Alignment.Center,
     ) {
-        Canvas(
-            modifier = Modifier.size(CouiCheckBoxDefaults.RippleRadius * 2),
-        ) {
+        Canvas(modifier = Modifier.size(CouiCheckBoxDefaults.CanvasSize)) {
+            val s = size.width / CouiCheckBoxDefaults.Viewport
             if (halo > 0f) {
                 drawCircle(
                     color = fillColor.copy(alpha = halo),
-                    radius = CouiCheckBoxDefaults.RippleRadius.toPx(),
+                    radius = with(this) { CouiCheckBoxDefaults.RippleRadius.toPx() },
                     center = Offset(this.size.width / 2f, this.size.height / 2f),
                 )
             }
-            val boxSide = CouiCheckBoxDefaults.BoxSize.toPx()
-            val topLeft = Offset((this.size.width - boxSide) / 2f, (this.size.height - boxSide) / 2f)
-            val boxSize = Size(boxSide, boxSide)
-            val corner = CornerRadius(CouiCheckBoxDefaults.CornerRadius.toPx())
-            val stroke = CouiCheckBoxDefaults.StrokeWidth.toPx()
-
             if (glyph < 1f) {
+                // The empty box: rounded rect (3.8, 3.8)-(20.2, 20.2), radius 3.2, stroke 1.3.
                 drawRoundRect(
-                    color = borderColor.copy(alpha = 1f - glyph),
-                    topLeft = topLeft,
-                    size = boxSize,
-                    cornerRadius = corner,
-                    style = Stroke(width = stroke),
+                    color = outlineColor.copy(alpha = 1f - glyph),
+                    topLeft = Offset(3.8f * s, 3.8f * s),
+                    size = Size(16.4f * s, 16.4f * s),
+                    cornerRadius = CornerRadius(3.2f * s),
+                    style = Stroke(width = 1.3f * s),
                 )
             }
             if (glyph > 0f) {
+                // The filled box: rounded rect (3, 3)-(21, 21), radius 4.
                 drawRoundRect(
                     color = fillColor.copy(alpha = glyph),
-                    topLeft = topLeft,
-                    size = boxSize,
-                    cornerRadius = corner,
+                    topLeft = Offset(3f * s, 3f * s),
+                    size = Size(18f * s, 18f * s),
+                    cornerRadius = CornerRadius(4f * s),
                 )
-                val glyphAlpha = glyph.coerceIn(0f, 1f)
                 if (state == CouiCheckBoxState.Part) {
-                    // The half-selected dash: a horizontal bar across the middle.
-                    drawLine(
-                        color = glyphColor.copy(alpha = glyphAlpha),
-                        start = Offset(topLeft.x + boxSide * 0.28f, topLeft.y + boxSide / 2f),
-                        end = Offset(topLeft.x + boxSide * 0.72f, topLeft.y + boxSide / 2f),
-                        strokeWidth = stroke,
-                        cap = StrokeCap.Round,
+                    // The half-selected dash: rect (7, 11.866) 10 x 1.6.
+                    drawRect(
+                        color = glyphColor.copy(alpha = glyph),
+                        topLeft = Offset(7f * s, 11.866f * s),
+                        size = Size(10f * s, 1.6f * s),
                     )
                 } else {
-                    // The check mark, trimmed so it draws on with the transition.
-                    val inset = boxSide * 0.22f
-                    val path = Path().apply {
-                        moveTo(topLeft.x + inset, topLeft.y + boxSide * 0.55f)
-                        lineTo(topLeft.x + boxSide * 0.44f, topLeft.y + boxSide - inset)
-                        lineTo(topLeft.x + boxSide - inset, topLeft.y + inset)
-                    }
-                    val measure = PathMeasure().apply { setPath(path, false) }
-                    val partial = Path()
-                    measure.getSegment(0f, measure.length * glyphAlpha, partial, true)
                     drawPath(
-                        path = partial,
-                        color = glyphColor.copy(alpha = glyphAlpha),
-                        style = Stroke(width = stroke, cap = StrokeCap.Round, join = StrokeJoin.Round),
+                        path = checkMarkPath(s),
+                        color = glyphColor.copy(alpha = glyph),
+                        style = Fill,
                     )
                 }
             }
         }
     }
+}
+
+/** The check mark, with the original vector's coordinates and curve. */
+private fun checkMarkPath(s: Float): Path = Path().apply {
+    moveTo(10.831f * s, 14.318f * s)
+    lineTo(17.033f * s, 8f * s)
+    lineTo(18f * s, 8.985f * s)
+    lineTo(11.315f * s, 15.796f * s)
+    cubicTo(
+        11.047f * s, 16.068f * s,
+        10.614f * s, 16.068f * s,
+        10.347f * s, 15.796f * s,
+    )
+    lineTo(7f * s, 12.386f * s)
+    lineTo(7.967f * s, 11.401f * s)
+    lineTo(10.831f * s, 14.318f * s)
+    close()
 }
