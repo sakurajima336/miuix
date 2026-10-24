@@ -61,23 +61,26 @@ object CouiTooltipDefaults {
     /** The spring that fades the bubble: 0.3s response with the same light bounce. */
     val AlphaSpring = CouiSpringData(bounce = 0.2f, response = 0.3f)
 
-    /** The bubble fill. */
-    val BubbleColor = Color(0xF23C3C3E)
+    /** The bubble fill: the COUI tips blue. */
+    val BubbleColor = Color(0xFF0080FF)
 
     /** The text colour on the bubble. */
     val TextColor = Color.White
 
     /** The bubble's corner radius. */
-    val CornerRadius = 10.dp
+    val CornerRadius = 12.dp
 
-    /** The side length of the arrow. */
-    val ArrowSize = 8.dp
+    /** The width of the arrow at its base. */
+    val ArrowWidth = 10.dp
+
+    /** The band the arrow sits in, between the bubble plate and the anchor. */
+    val ArrowBandHeight = 13.dp
 
     /** The gap kept between the arrow tip and the anchor. */
     val AnchorGap = 4.dp
 
     /** The bubble's inner padding. */
-    val ContentPadding = 12.dp
+    val ContentPadding = 13.dp
 
     /** The bubble text style. */
     val messageStyle = CouiTypography.body
@@ -86,7 +89,7 @@ object CouiTooltipDefaults {
 /**
  * A [CouiTooltip] component with COUI style.
  *
- * A dark bubble with an arrow pointing at its anchor, shown in a popup window. The bubble
+ * A blue bubble with an arrow pointing at its anchor, shown in a popup window. The bubble
  * scales from the arrow - the pivot sits on the arrow tip, so the bubble appears to grow out
  * of the anchor - on a 0.4s spring with a light bounce, while its alpha runs a slightly
  * quicker 0.3s one. [direction] picks which side of the anchor the bubble sits on.
@@ -139,7 +142,7 @@ fun CouiTooltip(
             CouiTooltipPositionProvider(
                 direction = direction,
                 gapPx = CouiTooltipDefaults.AnchorGap.roundToPx(),
-                arrowPx = CouiTooltipDefaults.ArrowSize.roundToPx(),
+                arrowPx = CouiTooltipDefaults.ArrowBandHeight.roundToPx(),
             )
         }
     }
@@ -160,11 +163,11 @@ fun CouiTooltip(
                 .drawBehind { drawBubble(direction) }
                 .padding(
                     horizontal = when (direction) {
-                        CouiTooltipDirection.Left, CouiTooltipDirection.Right -> CouiTooltipDefaults.ContentPadding + CouiTooltipDefaults.ArrowSize
+                        CouiTooltipDirection.Left, CouiTooltipDirection.Right -> CouiTooltipDefaults.ContentPadding + CouiTooltipDefaults.ArrowBandHeight
                         else -> CouiTooltipDefaults.ContentPadding
                     },
                     vertical = when (direction) {
-                        CouiTooltipDirection.Up, CouiTooltipDirection.Down -> CouiTooltipDefaults.ContentPadding + CouiTooltipDefaults.ArrowSize
+                        CouiTooltipDirection.Up, CouiTooltipDirection.Down -> CouiTooltipDefaults.ContentPadding + CouiTooltipDefaults.ArrowBandHeight
                         else -> CouiTooltipDefaults.ContentPadding
                     },
                 ),
@@ -181,44 +184,45 @@ fun CouiTooltip(
 /** Draws the bubble plate plus the arrow on the anchor-facing side, in one pass. */
 private fun DrawScope.drawBubble(direction: CouiTooltipDirection) {
     val corner = CornerRadius(CouiTooltipDefaults.CornerRadius.toPx())
-    val arrow = CouiTooltipDefaults.ArrowSize.toPx()
+    val band = CouiTooltipDefaults.ArrowBandHeight.toPx()
+    val halfArrow = CouiTooltipDefaults.ArrowWidth.toPx() / 2f
     val color = CouiTooltipDefaults.BubbleColor
     when (direction) {
         CouiTooltipDirection.Up -> {
             // The arrow sits at the bottom edge, centred.
-            drawRoundRect(color = color, size = Size(size.width, size.height - arrow), cornerRadius = corner)
+            drawRoundRect(color = color, size = Size(size.width, size.height - band), cornerRadius = corner)
             drawTriangle(
                 color = color,
                 a = Offset(size.width / 2f, size.height),
-                b = Offset(size.width / 2f - arrow, size.height - arrow),
-                c = Offset(size.width / 2f + arrow, size.height - arrow),
+                b = Offset(size.width / 2f - halfArrow, size.height - band),
+                c = Offset(size.width / 2f + halfArrow, size.height - band),
             )
         }
         CouiTooltipDirection.Down -> {
-            drawRoundRect(color = color, topLeft = Offset(0f, arrow), size = Size(size.width, size.height - arrow), cornerRadius = corner)
+            drawRoundRect(color = color, topLeft = Offset(0f, band), size = Size(size.width, size.height - band), cornerRadius = corner)
             drawTriangle(
                 color = color,
                 a = Offset(size.width / 2f, 0f),
-                b = Offset(size.width / 2f - arrow, arrow),
-                c = Offset(size.width / 2f + arrow, arrow),
+                b = Offset(size.width / 2f - halfArrow, band),
+                c = Offset(size.width / 2f + halfArrow, band),
             )
         }
         CouiTooltipDirection.Left -> {
-            drawRoundRect(color = color, size = Size(size.width - arrow, size.height), cornerRadius = corner)
+            drawRoundRect(color = color, size = Size(size.width - band, size.height), cornerRadius = corner)
             drawTriangle(
                 color = color,
                 a = Offset(size.width, size.height / 2f),
-                b = Offset(size.width - arrow, size.height / 2f - arrow),
-                c = Offset(size.width - arrow, size.height / 2f + arrow),
+                b = Offset(size.width - band, size.height / 2f - halfArrow),
+                c = Offset(size.width - band, size.height / 2f + halfArrow),
             )
         }
         CouiTooltipDirection.Right -> {
-            drawRoundRect(color = color, topLeft = Offset(arrow, 0f), size = Size(size.width - arrow, size.height), cornerRadius = corner)
+            drawRoundRect(color = color, topLeft = Offset(band, 0f), size = Size(size.width - band, size.height), cornerRadius = corner)
             drawTriangle(
                 color = color,
                 a = Offset(0f, size.height / 2f),
-                b = Offset(arrow, size.height / 2f - arrow),
-                c = Offset(arrow, size.height / 2f + arrow),
+                b = Offset(band, size.height / 2f - halfArrow),
+                c = Offset(band, size.height / 2f + halfArrow),
             )
         }
     }

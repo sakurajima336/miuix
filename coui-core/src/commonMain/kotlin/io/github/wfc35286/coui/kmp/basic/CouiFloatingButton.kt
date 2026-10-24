@@ -34,6 +34,8 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
 import io.github.wfc35286.coui.kmp.motion.CouiEasing
 import io.github.wfc35286.coui.kmp.theme.CouiTheme
+import io.github.wfc35286.coui.kmp.token.CouiFontSize
+import io.github.wfc35286.coui.kmp.token.CouiTextStyle
 import io.github.wfc35286.coui.kmp.token.CouiTypography
 
 /** The measured values of the floating button. */
@@ -187,7 +189,7 @@ fun CouiExpandableFloatingButton(
                     }
                     CouiText(
                         text = item.label,
-                        style = CouiTypography.body,
+                        style = CouiTextStyle(CouiFontSize.Scaled(12f)),
                         color = colors.labelPrimary,
                     )
                 }
