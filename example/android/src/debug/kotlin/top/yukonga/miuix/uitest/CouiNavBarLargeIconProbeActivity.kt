@@ -1,11 +1,11 @@
 // Copyright 2026, COUI contributors
 // SPDX-License-Identifier: Apache-2.0
 package top.yukonga.miuix.uitest
-
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import component.CouiNavBarProbe
+
 
 /**
  * The bar in the official's **second** presentation: `COUIBottomFloatingNavigationBarItem

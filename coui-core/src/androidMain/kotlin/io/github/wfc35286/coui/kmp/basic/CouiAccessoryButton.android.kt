@@ -1,8 +1,7 @@
 // Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.basic
 import android.graphics.BlendMode
 import android.graphics.Shader
 import android.os.Build
@@ -28,6 +27,16 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import io.github.wfc35286.coui.kmp.graphics.COUI_PANEL_EDGE_WIDTH_DP
+import io.github.wfc35286.coui.kmp.graphics.CouiBackdrop
+import io.github.wfc35286.coui.kmp.graphics.CouiCausticShadow
+import io.github.wfc35286.coui.kmp.graphics.CouiFloatingMaterialDark
+import io.github.wfc35286.coui.kmp.graphics.CouiFloatingMaterialLight
+import io.github.wfc35286.coui.kmp.graphics.CouiShadowEdge
+import io.github.wfc35286.coui.kmp.graphics.drawCouiBackdropLayer
+import io.github.wfc35286.coui.kmp.graphics.drawCouiShadowEdge
+import io.github.wfc35286.coui.kmp.graphics.panelBlurEffect
+
 
 /**
  * `COUIBottomFloatingAccessoryView.setCausticShadowEffect()` - the round button's **level-5**

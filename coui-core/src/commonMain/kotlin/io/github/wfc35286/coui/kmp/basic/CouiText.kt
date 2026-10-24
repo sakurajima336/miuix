@@ -1,22 +1,22 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.basic
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import io.github.wfc35286.coui.kmp.theme.CouiTheme
 import io.github.wfc35286.coui.kmp.token.CouiTextEmphasis
 import io.github.wfc35286.coui.kmp.token.CouiTextStyle
 import io.github.wfc35286.coui.kmp.token.toRoundedTextUnit
 import io.github.wfc35286.coui.kmp.token.toTextUnit
+
 
 /**
  * Resolves the colour a COUI text style uses for a given [emphasis] and enabled state.

@@ -1,6 +1,7 @@
+// Copyright 2026, compose-miuix-ui contributors
+// SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.popup
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
@@ -18,6 +19,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.wfc35286.coui.kmp.shape.CouiSquircleShape
+
 
 @Composable
 internal actual fun CouiPopupRootAlpha(visual: CouiPopupVisualState) = Unit

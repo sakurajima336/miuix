@@ -1,7 +1,6 @@
 // Copyright 2026, COUI contributors
 // SPDX-License-Identifier: Apache-2.0
 package top.yukonga.miuix.uitest
-
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.os.Handler
@@ -12,6 +11,7 @@ import androidx.activity.compose.setContent
 import component.CouiSpotLightProbe
 import java.io.File
 import java.io.FileOutputStream
+
 
 /** Debug host for the spot light; writes its own window to files/spotlight.png. */
 class CouiSpotLightProbeActivity : ComponentActivity() {

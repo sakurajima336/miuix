@@ -1,7 +1,6 @@
 // Copyright 2026, COUI contributors
 // SPDX-License-Identifier: Apache-2.0
 package top.yukonga.miuix.uitest
-
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import component.CouiBlurSection
 import io.github.wfc35286.coui.kmp.theme.CouiTheme
+
 
 /**
  * Debug-only host for [CouiBlurSection] so the blur can be launched and screenshotted directly:

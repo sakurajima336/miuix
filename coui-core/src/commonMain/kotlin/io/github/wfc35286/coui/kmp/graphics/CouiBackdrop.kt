@@ -1,7 +1,7 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
-package io.github.wfc35286.coui.kmp.component
 
+package io.github.wfc35286.coui.kmp.graphics
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -25,16 +25,16 @@ import androidx.compose.ui.node.invalidateDraw
 import androidx.compose.ui.platform.InspectorInfo
 import kotlin.math.roundToInt
 
+
 /**
  * A Compose-side capture of the page that sits *behind* a floating surface.
  *
- * This exists because the ColorOS material is a **window-level backdrop filter**
- * (`RenderNode.setBackgroundRenderEffect` -> Oplus HWUI `OplusUniBackdropFilterDrawable`), which the
- * official bar can use only because it is a plain `View` inside the Activity window: predictive back
- * transforms the *window*, so the sampler always sees the full page.
+ * The ColorOS material is a **window-level backdrop filter** on the View side, which a floating bar
+ * can use only because it is a plain `View` inside the Activity window: predictive back transforms
+ * the *window*, so the sampler always sees the full page.
  *
  * In a Compose host the same effect has to be produced inside Compose, otherwise the interop host
- * stays put while the scene shrinks, samples past the scene layer and HWUI fills the rest with
+ * stays put while the scene shrinks, samples past the scene layer and the rest of the blur renders
  * black. Recording the page into a [GraphicsLayer] and blurring that layer reproduces the material
  * math *and* follows every Compose transform - including predictive back - by construction.
  *
@@ -99,10 +99,9 @@ private class CouiBackdropElement(
 
     override fun equals(other: Any?): Boolean = other is CouiBackdropElement && other.backdrop === backdrop
 
-    // `System.identityHashCode` is JVM-only and this file is `commonMain`, which broke the whole
-    // non-Android publication (`compileKotlinJs` / `compileCommonMainKotlinMetadata`:
-    // "Unresolved reference 'System'"). `Any.hashCode()` is the platform default, i.e. identity
-    // based, and `equals` above already compares with `===`, so equality stays referential.
+    // `System.identityHashCode` is JVM-only and this file is `commonMain`, so it cannot be used
+    // here. `Any.hashCode()` is the platform default, i.e. identity based, and `equals` above
+    // already compares with `===`, so equality stays referential.
     override fun hashCode(): Int = backdrop.hashCode()
 }
 
@@ -150,7 +149,7 @@ private fun androidx.compose.ui.geometry.Size.toIntSizeCompat() =
  *
  *   i.e. `scale(1/s)` followed by `translate(d)`. Without this the sampled page scales and slides
  *   with the pill: while the bar is dragged it looks like the picture inside is glued to it and
- *   "breathes" with the press - the artefact this whole rewrite exists to remove.
+ *   "breathes" with the press.
  */
 internal fun DrawScope.drawCouiBackdropLayer(
     backdrop: CouiBackdrop,
@@ -162,10 +161,8 @@ internal fun DrawScope.drawCouiBackdropLayer(
     val originCoordinates = origin ?: return
     // Where the **drawing origin** (this layer's local (0,0)) actually sits in the page. Measured,
     // not derived: the layer is an expanded child placed by a layout modifier inside the pill's
-    // transformed box, and guessing where that placement ends up (or how many times the expansion
-    // offset applies) got it wrong by exactly one margin - the backdrop then sampled 37px off,
-    // which is what "偏移了" was. `localPositionOf` reports the *visual* position, so it already
-    // contains the drag offset and the press/deform scale.
+    // transformed box, and its placement cannot be derived reliably. `localPositionOf` reports the
+    // *visual* position, so it already contains the drag offset and the press/deform scale.
     val o = try {
         layerCoordinates.localPositionOf(originCoordinates)
     } catch (_: Exception) {

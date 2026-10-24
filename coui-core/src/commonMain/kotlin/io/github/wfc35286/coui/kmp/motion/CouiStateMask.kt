@@ -1,8 +1,7 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package io.github.wfc35286.coui.kmp.motion
-
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -24,13 +23,14 @@ import io.github.wfc35286.coui.kmp.theme.CouiTheme
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
+
 /**
- * The press half of `COUIMaskEffectDrawable`, shared by every component that uses it.
+ * The press-state half of the mask feedback, shared by every component that draws it.
  *
- * `mMinProgressForTouchEnterAnimation` (0.7) is why a flick-tap still paints a full mask: on
- * release the progress keeps travelling **inwards** to 0.7 before it is allowed to fade out.
- * Both the press and the release use the same spring - `response 0.3`, `bounce 0` - unlike the
- * button's *scale*, which has separate press and release springs.
+ * A flick-tap still paints a full mask: on release the progress first keeps travelling until it
+ * passes [CouiPressMaskTouchEnterMinProgress] (0.7) before it is allowed to fade out. Both the
+ * press and the release use the same spring ([CouiPressMaskSpring]) - unlike the button's
+ * *scale*, which has separate press and release springs.
  *
  * @return The 0..1 mask progress, to be multiplied into the mask colour's alpha.
  */
@@ -58,7 +58,8 @@ internal fun rememberCouiPressMaskProgress(
 
                     is PressInteraction.Release, is PressInteraction.Cancel -> {
                         entered = false
-                        // animateToProgressUntil(0, 7000): continue entering before returning.
+                        // Continue entering first: the mask must pass the minimum progress
+                        // before it may fade out.
                         finishEnter = progress.value < CouiPressMaskTouchEnterMinProgress
                     }
                 }
@@ -80,19 +81,19 @@ internal fun rememberCouiPressMaskProgress(
     return progress
 }
 
-/** `COUIMaskEffectDrawable`'s press spring. */
+/** The press mask's spring. */
 internal val CouiPressMaskSpring: CouiSpringData = CouiSpringData(bounce = 0f, response = 0.3f)
 
-/** `COUIMaskEffectDrawable.mMinProgressForTouchEnterAnimation`. */
+/** The minimum progress a press must reach before the mask may start fading out. */
 internal const val CouiPressMaskTouchEnterMinProgress: Float = 0.7f
 
 /**
- * The mask's minimum visible change. `COUIMaskEffectDrawable` animates a 0..1 progress through
- * `COUISpringAnimation`, which defaults to `COUIProperty.DEFAULT_MIN_VISIBLE_CHANGE`.
+ * The mask's minimum visible change. The mask animates a 0..1 progress, so an effectively zero
+ * threshold keeps the spring from settling early.
  */
 internal const val CouiPressMaskMinVisibleChange: Float = 0.0001f
 
-/** ListSelectedItemLayout's COUIMaskEffectDrawable(type=container), with scale disabled. */
+/** A background mask reacting to press, hover and focus; content itself is not scaled. */
 @Composable
 internal fun Modifier.couiStateMask(source: MutableInteractionSource, enabled: Boolean): Modifier {
     val progress = rememberCouiPressMaskProgress(source, enabled)
@@ -109,8 +110,8 @@ internal fun Modifier.couiStateMask(source: MutableInteractionSource, enabled: B
     }
 }
 
-// StateEffectAnimator uses android.animation.ArgbEvaluator from transparent black.
-// Gamma-correct RGB interpolation matters for the white mask in the dark theme.
+// Interpolates from transparent black with gamma-correct RGB blending, like the platform's
+// ArgbEvaluator; that correction matters for the white mask in the dark theme.
 private fun couiMaskColor(end: Color, fraction: Float): Color {
     val argb = end.toArgb()
     val p = fraction.coerceIn(0f, 1f)

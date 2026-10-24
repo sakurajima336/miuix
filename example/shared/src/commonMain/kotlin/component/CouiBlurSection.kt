@@ -1,8 +1,6 @@
 // Copyright 2026, COUI contributors
 // SPDX-License-Identifier: Apache-2.0
 package component
-
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,18 +21,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import io.github.wfc35286.coui.kmp.basic.CouiCard
+import io.github.wfc35286.coui.kmp.basic.CouiCardDefaults
+import io.github.wfc35286.coui.kmp.basic.CouiSmallTitle
+import io.github.wfc35286.coui.kmp.basic.CouiSwitch
+import io.github.wfc35286.coui.kmp.basic.CouiText
 import io.github.wfc35286.coui.kmp.blur.CouiBlurPresets
 import io.github.wfc35286.coui.kmp.blur.CouiBlurSurface
 import io.github.wfc35286.coui.kmp.blur.couiBlurSource
 import io.github.wfc35286.coui.kmp.blur.rememberCouiBlurBackdrop
-import io.github.wfc35286.coui.kmp.component.CouiCard
-import io.github.wfc35286.coui.kmp.component.CouiCardDefaults
-import io.github.wfc35286.coui.kmp.component.CouiSmallTitle
-import io.github.wfc35286.coui.kmp.component.CouiSwitch
-import io.github.wfc35286.coui.kmp.component.CouiText
 import io.github.wfc35286.coui.kmp.theme.CouiTheme
 import io.github.wfc35286.coui.kmp.token.CouiTextEmphasis
 import io.github.wfc35286.coui.kmp.token.CouiTypography
+
+
 
 /**
  * The COUI material blur (`coui-blur`), shown over a deliberately loud backdrop so the two tint

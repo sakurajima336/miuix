@@ -1,5 +1,6 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
+
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
@@ -16,7 +17,7 @@ couiPublication {
     description.set("COUI design-system foundation: tokens, shape, motion and theme")
 }
 
-/**
+/*
  * The COUI design-system foundation: tokens, shape, motion and theme.
  *
  * Deliberately has **no dependency on Miuix** — the point of this module is to be an

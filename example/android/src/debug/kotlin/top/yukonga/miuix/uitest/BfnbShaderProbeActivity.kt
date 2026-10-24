@@ -1,13 +1,13 @@
 // Copyright 2026, COUI contributors
 // SPDX-License-Identifier: Apache-2.0
 package top.yukonga.miuix.uitest
-
 import android.graphics.RuntimeShader
 import android.os.Bundle
 import android.util.Log
-import android.widget.TextView
 import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.activity.ComponentActivity
+
 
 /**
  * Debug host that reports whether the COUI panel-material shaders compile on this device, and
@@ -36,7 +36,7 @@ class BfnbShaderProbeActivity : ComponentActivity() {
             appendLine("sdk=${android.os.Build.VERSION.SDK_INT}")
             appendLine(
                 runCatching {
-                    val m = Class.forName("io.github.wfc35286.coui.kmp.component.CouiShadowEdgeShaderKt")
+                    val m = Class.forName("io.github.wfc35286.coui.kmp.graphics.CouiShadowEdgeShaderKt")
                         .getMethod("couiShadowEdgeCompileReport")
                     m.invoke(null) as String
                 }.getOrElse { "ShadowEdge: ${it.javaClass.name}: ${it.message}" },

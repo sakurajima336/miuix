@@ -1,4 +1,7 @@
-package io.github.wfc35286.coui.kmp.component
+// Copyright 2026, compose-miuix-ui contributors
+// SPDX-License-Identifier: Apache-2.0
+
+package io.github.wfc35286.coui.kmp.popup
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.LayoutCoordinates
@@ -22,8 +25,6 @@ internal object CouiPopupDebug32 {
         if (panel === mainPanel) mainTitles[index] = coordinates
         if (panel === subPanel) subTitles[index] = coordinates
     }
-
-
 
     fun titles(): String {
         fun panel(map: Map<Int, LayoutCoordinates>): String = map.entries.filter { it.value.isAttached }.joinToString(";") { (index, c) ->

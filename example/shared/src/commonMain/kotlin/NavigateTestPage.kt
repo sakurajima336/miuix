@@ -1,6 +1,5 @@
 // Copyright 2025, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
-
 @file:OptIn(ExperimentalScrollBarApi::class)
 
 import androidx.compose.foundation.layout.Box
@@ -23,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import component.BackNavigationIcon
+import kotlin.random.Random
 import navigation.Route
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.Card
@@ -42,7 +42,7 @@ import utils.AdaptiveTopAppBar
 import utils.BlurredBar
 import utils.pageContentPadding
 import utils.pageScrollModifiers
-import kotlin.random.Random
+
 
 @Composable
 fun NavTestPage(

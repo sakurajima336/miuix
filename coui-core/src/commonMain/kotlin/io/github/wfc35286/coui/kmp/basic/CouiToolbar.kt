@@ -1,7 +1,7 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
-package io.github.wfc35286.coui.kmp.component
 
+package io.github.wfc35286.coui.kmp.basic
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -28,35 +28,20 @@ import io.github.wfc35286.coui.kmp.theme.CouiTheme
 import io.github.wfc35286.coui.kmp.token.CouiTextStyle
 import io.github.wfc35286.coui.kmp.token.CouiTypography
 
+
 /**
- * COUI's page top bar - the Compose counterpart of `com.coui.appcompat.toolbar.COUIToolbar`
- * as it is used by ColorOS Settings sub pages.
- *
- * Traced from `设置_17.0.0.apk` (ColorOS 17), not eyeballed:
- *
- * * The page chrome is `res/layout/coui_preference_list_with_appbar_fragment.xml`:
- *   `COUIDividerAppBarLayout` (background `coui_window_bg_with_card`, elevation 0) wrapping a
- *   `COUIToolbar` with `style=COUIToolBarInAppBarLayoutStyle` (0x7f160294), which sets
- *   `layout_height=@dimen/toolbar_min_height`, `paddingTop/Bottom=0dp`.
- * * `dimen/toolbar_min_height = 52dp`.
- * * The title uses `textAppearanceSecondTitle` -> `TextAppearance.COUI.Toolbar.SecondTitle`
- *   (0x7f160689): `textSize=18dp`, `textStyle=normal`, `fontFamily="sans-serif-medium"`,
- *   `textColor=?attr/couiColorPrimaryNeutral` - i.e. [CouiTypography.toolbarTitle] plus
- *   `couiColorPrimaryNeutral`.
- * * Measured on the device (1240x2772, density 2.975, dark theme so the glyphs are light):
- *   bar `y=141..296px` = 52.0dp; the back glyph is a "←" (shaft + head) with ~2dp stroke,
- *   ink `20.2 x 15.5dp`, its 24dp box at `x=24..48dp`; the title ink starts at `x=66dp`.
- *   The bar background is the page background, so no divider is drawn at rest.
+ * Defaults for [CouiToolbar], matching the ColorOS page top bar: a 52dp bar, a 24dp back-glyph
+ * box and the title starting 66dp from the left edge.
  */
 object CouiToolbarDefaults {
-    /** `dimen/toolbar_min_height`. */
+    /** The bar height. */
     val Height: Dp = 52.dp
 
-    /** The 24dp glyph box; measured at `x=24..48dp` on the device. */
+    /** The back glyph's drawing box. */
     val IconSize: Dp = 24.dp
     val IconStart: Dp = 24.dp
 
-    /** Left edge of the title text box (measured: ink starts at 66dp). */
+    /** Left edge of the title text box. */
     val TitleStart: Dp = 66.dp
 
     /** Touch target of the back button; the icon is centred inside it. */
@@ -67,10 +52,10 @@ object CouiToolbarDefaults {
 }
 
 /**
- * A ColorOS page top bar: back arrow on the left, page title next to it.
+ * A page top bar: a back arrow on the left and the page title next to it.
  *
- * The bar paints nothing itself - like `COUIDividerAppBarLayout` it lets the page background
- * (`couiColorBackgroundWithCard` / `couiColorBackground`) show through.
+ * The bar paints no background of its own - the page background shows through, so no divider is
+ * drawn at rest.
  *
  * @param title The page title.
  * @param onBack Invoked when the back arrow is clicked; pass `null` for a bar without a back
@@ -123,8 +108,8 @@ fun CouiToolbar(
 }
 
 /**
- * The COUI back glyph: an "←" whose ink is 20.2 x 15.5dp inside the 24dp box, drawn with a
- * 2dp round-capped stroke (measured on the device).
+ * The back arrow glyph: an "←" filling most of its 24dp box, drawn with a round-capped stroke
+ * whose width is [CouiToolbarDefaults.IconStrokeWidth].
  */
 @Composable
 fun CouiBackArrow(

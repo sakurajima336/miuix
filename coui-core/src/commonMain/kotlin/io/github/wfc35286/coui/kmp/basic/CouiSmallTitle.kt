@@ -1,8 +1,7 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.basic
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -13,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import io.github.wfc35286.coui.kmp.token.CouiTextEmphasis
 import io.github.wfc35286.coui.kmp.token.CouiTextStyle
 import io.github.wfc35286.coui.kmp.token.CouiTypography
+
 
 /**
  * Defaults for [CouiSmallTitle], taken from `Widget.COUI.List.Category.Title` and the category

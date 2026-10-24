@@ -1,11 +1,13 @@
+// Copyright 2026, compose-miuix-ui contributors
+// SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.popup
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextMotion
+
 
 internal actual fun couiPopupPlatformTextStyle(style: TextStyle): TextStyle = style.copy(
     platformStyle = PlatformTextStyle(includeFontPadding = true),
@@ -34,8 +36,10 @@ internal actual fun couiPopupVisibleWindowBounds(): androidx.compose.ui.unit.Int
             view.getWindowVisibleDisplayFrame(rect)
             view.rootView.getLocationOnScreen(location)
             val next = androidx.compose.ui.unit.IntRect(
-                rect.left - location[0], rect.top - location[1],
-                rect.right - location[0], rect.bottom - location[1],
+                rect.left - location[0],
+                rect.top - location[1],
+                rect.right - location[0],
+                rect.bottom - location[1],
             )
             if (next != frame) frame = next
         }

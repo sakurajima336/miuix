@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package top.yukonga.miuix.uitest
-
 import App
 import android.graphics.Color
 import android.os.Build
@@ -17,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

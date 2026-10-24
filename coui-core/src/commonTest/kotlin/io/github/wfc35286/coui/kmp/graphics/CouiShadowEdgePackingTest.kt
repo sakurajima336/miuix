@@ -1,10 +1,11 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
-package io.github.wfc35286.coui.kmp.component
 
+package io.github.wfc35286.coui.kmp.graphics
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertTrue
+
 
 /**
  * Pins the two `ShadowEdge` uniform packers against the reference values transcribed straight out

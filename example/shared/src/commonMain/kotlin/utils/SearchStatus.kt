@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package utils
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
@@ -11,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
+
 
 @Stable
 data class SearchStatus(

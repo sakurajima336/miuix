@@ -1,8 +1,7 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package io.github.wfc35286.coui.kmp.shape
-
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ShaderBrush
@@ -10,6 +9,7 @@ import androidx.compose.ui.graphics.asComposeShader
 import androidx.compose.ui.graphics.colorspace.ColorSpaces
 import org.jetbrains.skia.RuntimeEffect
 import org.jetbrains.skia.RuntimeShaderBuilder
+
 
 internal actual fun createCouiCapsuleShader(): CouiCapsuleShader? = SkikoCouiCapsuleShader()
 

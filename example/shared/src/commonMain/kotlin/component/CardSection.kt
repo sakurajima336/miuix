@@ -9,10 +9,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import io.github.wfc35286.coui.kmp.component.CouiCard
-import io.github.wfc35286.coui.kmp.component.CouiCardDefaults
-import io.github.wfc35286.coui.kmp.component.CouiSmallTitle
-import io.github.wfc35286.coui.kmp.component.CouiText
+import io.github.wfc35286.coui.kmp.basic.CouiCard
+import io.github.wfc35286.coui.kmp.basic.CouiCardDefaults
+import io.github.wfc35286.coui.kmp.basic.CouiSmallTitle
+import io.github.wfc35286.coui.kmp.basic.CouiText
 import io.github.wfc35286.coui.kmp.token.CouiTextEmphasis
 import io.github.wfc35286.coui.kmp.token.CouiTypography
 

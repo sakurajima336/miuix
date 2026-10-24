@@ -1,8 +1,7 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package io.github.wfc35286.coui.kmp.shape
-
 import android.annotation.TargetApi
 import android.graphics.RuntimeShader
 import android.os.Build
@@ -10,6 +9,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.toArgb
+
 
 internal actual fun createCouiCapsuleShader(): CouiCapsuleShader? = if (Build.VERSION.SDK_INT >= 33) AndroidCouiCapsuleShader() else null
 

@@ -1,6 +1,8 @@
+// Copyright 2026, compose-miuix-ui contributors
+// SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.popup
+import io.github.wfc35286.coui.kmp.basic.step
 import io.github.wfc35286.coui.kmp.motion.CouiSpringData
 
 internal abstract class CouiPopupSpringProgressUnit {
@@ -59,8 +61,7 @@ internal abstract class CouiPopupSpringProgressUnit {
      * visible 1px text rasterisation step. This exposes the same "close enough" test so the driver
      * can land exactly while the rest of the animation is still running.
      */
-    fun nearTarget(epsilonFraction: Float): Boolean =
-        animating && kotlin.math.abs(value - target) <= epsilonFraction * PROGRESS_SCALE
+    fun nearTarget(epsilonFraction: Float): Boolean = animating && kotlin.math.abs(value - target) <= epsilonFraction * PROGRESS_SCALE
 
     fun advance(dtSeconds: Float): Boolean {
         if (!animating) return false
@@ -132,8 +133,10 @@ internal class CouiPopupMenuTransitionUnit : CouiPopupSpringProgressUnit() {
     override fun reset(keepValue: Boolean) {
         super.reset(keepValue)
         if (!keepValue) {
-            currentScaleX = 1f; currentScaleY = 1f
-            currentTranslationY = 0f; currentContentAlpha = 1f
+            currentScaleX = 1f
+            currentScaleY = 1f
+            currentTranslationY = 0f
+            currentContentAlpha = 1f
         }
     }
 
@@ -216,8 +219,10 @@ internal class CouiPopupSubMenuTransitionUnit : CouiPopupSpringProgressUnit() {
     override fun reset(keepValue: Boolean) {
         super.reset(keepValue)
         if (!keepValue) {
-            currentScaleX = 1f; currentScaleY = 1f
-            currentAlpha = 1f; currentTranslateY = 0f
+            currentScaleX = 1f
+            currentScaleY = 1f
+            currentAlpha = 1f
+            currentTranslateY = 0f
         }
     }
 
@@ -226,5 +231,4 @@ internal class CouiPopupSubMenuTransitionUnit : CouiPopupSpringProgressUnit() {
     }
 }
 
-internal fun couiConvertedFraction(start: Float, end: Float, fraction: Float): Float =
-    start + (end - start) * fraction.coerceIn(0f, 1f)
+internal fun couiConvertedFraction(start: Float, end: Float, fraction: Float): Float = start + (end - start) * fraction.coerceIn(0f, 1f)

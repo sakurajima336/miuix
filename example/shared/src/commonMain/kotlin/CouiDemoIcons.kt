@@ -1,14 +1,14 @@
 // Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
+
+/** Neutral demo artwork. It carries no Settings application meaning or component specification. */
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.unit.dp
-
-/** Neutral demo artwork. It carries no Settings application meaning or component specification. */
 internal object CouiDemoIcons {
     val Placeholder: ImageVector = ImageVector.Builder(name = "Placeholder", defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f).apply {
         addPath(

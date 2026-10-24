@@ -1,18 +1,16 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package io.github.wfc35286.coui.kmp.shape
-
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+
 
 /**
  * The nine-step COUI corner scale.
  *
- * ColorOS names its corners `xs / s / m / l / xl / xxl / xxxl / xxxxl / full` and each step
- * carries four numbers: a nominal size, a nominal radius, a "16_1" normal radius, a "16_1"
- * large radius, and a smoothing weight. All of them are reproduced verbatim below from
- * `coui_round_corner_*` in the ColorOS 17.0.0 resource table - none of them are eyeballed.
+ * The steps are `xs / s / m / l / xl / xxl / xxxl / xxxxl / full`; each step carries a nominal
+ * radius, a "16_1" normal radius, a "16_1" large radius and a smoothing weight.
  */
 enum class CouiCornerScale {
     Xs,
@@ -29,21 +27,10 @@ enum class CouiCornerScale {
 }
 
 /**
- * Corner radii, straight out of `coui_round_corner_*`.
+ * Corner radii for each step of [CouiCornerScale].
  *
- * | step | `_radius` | `_radius_normal_16_1` | `_radius_large_16_1` | `_weight` |
- * |---|---|---|---|---|
- * | xs | 4 | 5 | 5 | 1.5 |
- * | s | 8 | 10 | 11 | 1.5 |
- * | m | 9 | 15 | 17 | 0.99 |
- * | l | 13 | 19 | 23 | 0.99 |
- * | xl | 16 | 24 | 28 | 1.1 |
- * | xxl | 19 | 29 | 34 | 1.1 |
- * | xxxl | 22 | 34 | 39 | 1.1 |
- * | xxxxl | 25 | 38 | 45 | 1.1 |
- *
- * The `_radius` column is the pre-16.1 value; on this device (`getOSVersionCode() = 40`,
- * i.e. past the 0x25 threshold) the `_16_1` columns are the live ones.
+ * Each step has a base radius plus a `Normal` and a `Large` variant introduced with ColorOS
+ * 16.1; the 16.1 variants are the live values on current systems.
  */
 object CouiCornerRadius {
     val Xs: Dp = 4.dp
@@ -55,7 +42,7 @@ object CouiCornerRadius {
     val Xxxl: Dp = 22.dp
     val Xxxxl: Dp = 25.dp
 
-    /** `coui_round_corner_*_radius_normal_16_1` - the standard size on ColorOS 16.1+. */
+    /** The standard corner radius on ColorOS 16.1+. */
     object Normal {
         val Xs: Dp = 5.dp
         val S: Dp = 10.dp
@@ -67,7 +54,7 @@ object CouiCornerRadius {
         val Xxxxl: Dp = 38.dp
     }
 
-    /** `coui_round_corner_*_radius_large_16_1` - the "large" variant on ColorOS 16.1+. */
+    /** The "large" corner radius variant on ColorOS 16.1+. */
     object Large {
         val Xs: Dp = 5.dp
         val S: Dp = 11.dp
@@ -79,10 +66,10 @@ object CouiCornerRadius {
         val Xxxxl: Dp = 45.dp
     }
 
-    /** `coui_round_corner_full` - the pill radius used when a shape is fully rounded. */
+    /** The pill radius used when a shape is fully rounded. */
     val Full: Dp = 72.dp
 
-    /** `coui_round_corner_<scale>_weight`. */
+    /** The smoothing weight for the given step. */
     fun weight(scale: CouiCornerScale): Float = when (scale) {
         CouiCornerScale.Xs, CouiCornerScale.S -> 1.5f
         CouiCornerScale.M, CouiCornerScale.L -> 0.99f
@@ -92,29 +79,28 @@ object CouiCornerRadius {
 }
 
 /**
- * The corner-weight constants ColorOS uses to decide how smooth a corner is drawn.
+ * The corner-weight constants used to decide how smooth a corner is drawn.
  *
- * These come from `OplusSmoothRoundedManager` and `RoundCornerUtil`; the default G1/G2 weights
- * are read from system properties and fall back to the values below, which were confirmed on
- * this device via an on-device probe.
+ * Counter-intuitively, a smaller weight means a smoother corner; at or above [NonWeight] the
+ * corner is a plain circular arc.
  */
 object CouiCornerWeights {
-    /** `NON_WEIGHT`. At or above this the corner is a plain circular arc. */
+    /** At or above this weight the corner is a plain circular arc. */
     const val NonWeight: Float = 2.0f
 
-    /** `DEFAULT_G1_WEIGHT` - `persist.sys.oplus.default_smooth_weight` (0xaa) / 100. */
+    /** The default G1 smoothing weight. */
     const val DefaultG1: Float = 1.70f
 
-    /** `DEFAULT_G2_WEIGHT` - `persist.sys.oplus.default_g2_weight` (0xf5) / 100. */
+    /** The default G2 smoothing weight. */
     const val DefaultG2: Float = 2.45f
 
-    /** `RoundCornerUtil.WEIGHT_16_1_NORMAL`. */
+    /** The smoothing weight for a normal 16.1 corner. */
     const val Normal161: Float = 2.5f
 
-    /** `RoundCornerUtil.WEIGHT_16_1_LARGE`. */
+    /** The smoothing weight for a large 16.1 corner. */
     const val Large161: Float = 3.0f
 
-    /** `RoundCornerUtil.OS_16_1_FULL_ROUND_SMOOTH_WEIGHT` - the pill case. */
+    /** The smoothing weight for the fully-rounded (pill) case. */
     const val FullRound: Float = 1.0f
 
     /** `LERP_START` - the radius multiplier at the smoothest weight. */
@@ -128,8 +114,6 @@ object CouiCornerWeights {
 }
 
 /**
- * `OplusSmoothRoundedManager.reverseNoWeightRadius(radius, weight)`.
- *
  * Converts a "smooth" radius back into the radius that a plain `addRoundRect` would need in
  * order to look the same size. Counter-intuitively, **a smaller weight means a smoother
  * corner** - [CouiCornerWeights.NonWeight] (2.0) is the boundary at which smoothing is off.
@@ -148,12 +132,10 @@ fun couiReverseNoWeightRadius(radius: Float, weight: Float): Float {
 }
 
 /**
- * `OplusSmoothRoundedManager.isFullyRoundedToCircle(...)`.
- *
- * A corner counts as "already a circle or pill" once its radius reaches half the shorter side.
- * ColorOS only forwards the real weight to the native path in that case; otherwise it clamps
- * the weight up to [CouiCornerWeights.NonWeight], which is why mid-sized corners on a tall
- * rectangle come out as plain arcs.
+ * Whether a corner counts as "already a circle or pill": its radius reaches half the shorter
+ * side. In that case the real smoothing weight applies; otherwise the weight is clamped up to
+ * [CouiCornerWeights.NonWeight], which is why mid-sized corners on a tall rectangle come out
+ * as plain arcs.
  */
 fun couiIsFullyRoundedToCircle(
     left: Float,

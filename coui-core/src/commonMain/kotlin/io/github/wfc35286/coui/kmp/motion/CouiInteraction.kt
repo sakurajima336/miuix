@@ -1,17 +1,15 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package io.github.wfc35286.coui.kmp.motion
-
 import kotlin.math.abs
 import kotlin.math.ln
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sign
 
+
 /**
- * `TouchMotionRubberBand.apply(distance, ratio, maxDistance)`.
- *
  * The classic iOS-style rubber band: resistance grows the further you pull, asymptotically
  * approaching [maxDistance] but never reaching it.
  *
@@ -19,9 +17,6 @@ import kotlin.math.sign
  * t = ratio * |d| / max
  * result = sign(d) * max * (1 - 1 / (1 + t))
  * ```
- *
- * This implementation was checked against the real `TouchMotionRubberBand` on-device at ten
- * sample points and matches to the last bit (`diff = 0.000000`).
  *
  * @param distance How far the finger has travelled, in pixels. May be negative.
  * @param ratio The curve ratio; see [CouiTouchTiers.RubberCurveRatio] and
@@ -35,10 +30,10 @@ fun couiRubberBand(distance: Float, ratio: Float, maxDistance: Float): Float {
 }
 
 /**
- * `TouchMotionRubberBand.inverse(...)` - the inverse of [couiRubberBand].
+ * The inverse of [couiRubberBand].
  *
  * Recovers the finger distance that would have produced [offset]. Distances at or beyond
- * [maxDistance] are clamped rather than extrapolated, matching the original.
+ * [maxDistance] are clamped rather than extrapolated.
  *
  * @param offset The rubber-banded offset.
  * @param ratio The curve ratio.
@@ -54,8 +49,6 @@ fun couiRubberBandInverse(offset: Float, ratio: Float, maxDistance: Float): Floa
 }
 
 /**
- * `TouchAnimatorParamProvider.calculateScaleWithK(w, h, maxScale, k1, k2)`.
- *
  * The adaptive cap on how far a large surface is allowed to scale: small surfaces get the full
  * [maxScale], and the allowance tapers off as area and aspect ratio grow.
  *
@@ -66,9 +59,6 @@ fun couiRubberBandInverse(offset: Float, ratio: Float, maxDistance: Float): Floa
  * t = min(1, (k1/1e6) * ln(area / 38416) + (k2/1e3) * (ratio - 1))
  * return max(1.03, 1.03 + (maxScale - 1.03) * (1 - t))
  * ```
- *
- * Verified on-device against the real implementation across seven sizes (`diff = 0.000000`).
- * The magic `38416` is `196^2`, and `1.03` is the floor the result can never go below.
  *
  * @param width The surface width, in pixels.
  * @param height The surface height, in pixels.
@@ -103,7 +93,7 @@ const val AreaThreshold: Int = 38416
 const val ScaleFloor: Float = 1.03f
 
 /**
- * `PressCalc.calculateUniformScaleBreakdown(...)` - the two-channel press-scale formula.
+ * The two-channel press-scale formula.
  *
  * Channel one maps the surface **area** into `[minScale, maxScale]`. Channel two wakes up only
  * once the surface is at least [CouiPressScaleRange.AspectActivationThreshold] times as long as
@@ -163,8 +153,6 @@ private fun Float.clampToTargetRange(): Float =
     coerceIn(CouiPressScaleRange.TargetScaleMin, CouiPressScaleRange.TargetScaleMaxShrink)
 
 /**
- * `PressPhysicsEngine.calculateImpactVelocity(d0, d1, scale)`.
- *
  * Turns a change in touch distance into an initial velocity for the release spring.
  *
  * @param d0 The distance at the previous sample.
@@ -177,8 +165,7 @@ fun couiImpactVelocity(d0: Float, d1: Float, scale: Float): Float =
 /**
  * The point in the switch's travel at which the thumb is stretched the most.
  *
- * Recovered from `COUISwitch$2.setValue`, where the expression is written out literally. The
- * peak sits at **34.7%** of the travel, not at the halfway point.
+ * The peak sits at **34.7%** of the travel, not at the halfway point.
  */
 const val SwitchStretchPeakAt: Float = 0.34725847840309143f
 
@@ -189,15 +176,14 @@ const val SwitchStretchPeak: Float = 1.3f
 const val SwitchStretchAmplitude: Float = SwitchStretchPeak - 1f
 
 /**
- * `COUISwitch$2.setValue` - the thumb's horizontal stretch as a function of its travel.
+ * The thumb's horizontal stretch as a function of its travel.
  *
  * The thumb is a circle at both ends of the track and stretches into a capsule while travelling.
- * This is **piecewise linear**, with a peak of [SwitchStretchPeak] at [SwitchStretchPeakAt] of
- * the way across - it is emphatically *not* the sinusoid a screen recording suggests, and
- * fitting one would put the peak in the wrong place.
+ * The curve is **piecewise linear**, with a peak of [SwitchStretchPeak] at [SwitchStretchPeakAt]
+ * of the way across; a sinusoidal approximation would put the peak in the wrong place.
  *
  * @param fraction The normalised travel, `0` at one end and `1` at the other. Take
- *   `1 - fraction` first for RTL, exactly as the original does.
+ *   `1 - fraction` first for RTL.
  */
 fun couiSwitchThumbStretch(fraction: Float): Float {
     return if (fraction < SwitchStretchPeakAt) {

@@ -1,6 +1,5 @@
 // Copyright 2025, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
-
 @file:OptIn(ExperimentalScrollBarApi::class)
 
 import androidx.compose.foundation.background
@@ -39,9 +38,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import component.BackNavigationIcon
-import io.github.wfc35286.coui.kmp.component.CouiButton
-import io.github.wfc35286.coui.kmp.component.CouiButtonSize
-import io.github.wfc35286.coui.kmp.component.CouiButtonType
+import io.github.wfc35286.coui.kmp.basic.CouiButton
+import io.github.wfc35286.coui.kmp.basic.CouiButtonSize
+import io.github.wfc35286.coui.kmp.basic.CouiButtonType
 import io.github.wfc35286.coui.kmp.example.CouiCard
 import io.github.wfc35286.coui.kmp.example.CouiCategoryHeader
 import io.github.wfc35286.coui.kmp.example.CouiCheckBox
@@ -68,6 +67,7 @@ import utils.BlurredBar
 import utils.pageContentPadding
 import utils.pageScrollModifiers
 import utils.rememberBlurBackdrop
+
 
 private val CouiTabs = listOf("Item 1", "Item 2", "Item 3")
 private val CouiChips = listOf("Item 1", "Item 2", "Item 3", "Item 4")

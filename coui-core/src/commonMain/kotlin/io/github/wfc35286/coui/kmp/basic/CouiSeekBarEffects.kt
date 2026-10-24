@@ -1,8 +1,7 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.basic
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -16,12 +15,14 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipPath
-import io.github.wfc35286.coui.kmp.effect.CouiSpotLightDefaults
+import io.github.wfc35286.coui.kmp.graphics.CouiSpotLightDefaults
+import io.github.wfc35286.coui.kmp.graphics.createCouiSpotLightShader
+import io.github.wfc35286.coui.kmp.graphics.spotLightBrush
 import io.github.wfc35286.coui.kmp.motion.CouiSpringData
 import kotlin.math.abs
 import kotlin.math.max
 
-/** Shared `touchAnim/releaseAnim`, textured-thumb and spotlight animations for both seek bars. */
+/** Press, textured-thumb and spotlight animations shared by both seek bars. */
 @Stable
 internal class CouiSeekBarPressMotion {
     var pressed = false
@@ -60,8 +61,8 @@ internal class CouiSeekBarPressMotion {
         pressed = true
         pendingRelease = false
         heightTarget = 1f
-        // StandardAnimationHandler cancels/restarts the radius spring. Core.touchAnim always
-        // invokes startThumbScaleAnimation(true), including a down on the empty track.
+        // Pressing restarts the thumb-scale spring from zero velocity, including a press on
+        // the empty track.
         thumbVelocity = 0f
         lightPosition(x, y)
     }
@@ -74,8 +75,8 @@ internal class CouiSeekBarPressMotion {
     fun lightPosition(x: Float, y: Float) {
         lightTargetX = x
         lightTargetY = y
-        // COUISpotLightEffect.setLightPosition snaps when mProgress == 0, before glow().
-        // Only an already visible light follows the touch through the position springs.
+        // The light position snaps while the glow is invisible; only an already visible light
+        // follows the touch through the position springs.
         if (glowAlpha == 0f) {
             glowX = x
             glowY = y
@@ -84,8 +85,8 @@ internal class CouiSeekBarPressMotion {
         }
     }
 
-    // setProgress: release expands the radius by 2 * endRadius * (1 - progress).
-    // At exactly zero the original resets both intensity and radius to zero.
+    // On release the glow radius expands as the glow fades; at exactly zero progress both
+    // intensity and radius reset to zero.
     val lightRadius: Float
         get() {
             val progress = glowAlpha.coerceIn(0f, 1f)
@@ -97,16 +98,16 @@ internal class CouiSeekBarPressMotion {
     fun up(trackEnlarges: Boolean) {
         pressed = false
         thumbVelocity = 0f
-        // COUISeekBar.getMinEnlargeHeight = (maxHeight - height) / 2. Below that gate,
-        // Core.releaseAnim defers to checkPendingReleaseAndPost on EVERY height update.
+        // While the press is below the midpoint of the enlarging track, release is deferred
+        // and re-checked on every height update until the enlargement finishes.
         pendingRelease = trackEnlarges && heightTarget == 1f && enlarge < 0.5f
         if (!pendingRelease) heightTarget = 0f
     }
 
     fun advance(dt: Float): Boolean {
         if (dt <= 0f) return true
-        // FloatValueHolder default minimumVisibleChange=1, valueThreshold=0.75,
-        // velocityThreshold=valueThreshold*62.5. Height animation uses 0..100, not 0..1.
+        // The height animation runs over a 0..100 range, so its thresholds are the 0..1
+        // defaults scaled accordingly.
         val heightMoving = step(
             enlarge,
             enlargeVelocity,
@@ -123,8 +124,8 @@ internal class CouiSeekBarPressMotion {
         if (pendingRelease && (enlarge >= 0.5f || !heightMoving)) {
             pendingRelease = false
             heightTarget = 0f
-            // initEnlargeAnim$lambda$0 calls checkPendingReleaseAndPost on each frame.
-            // The end listener is only a fallback; waiting for it causes a long full-size pulse.
+            // Pending release is checked on each animation frame; waiting for the animation's
+            // end listener instead causes a long full-size pulse.
             moving = true
         }
         val scaleSpec = if (pressed) SpringBounce03Response050 else SpringBounce0Response050
@@ -142,7 +143,8 @@ internal class CouiSeekBarPressMotion {
             layerCVelocity = vel
         } || moving
         val lightSpec = if (pressed) SpringBounce0Response015 else SpringBounce0Response040
-        // Glow animates 0..10000 with FloatPropertyCompat's default 0.75 value threshold.
+        // The glow uses very fine thresholds, equivalent to animating 0..10000 with a default
+        // 0.75 value threshold.
         moving = step(
             glowAlpha,
             glowVelocity,
@@ -155,10 +157,11 @@ internal class CouiSeekBarPressMotion {
             glowAlpha = v
             glowVelocity = vel
         } || moving
-        // The original follows normalized x/y, with minimumVisibleChange=1e-4.
-        // Keeping pixels here is equivalent after scaling both equilibrium thresholds.
+        // The follow-hand springs work in normalized coordinates with a minimumVisibleChange
+        // of 1e-4; keeping pixels here is equivalent after scaling both equilibrium thresholds.
         if (glowAlpha == 0f) {
-            // setProgress(0) skips the two follow-hand springs to their final positions.
+            // While the glow is invisible the two follow-hand springs sit at their final
+            // positions.
             glowX = lightTargetX
             glowY = lightTargetY
             lightXVelocity = 0f
@@ -193,7 +196,7 @@ internal class CouiSeekBarPressMotion {
     }
 }
 
-/** `COUIRubberAnimatorUnit`: rubber-band drag and a separate velocity-aware hand-up spring. */
+/** Rubber-band drag with a separate velocity-aware hand-up spring. */
 @Stable
 internal class CouiSeekBarRubberMotion {
     var shift by mutableFloatStateOf(0f)
@@ -204,7 +207,8 @@ internal class CouiSeekBarRubberMotion {
     private var spec = DragSpring
 
     fun down(x: Float, maxDistance: Float) {
-        // Re-grabbing a returning bar preserves its current displacement (inverseRubberBand).
+        // Re-grabbing a returning bar preserves its current displacement (the inverse of the
+        // rubber-band curve).
         val magnitude = abs(shift).coerceAtMost(maxDistance * 0.9999f)
         val effective = if (maxDistance > 0f) {
             magnitude * maxDistance / (0.05f * (maxDistance - magnitude))
@@ -223,7 +227,7 @@ internal class CouiSeekBarRubberMotion {
     }
 
     fun up(velocityPxPerSecond: Float, maxDistance: Float, widthDp: Float, heightDp: Float) {
-        // COUIVelocityTrackerHelper: computeCurrentVelocity(1), then multiply by 0.3.
+        // Velocity is tracked in px/ms and scaled by 0.3.
         val eventVelocity = velocityPxPerSecond * 0.0003f
         val initial = if (maxDistance > 0f) {
             (eventVelocity / maxDistance * abs(shift)).coerceIn(-1000f, 1000f)
@@ -235,7 +239,7 @@ internal class CouiSeekBarRubberMotion {
         val response = 0.42f + (0.45f - 0.42f) * areaProgress
         val bounce = max(0.65f, abs(initial) / 1000f).coerceAtMost(1f)
         spec = CouiSpringData(bounce, response)
-        // applyHandUpSpring overwrites the drag velocity when useNormalizedHandUpVelocity=true.
+        // The hand-up spring's initial velocity replaces the drag velocity.
         velocity = initial
         target = 0f
     }
@@ -254,7 +258,7 @@ internal class CouiSeekBarRubberMotion {
     }
 }
 
-/** `TouchMotionRubberBand.apply`: raw pixels in, raw pixels out; 28dp is converted by the caller. */
+/** Rubber-band mapping: raw pixels in, raw pixels out; the 28dp limit is converted by the caller. */
 internal fun rubberBand(delta: Float, maxDistance: Float, curveRatio: Float = 0.05f): Float {
     if (maxDistance <= 0f) return 0f
     val a = curveRatio * abs(delta) / maxDistance
@@ -264,7 +268,7 @@ internal fun rubberBand(delta: Float, maxDistance: Float, curveRatio: Float = 0.
 
 /** Per-control shader/brush/path, also used by the section seek bar. */
 internal class CouiSeekBarLightRenderer(darkTheme: Boolean) {
-    // Settings 17's `TYPE_OPAQUE_MEDIUM_1` preset; all lengths are raw pixels.
+    // The opaque-medium spotlight preset; all lengths are raw pixels.
     private val spec = CouiSpotLightDefaults.OpaqueMedium1(darkTheme)
     private val endIntensity = spec.endIntensity
     private val shader = createCouiSpotLightShader()?.apply {
@@ -286,7 +290,7 @@ internal class CouiSeekBarLightRenderer(darkTheme: Boolean) {
         light.setResolution(size.width, size.height)
         // Android reuses its live RuntimeShader brush; Skiko snapshots the updated uniforms.
         val lightBrush = spotLightBrush(light)
-        // SpotLightEffectRenderer clips with ordinary addRoundRect, radius=backgroundHeight/2.
+        // The spotlight is clipped to the track's rounded rect with radius = track height / 2.
         clip.reset()
         clip.addRoundRect(RoundRect(background, CornerRadius(background.height / 2f)))
         clipPath(clip) {

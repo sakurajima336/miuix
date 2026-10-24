@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package component.effect
-
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -13,6 +12,7 @@ import androidx.compose.ui.node.invalidateDraw
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+
 
 internal fun Modifier.bgEffectDraw(
     painter: BgEffectPainter,

@@ -1,8 +1,7 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package io.github.wfc35286.coui.kmp.theme
-
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -16,13 +15,12 @@ import io.github.wfc35286.coui.kmp.shape.CouiCornerWeights
 import io.github.wfc35286.coui.kmp.token.CouiColorTokens
 import io.github.wfc35286.coui.kmp.token.CouiComponentColors
 
+
 /**
  * Corner radii used by COUI components.
  *
- * These are the real `coui_round_corner_*_radius_normal_16_1` values, which are the ones this
- * device uses (`getOSVersionCode()` is past the 16.1 threshold). Components read them from here
- * rather than writing literals, so a single swap to [CouiCornerRadius.Large] reskins the whole
- * library to the "large" corner variant.
+ * Components read them from here rather than writing literals, so a single swap to
+ * [CouiCornerRadius.Large] reskins the whole library to the "large" corner variant.
  */
 @Immutable
 data class CouiShapes(
@@ -34,15 +32,15 @@ data class CouiShapes(
     val extraExtraLarge: Dp = CouiCornerRadius.Normal.Xxl,
     val extraExtraExtraLarge: Dp = CouiCornerRadius.Normal.Xxxl,
     val extraExtraExtraExtraLarge: Dp = CouiCornerRadius.Normal.Xxxxl,
-    /** The curvature family every corner is drawn with. G2 on ColorOS 16+. */
+    /** The curvature family every corner is drawn with (G2). */
     val continuity: CouiContinuity = CouiContinuity.G2,
 )
 
 /**
- * Corner weights for COUI components, mirroring the `_weight` entries of `coui_round_corner_*`.
+ * Corner weights for COUI components.
  *
- * Kept next to [CouiShapes] because the two are only meaningful together: ColorOS decides both
- * how big a corner is and how smooth it is drawn from the same corner-scale entry.
+ * Kept next to [CouiShapes] because the two are only meaningful together: the corner scale
+ * decides both how big a corner is and how smoothly it is drawn.
  */
 @Immutable
 data class CouiCornerWeightsSet(
@@ -54,7 +52,7 @@ data class CouiCornerWeightsSet(
     val extraExtraLarge: Float = 1.1f,
     val extraExtraExtraLarge: Float = 1.1f,
     val extraExtraExtraExtraLarge: Float = 1.1f,
-    /** `OS_16_1_FULL_ROUND_SMOOTH_WEIGHT` - used for pills. */
+    /** The full-round weight, used for pills. */
     val full: Float = CouiCornerWeights.FullRound,
 )
 
@@ -74,22 +72,23 @@ private val LocalCouiComponentColors = staticCompositionLocalOf { CouiComponentC
  *
  * Wrap your UI in [CouiTheme] and read tokens through [CouiTheme.colors] / [CouiTheme.shapes].
  *
- * The default colour scheme follows the system dark-mode setting and is the real ColorOS
- * palette - both variants were extracted from the device's own `resources.arsc`, so there is
- * nothing to eyeball or maintain by hand.
+ * The default colour scheme follows the system dark-mode setting and uses the ColorOS palette.
  */
 object CouiTheme {
     /** The active colour tokens. */
     val colors: CouiColorTokens
-        @Composable @ReadOnlyComposable get() = LocalCouiColors.current
+        @Composable @ReadOnlyComposable
+        get() = LocalCouiColors.current
 
     /** The active corner radii. */
     val shapes: CouiShapes
-        @Composable @ReadOnlyComposable get() = LocalCouiShapes.current
+        @Composable @ReadOnlyComposable
+        get() = LocalCouiShapes.current
 
     /** The active corner weights. */
     val cornerWeights: CouiCornerWeightsSet
-        @Composable @ReadOnlyComposable get() = LocalCouiCornerWeights.current
+        @Composable @ReadOnlyComposable
+        get() = LocalCouiCornerWeights.current
 
     /**
      * Colours that individual components reference by name rather than through a theme attribute.
@@ -97,15 +96,17 @@ object CouiTheme {
      * See [CouiComponentColors] for why this is a separate set from [colors].
      */
     val componentColors: CouiComponentColors
-        @Composable @ReadOnlyComposable get() = LocalCouiComponentColors.current
+        @Composable @ReadOnlyComposable
+        get() = LocalCouiComponentColors.current
 }
 
 /**
  * Provides the COUI design system to [content].
  *
- * @param colors The colour tokens; defaults to the real ColorOS light/dark palette.
- * @param shapes The corner radii; defaults to the `_16_1` normal scale.
- * @param cornerWeights The corner weights; defaults to the `coui_round_corner_*_weight` values.
+ * @param colors The colour tokens; defaults to the ColorOS light/dark palette, selected by the
+ *   system dark-mode setting.
+ * @param shapes The corner radii; defaults to the normal corner scale.
+ * @param cornerWeights The corner weights; defaults to the COUI corner weights.
  * @param content The UI to theme.
  */
 @Composable

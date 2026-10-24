@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package utils
-
 import LocalAppState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -35,6 +34,7 @@ import top.yukonga.miuix.kmp.blur.textureBlur
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
+
 
 fun Modifier.pageScrollModifiers(
     enableScrollEndHaptic: Boolean,

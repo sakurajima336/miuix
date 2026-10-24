@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package component.liquid
+import top.yukonga.miuix.kmp.blur.BackdropEffectScope
+import top.yukonga.miuix.kmp.blur.colorControls
 
 // Adapted from Kyant0/AndroidLiquidGlass — https://github.com/Kyant0/AndroidLiquidGlass (Apache 2.0).
 
-import top.yukonga.miuix.kmp.blur.BackdropEffectScope
-import top.yukonga.miuix.kmp.blur.colorControls
 
 /** Lightweight stand-in for Kyant's `vibrancy()`. */
 fun BackdropEffectScope.vibrancy() {

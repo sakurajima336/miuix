@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package utils
-
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
+
 
 @Composable
 fun shouldShowSplitPane(): Boolean {

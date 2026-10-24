@@ -1,12 +1,12 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.graphics
 import android.annotation.TargetApi
 import android.graphics.RuntimeShader
 import android.os.Build
 import androidx.compose.ui.graphics.ShaderBrush
+
 
 /** Android actual: `android.graphics.RuntimeShader`, available from API 33 (Android 13). */
 internal actual fun createCouiSpotLightShader(): CouiSpotLightShader? = if (Build.VERSION.SDK_INT >= 33) AndroidCouiSpotLightShader() else null
@@ -47,19 +47,17 @@ internal class AndroidCouiSpotLightShader : CouiSpotLightShader {
     private var resolutionH = 0f
 
     /** `flushIfDirty`'s `u_lightPosAndHeight` block. */
-    private fun pushLightPos() =
-        shader.setFloatUniform(
-            "u_lightPosAndHeight",
-            normX * resolutionW,
-            normY * resolutionH,
-            radius,
-            intensity,
-        )
+    private fun pushLightPos() = shader.setFloatUniform(
+        "u_lightPosAndHeight",
+        normX * resolutionW,
+        normY * resolutionH,
+        radius,
+        intensity,
+    )
 
     private fun pushLighting() = shader.setFloatUniform("u_lightingParams", diffuse, lightHeight, noise, ditherN)
 
-    private fun pushLightColor() =
-        shader.setFloatUniform("u_lightColorAndAmbient", colorR, colorG, colorB, ambient)
+    private fun pushLightColor() = shader.setFloatUniform("u_lightColorAndAmbient", colorR, colorG, colorB, ambient)
 
     override fun setLightPosition(x: Float, y: Float) {
         this.normX = x

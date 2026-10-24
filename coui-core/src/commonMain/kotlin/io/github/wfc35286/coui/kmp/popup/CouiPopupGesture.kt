@@ -1,6 +1,7 @@
+// Copyright 2026, compose-miuix-ui contributors
+// SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.popup
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -22,6 +23,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
 
 internal class CouiPopupPanelState(val motion: CouiPopupTouchMotion) {
     val rows = mutableStateMapOf<Int, Rect>()
@@ -71,14 +73,9 @@ internal class CouiPopupPanelState(val motion: CouiPopupTouchMotion) {
             pendingHandoff?.let { value ->
                 pendingHandoff = null
                 attach(index, animate = false)
-                // Official small-screen path: `triggerShowSubMenu` reads the clicked row's mask
-                // progress and then calls `ListItemMaskEffectDrawable.setTouchExited()`
-                // (COUIPopupListWindow.smali:3356-3378), while the sub menu's parent row draws
-                // `mSharedDrawable.getChild()` (DefaultAdapter.smali:565-573). The child only
-                // mirrors the parent's progress, so the highlight that travelled into the sub
-                // menu starts at the transferred value and fades out - it is NOT locked on.
-                // (`setHoverStateLocked(true, true, true)` only runs in the *non* small-screen
-                // branch of setSubMenuGroupItemActivation, COUIPopupListWindow.smali:2890+.)
+                // Handing the highlight off to the sub menu: the sub menu's parent row mirrors
+                // the parent panel's press progress, so the transferred highlight starts at the
+                // given value and fades out - it is NOT locked on.
                 press.snap(value)
                 press.target = 0f
                 requestFrame()
@@ -268,12 +265,10 @@ internal fun Modifier.couiPopupGestures(
                 }
                 val inSub = currentSub.value && currentSubBounds.value().contains(down.position)
                 val inMain = currentMainBounds.value().contains(down.position)
-                // Official `dispatchAfterSubMenuExitIfNeeded` (COUIPopupMenuRootView.smali:440-503):
-                // once the exit animation has finished, the *next* touch event sends a synthetic
-                // ACTION_CANCEL followed by ACTION_DOWN to the main menu, so the stale touch state is
-                // dropped and the same gesture keeps tracking the row under the finger. Consuming the
-                // flag after `begin()` (the previous placement) cancelled the freshly started press,
-                // which is why the first tap after the exit did nothing and a second tap was needed.
+                // Once the sub menu exit animation has finished, the *next* touch event drops the
+                // main menu's stale press state so the same gesture keeps tracking the row under
+                // the finger. Consuming the flag after `begin()` would cancel the freshly started
+                // press, and the first tap after the exit would need a second tap to land.
                 if (consumeReDispatchDown()) {
                     main.motion.up()
                     main.clear()
@@ -304,9 +299,9 @@ internal fun Modifier.couiPopupGestures(
                             cancelPanel()
                         }
                         if (consumeReDispatchDown()) {
-                            // Mid gesture: the exit finished while the finger is down. The official
-                            // re-dispatches CANCEL + DOWN so the row under the finger starts a fresh
-                            // press instead of losing the gesture.
+                            // Mid gesture: the exit finished while the finger is down. The press
+                            // state is reset so the row under the finger starts a fresh press
+                            // instead of losing the gesture.
                             cancelPanel()
                             main.motion.up()
                             main.clear()
@@ -336,8 +331,7 @@ internal fun Modifier.couiPopupGestures(
                             // Only claim the UP when this gesture really handled something. This
                             // listener runs in the Initial pass, so consuming here marks the event
                             // consumed for every later pass; the list's fling is decided in the Main
-                            // pass, and a consumed UP cancels it. That is why the items could be
-                            // dragged but never kept sliding after the finger lifted.
+                            // pass, and a consumed UP cancels it.
                             if (!cancelled) change.consume()
                             break
                         }
@@ -366,11 +360,9 @@ internal fun Modifier.couiPopupGestures(
                                     clickBlocked = false
                                 }
                             }
-                            // Official touch dispatch: once the sub menu root takes the DOWN
-                            // (setAllowDispatchEvent(true)) it keeps the whole event stream, and the
-                            // main menu list ignores touches while the sub menu is up. So leaving the
-                            // sub menu rect must NOT cancel the panel - the deform/rubber band keeps
-                            // following the finger, exactly like COUIPopupTouchMotionAnimator.
+                            // While the sub menu is up it owns the whole touch stream and the main
+                            // menu list ignores touches. So leaving the sub menu rect must NOT
+                            // cancel the panel - the deform/rubber band keeps following the finger.
                         } else if (active === sub) {
                             cancelPanel()
                         } else if (active == null && currentMainBounds.value().contains(lastPoint) && sub.items.isEmpty()) {

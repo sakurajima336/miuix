@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package webfont
-
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+
 
 /** One `@font-face` subset reduced to what the preloader needs: where to fetch it and how to tag it. */
 internal data class FontFaceDecl(

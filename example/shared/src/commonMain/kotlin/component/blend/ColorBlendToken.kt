@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package component.blend
-
 import androidx.compose.ui.graphics.Color
 import top.yukonga.miuix.kmp.blur.BlendColorEntry
 import top.yukonga.miuix.kmp.blur.BlurBlendMode
+
 
 object ColorBlendToken {
     // Info Series

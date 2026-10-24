@@ -1,28 +1,20 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package io.github.wfc35286.coui.kmp.motion
-
 import androidx.compose.runtime.Composable
 
+
 /**
- * The Compose-side counterpart of `COUISeekBarCore.attemptClaimDrag()`:
- *
- * ```java
- * // COUISeekBarCore.startDrag()
- * private final void attemptClaimDrag() {
- *     ViewParent p = getParent();
- *     if (p != null) p.requestDisallowInterceptTouchEvent(true);
- * }
- * ```
- *
- * `startDrag()` runs from `onTouchEvent` as soon as a MOVE passes `mTouchSlop`, and from that
- * moment the bar owns the gesture - the enclosing scroll container can no longer take it away.
+ * A hook that lets a control keep a drag gesture when it is hosted inside a scroll container.
  *
  * Consuming the pointer change already stops a Compose `scrollable` ancestor from claiming the
  * gesture, but this control is meant to be dropped into *any* host, including a View-based
- * `ScrollView` (the real Settings app is one). In that situation `consume()` does nothing for the
- * parent, and only `requestDisallowInterceptTouchEvent` will keep the drag.
+ * `ScrollView`. In that situation `consume()` does nothing for the parent, and only
+ * `requestDisallowInterceptTouchEvent` on the parent will keep the drag.
+ *
+ * The control calls this as soon as a MOVE event passes the touch slop; from that moment it owns
+ * the gesture and the enclosing scroll container can no longer take it away.
  */
 interface CouiParentIntercept {
     /**

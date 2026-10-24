@@ -1,40 +1,33 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.graphics
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.Brush
+
 
 /**
- * The ColorOS "material" of a floating surface, transcribed from
- * `com.coui.appcompat.COUIMaterialBlurEffect` / `COUIMaterialStrokeEffect`.
+ * The ColorOS "material" of a floating surface: a backdrop blur, two colour layers blended over
+ * it, an inner edge stroke and a drop shadow, all rounded to the surface's capsule silhouette.
  *
- * On ColorOS the whole thing is handed to the framework:
- *
- * 1. `RenderEffect.createBlurEffect(r, r, MIRROR)`, then two
- *    `RenderEffect.createColorFilterEffect(BlendModeColorFilter(color, blend))` layers, applied with
- *    `com.oplus.view.OplusViewBackgroundRenderEffect.setBackgroundRenderEffect(effect, view)` -
- *    i.e. the **RenderNode** blurs whatever is painted *behind* the view (a true backdrop blur).
- * 2. `com.oplus.view.material.OplusMaterialUtil.setCornerParams` rounds that background.
- * 3. `...setEdgeParams` + `...setShadowParams` draw the inner stroke and the drop shadow.
- *
- * None of that is reachable from Compose, so the surface is hosted by a plain Android `View`
- * (see [CouiFloatingMaterialSurface]) and the framework does the painting. When the framework is
- * missing the same silhouette is approximated in Compose - that is a **fallback**, not the design.
+ * On ColorOS the whole thing is handed to the framework, which blurs whatever is painted *behind*
+ * the view (a true backdrop blur) via a **RenderNode** background effect. None of that is
+ * reachable from Compose, so the surface is hosted by a plain Android `View` (see
+ * [CouiFloatingMaterialSurface]) and the framework does the painting. When the framework is
+ * missing, the same silhouette is approximated in Compose - that is a fallback, not the design.
  */
 internal data class CouiFloatingMaterialSpec(
-    /** `mRadius` from `updateSmoothRoundPath()`: always `(height - paddingTop - paddingBottom) / 2`. */
+    /** The corner radius, in pixels: half the content height, giving a full capsule. */
     val cornerRadiusPx: Float,
-    /** `BlurEffectParams.blurRadius` - raw px, no dp conversion in the official. */
+    /** The backdrop blur radius, in raw pixels. */
     val blurRadiusPx: Float,
     val layer1Color: Int,
     val layer1Blend: CouiBlendMode,
@@ -48,40 +41,36 @@ internal data class CouiFloatingMaterialSpec(
     val shadowFadeIn: Float,
     val shadowFadeOut: Float,
     /**
-     * Whether `BaseBottomFloatingMenuView.setCausticShadowEffect()` runs - the outer shadow
-     * (`OplusMaterialUtil.setOutlineCausticShadow*` + a 24dp elevation with the `caustic_down`
-     * light geometry). It is the only part of the material that paints **outside** the pill, so it
-     * is kept switchable for bisection.
+     * Whether the outer caustic shadow is drawn. It is one of the only parts of the material that
+     * paint **outside** the pill, so it is kept switchable to debug in isolation.
      */
     val applyCausticShadow: Boolean = true,
     /**
-     * Whether `OplusMaterialUtil.setShadowParams` is called. Kept switchable so the drop shadow can
-     * be bisected away: it is the only part of the material that paints **outside** the pill, so it is
-     * the prime suspect whenever a block larger than the pill shows up.
+     * Whether the drop shadow is drawn. Kept switchable so it can be turned off in isolation: it
+     * is the prime suspect whenever a block larger than the pill shows up.
      */
     val applyShadow: Boolean = true,
 )
 
 /**
- * The `BlendMode`s the official material uses. Only these four appear in `COUIMaterialBlurEffect`,
- * so the list is deliberately closed (the obfuscated `a.a.a.{k,l,m,n}92` helpers were resolved to
- * exactly these).
+ * The blend modes the material layers use. The list is deliberately closed: only these four
+ * appear in the material.
  */
 internal enum class CouiBlendMode {
-    /** `k92` */
+    /** Source-over compositing. */
     SrcOver,
 
-    /** `l92` */
+    /** Colour-dodge blending. */
     ColorDodge,
 
-    /** `m92` */
+    /** Luminosity blending. */
     Luminosity,
 
-    /** `n92` */
+    /** Overlay blending. */
     Overlay,
 }
 
-/** `COUIMaterialStrokeEffect.FRAMEWORK_CAPSULE_PARAMS_12_LIGHT` - runtime dump of `设置_17.0.0`. */
+/** Light-theme material parameters for a capsule panel. */
 internal val CouiFloatingMaterialLight =
     CouiFloatingMaterialSpec(
         cornerRadiusPx = 0f,
@@ -91,8 +80,6 @@ internal val CouiFloatingMaterialLight =
         layer2Color = 0x99F5F5F5.toInt(),
         layer2Blend = CouiBlendMode.Luminosity,
         strokeType = 1,
-        // StrokeEffectParams(strokeType=1, edgeAlpha=0.8, edgeWidthDp=2.0, edgeAngle=0.0,
-        //                    shadowFadeIn=0.1, shadowFadeOut=1.0, shadowFadeScale=1.0)
         edgeWidthPx = 0f,
         edgeAlpha = 0.8f,
         edgeAngle = 0f,
@@ -101,20 +88,18 @@ internal val CouiFloatingMaterialLight =
         shadowFadeOut = 1f,
     )
 
-/** `COUIMaterialStrokeEffect.FRAMEWORK_CAPSULE_PARAMS_12_DARK` - same source. */
+/** Dark-theme material parameters for a capsule panel. */
 internal val CouiFloatingMaterialDark =
     CouiFloatingMaterialSpec(
         cornerRadiusPx = 0f, // filled in from the measured height
         blurRadiusPx = 25f,
         layer1Color = 0x80666666.toInt(),
-        // `FRAMEWORK_BOTTOM_BAR_PARAMS_DARK` uses OVERLAY here, not the light theme's COLOR_DODGE:
-        // dodge against a dark backdrop saturates to a flat light grey and eats the blur.
+        // Overlay rather than the light theme's colour-dodge: dodge against a dark backdrop
+        // saturates to a flat light grey and eats the blur.
         layer1Blend = CouiBlendMode.Overlay,
         layer2Color = 0xB3262626.toInt(),
         layer2Blend = CouiBlendMode.Luminosity,
         strokeType = 1,
-        // StrokeEffectParams(strokeType=1, edgeAlpha=0.15, edgeWidthDp=2.0, edgeAngle=0.0,
-        //                    shadowFadeIn=0.01, shadowFadeOut=0.0, shadowFadeScale=1.0)
         edgeWidthPx = 0f,
         edgeAlpha = 0.15f,
         edgeAngle = 0f,
@@ -123,38 +108,31 @@ internal val CouiFloatingMaterialDark =
         shadowFadeOut = 0f,
     )
 
-/**
- * `FRAMEWORK_CAPSULE_PARAMS_12.edgeWidthDp` - **2.0 in both themes**. The 0.8 / 0.15 pair that
- * used to live here was the *edge alpha* read out of the wrong field of `StrokeEffectParams`, and
- * it made the top rim roughly a third of its real width.
- */
+/** The width of the panel's inner edge stroke, in dp - the same in both themes. */
 internal const val COUI_PANEL_EDGE_WIDTH_DP = 2.0f
 
-/** `coui_caustic_color_2` - the caustic drop shadow's colour (`#42ffffff`). */
+/** The colour of the caustic drop shadow (`#42ffffff`). */
 internal const val COUI_CAUSTIC_COLOR: Int = 0x42FFFFFF
 
-/** `coui_caustic_layout_b_level4` - how far the caustic shadow reaches below the pill. */
+/** How far the caustic shadow reaches below the pill. */
 internal const val COUI_CAUSTIC_BOTTOM_DP = 4.9f
 
-/** `coui_caustic_layout_sdf_level4` - the caustic shadow's SDF softening radius. */
+/** The softening radius of the caustic shadow's signed-distance falloff. */
 internal const val COUI_CAUSTIC_SDF_DP = 10.4f
 
 /**
- * The panel edge + inner shadow are the official AGSL shader, ported verbatim in
- * [CouiShadowEdge]: the exact `ShadowEdge` source plus the exact `GradientStrokeStyleMapper` /
- * `InnerShadowStyleMapper` uniform packing.
+ * The panel edge and inner shadow are rendered by the AGSL shader in [CouiShadowEdge].
  *
- * On Android the shader runs (`COUIShadowEdgeDrawable` requires
- * `COUIEffectVersionUtil.isRuntimeShaderVersion()`, i.e. SDK > 33). On skiko it cannot, so
- * [CouiFloatingMaterial.skiko] falls back to the flat panel.
+ * On Android the shader runs on API levels above 33; on skiko it cannot, so the skiko
+ * implementation of [CouiFloatingMaterialSurface] falls back to the flat panel.
  */
 
 /**
  * Hosts the pill's material.
  *
- * On Android the content is drawn over a framework-material `View`, so the official blur, stroke and
- * shadow come out exactly as in ColorOS. Everywhere else - and on Android builds without the Oplus
- * framework - the content is drawn over [fallback], which approximates the same silhouette in
+ * On Android the content is drawn over a framework-material `View`, so the blur, stroke and shadow
+ * are painted by the ColorOS material framework. Everywhere else - and on Android builds without
+ * that framework - the content is drawn over [fallback], which approximates the same silhouette in
  * Compose.
  */
 @Composable
@@ -170,7 +148,7 @@ internal expect fun CouiFloatingMaterialSurface(
     backdrop: CouiBackdrop? = null,
     /** The press/rubber-band translation, read in the **layout** phase so interop views follow. */
     translation: () -> Offset,
-    /** The uniform press scale, applied around the **centre** (`COUIPressAnimatorUnit`). */
+    /** The uniform press scale, applied around the **centre**. */
     pressScale: () -> Float,
     /**
      * The horizontal deformation scale. On Android this is pushed onto the host View (a Compose
@@ -184,9 +162,9 @@ internal expect fun CouiFloatingMaterialSurface(
      * stays put while the surface stretches.
      */
     transformOrigin: () -> Offset,
-    /** Whether the panel edge / inner shadow (the `COUIShadowEdgeDrawable` pair) is requested. */
+    /** Whether the panel edge / inner shadow is requested. */
     shadowEnabled: Boolean = true,
-    /** Whether the host is in dark theme (`isCOUIDarkThemeOrNightMode`). */
+    /** Whether the host is in dark theme (including night mode). */
     dark: Boolean = false,
     modifier: Modifier,
     fallback: @Composable () -> Unit,
@@ -206,10 +184,10 @@ internal expect fun CouiFloatingMaterialSurface(
  * A Compose layer transform is invisible to both `LayoutCoordinates.localToWindow` and
  * `View.getLocationInWindow`, so the component cannot detect it. Hosts that know - anything built
  * on `miuix-nav` can read `LocalNavTransitionScope.current` - provide this flag, and the bar falls
- * back to the flat panel (the official's own non-material appearance) for the duration.
+ * back to the flat panel for the duration.
  */
 val LocalCouiSceneTransition: androidx.compose.runtime.ProvidableCompositionLocal<() -> Boolean> =
     androidx.compose.runtime.staticCompositionLocalOf { { false } }
 
-/** True when the running device exposes the ColorOS material (`com.oplus.view.material.*`). */
+/** True when the running device exposes the ColorOS material framework. */
 internal expect fun isCouiFloatingMaterialAvailable(): Boolean

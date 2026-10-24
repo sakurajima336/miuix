@@ -1,8 +1,10 @@
+// Copyright 2026, compose-miuix-ui contributors
+// SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.popup
 import kotlin.math.max
 import kotlin.math.min
+
 
 internal class CouiPopupSmallScreenController(
     private val helper: CouiPopupLocateHelper,
@@ -126,8 +128,10 @@ internal class CouiPopupSmallScreenController(
         val gap = minGapBetweenMainAndSubMenu
         val raw = when {
             mainTop + gap > subTop -> (subTop - gap) - mainTop
+
             mainTop + gap > subTop + subMenuTranslateEndY.toInt() ->
                 (subTop + subMenuTranslateEndY.toInt()) - (mainTop + gap)
+
             else -> 0
         }
         return clampMainMenuTranslationY(raw.toFloat())

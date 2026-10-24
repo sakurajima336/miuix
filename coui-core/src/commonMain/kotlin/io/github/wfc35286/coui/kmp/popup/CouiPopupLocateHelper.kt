@@ -1,8 +1,10 @@
+// Copyright 2026, compose-miuix-ui contributors
+// SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.popup
 import kotlin.math.max
 import kotlin.math.min
+
 
 internal class CouiPopupLocateHelper(
     val domain: CouiPopupDomain = CouiPopupDomain(),
@@ -13,14 +15,14 @@ internal class CouiPopupLocateHelper(
     private var anchorRowTop = 0
     private var anchorRowHeight = 0
 
-    var statusBarMargin = 0                     // coui_popup_list_window_top_status_bar_margin = 16dp
-    var navigationBarMargin = 0                 // ..._bottom_navigation_bar_margin = 32dp
-    var minGapBetweenMainAndSubMenu = 0         // ..._min_gap_to_top = 12dp
-    var mainMenuShrinkWidth = 0                 // ..._main_menu_shrink_width = 16dp
-    var horizontalOverlap = 0                   // ..._horizontal_overlap_between_main_and_sub_menu = 14dp
-    var verticalOverlap = 0                     // ..._vertical_overlap_between_main_and_sub_menu = 14dp
-    var anchorGap = 0                           // ..._default_vertical_gap_to_anchor = 8dp
-    var menuInnerPaddingVertical = 0            // coui_popup_list_padding_vertical = 8dp
+    var statusBarMargin = 0 // coui_popup_list_window_top_status_bar_margin = 16dp
+    var navigationBarMargin = 0 // ..._bottom_navigation_bar_margin = 32dp
+    var minGapBetweenMainAndSubMenu = 0 // ..._min_gap_to_top = 12dp
+    var mainMenuShrinkWidth = 0 // ..._main_menu_shrink_width = 16dp
+    var horizontalOverlap = 0 // ..._horizontal_overlap_between_main_and_sub_menu = 14dp
+    var verticalOverlap = 0 // ..._vertical_overlap_between_main_and_sub_menu = 14dp
+    var anchorGap = 0 // ..._default_vertical_gap_to_anchor = 8dp
+    var menuInnerPaddingVertical = 0 // coui_popup_list_padding_vertical = 8dp
 
     var smallScreen = false
     var isRtl = false
@@ -38,8 +40,7 @@ internal class CouiPopupLocateHelper(
         domain.subMenuAnchor.set(submenuAnchorBounds)
     }
 
-    fun dynamicAnchorTop(mainMenuTranslationY: Float): Int =
-        (submenuAnchorBounds.top - mainMenuTranslationY).toInt()
+    fun dynamicAnchorTop(mainMenuTranslationY: Float): Int = (submenuAnchorBounds.top - mainMenuTranslationY).toInt()
 
     fun subMenuOffsetX(subMenuWidth: Int): Int {
         if (smallScreen) return domain.mainMenu.left
@@ -47,8 +48,11 @@ internal class CouiPopupLocateHelper(
         val available = domain.windowBarriers.takeIf { !it.isEmpty() } ?: domain.window
         if (isRtl) {
             val candidate = relocated.right - horizontalOverlap
-            return if (candidate + subMenuWidth < available.right) candidate
-            else relocated.left + horizontalOverlap - subMenuWidth
+            return if (candidate + subMenuWidth < available.right) {
+                candidate
+            } else {
+                relocated.left + horizontalOverlap - subMenuWidth
+            }
         }
         val candidate = relocated.left + horizontalOverlap - subMenuWidth
         return if (candidate > available.left) candidate else relocated.right - horizontalOverlap
@@ -129,8 +133,6 @@ internal class CouiPopupLocateHelper(
     }
 }
 
-internal fun couiLerp(start: Float, end: Float, fraction: Float): Float =
-    start + (end - start) * fraction.coerceIn(0f, 1f)
+internal fun couiLerp(start: Float, end: Float, fraction: Float): Float = start + (end - start) * fraction.coerceIn(0f, 1f)
 
-internal fun couiClamp(value: Int, minValue: Int, maxValue: Int): Int =
-    max(minValue, min(maxValue, value))
+internal fun couiClamp(value: Int, minValue: Int, maxValue: Int): Int = max(minValue, min(maxValue, value))

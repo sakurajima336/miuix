@@ -1,6 +1,7 @@
+// Copyright 2026, compose-miuix-ui contributors
+// SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.popup
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
@@ -14,10 +15,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.key
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,18 +52,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
+import io.github.wfc35286.coui.kmp.basic.toTextStyle
 import io.github.wfc35286.coui.kmp.motion.CouiSpringData
 import io.github.wfc35286.coui.kmp.motion.toSpringSpec
 import io.github.wfc35286.coui.kmp.theme.CouiTheme
 import io.github.wfc35286.coui.kmp.token.CouiFontSize
 import io.github.wfc35286.coui.kmp.token.CouiTextStyle
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private fun lerp(start: Float, end: Float, fraction: Float): Float = start + (end - start) * fraction
 
@@ -94,8 +96,7 @@ data class CouiPopupListItem(
 
 internal fun List<CouiPopupListItem>.withGroupDividers(): List<CouiPopupListItem> = couiPopupWithGroupDividers(this)
 
-internal fun couiPopupSubMenuItems(parent: CouiPopupListItem, compact: Boolean): List<CouiPopupListItem> =
-    (if (compact) listOf(parent) + parent.subItems else parent.subItems).withGroupDividers()
+internal fun couiPopupSubMenuItems(parent: CouiPopupListItem, compact: Boolean): List<CouiPopupListItem> = (if (compact) listOf(parent) + parent.subItems else parent.subItems).withGroupDividers()
 
 internal fun List<CouiPopupListItem>.displayToDataIndex(): List<Int> {
     val map = ArrayList<Int>(size)
@@ -126,9 +127,9 @@ object CouiPopupListWindowDefaults {
     val ItemContentMinHeight: Dp get() = ItemMinHeight - ItemPaddingVertical * 2
     val HeaderMinHeight: Dp = 32.dp
     val ItemPaddingHorizontal: Dp = 20.dp
-    // Official coui_popup_list_window_item.xml pins paddingStart/End to
-    // coui_popup_list_window_item_icon_margin_left = 20dp for every row; only the
-    // ImageView's GONE/VISIBLE decides whether the icon column is occupied.
+
+    // Row horizontal padding is 20dp whether or not a leading icon is present; only the
+    // icon's visibility decides whether the icon column is occupied.
     val ItemPaddingHorizontalNoIcon: Dp = 20.dp
     val ItemPaddingVertical: Dp = 8.dp
     val ItemIconSize: Dp = 20.dp
@@ -157,11 +158,7 @@ object CouiPopupListWindowDefaults {
     val GroupDividerHeight: Dp = 4.dp
     val GroupDividerTotalHeight: Dp = 12.dp
 
-    /**
-     * `coui_popup_list_window_scrollbar_vertical_padding` = 12dp. `COUITouchListView` passes it as
-     * both `marginTop` and `marginBottom` to `COUIScrollBar.Builder`, so the menu's scrollbar track
-     * is inset 12dp from the panel's top and bottom (the generic defaults are 8dp / 16dp).
-     */
+    /** Vertical inset of the menu's scrollbar track from the panel's top and bottom. */
     val ScrollBarMarginVertical: Dp = 12.dp
     val CheckboxSize: Dp = 24.dp
     val CheckboxMarginEnd: Dp = 18.dp
@@ -235,9 +232,8 @@ fun CouiPopupListWindow(
     val palette = CouiTheme.colors
     val dark = palette.labelPrimary.red > 0.5f
     val textColor = if (dark) Color.White else Color.Black
-    // res/values-night: coui_popup_list_background_color = #ff242424
-    // res/values: coui_popup_list_background_color = #ffffffff
-    // Solid panel colour shown before the blur blends in; #ff333333 read lighter than official.
+    // Solid panel colour shown before the blur blends in: #242424 in dark mode, white in
+    // light mode.
     val fallbackColor = if (dark) Color(0xFF242424) else Color.White
     val textStyle = CouiPopupListWindowDefaults.TextStyle
     val textMeasurer = rememberTextMeasurer()
@@ -264,8 +260,12 @@ fun CouiPopupListWindow(
                     } else {
                         0
                     } +
-                    if (stateSlot) CouiPopupListWindowDefaults.StateIconGap.roundToPx() + CouiPopupListWindowDefaults.CheckboxSize.roundToPx() else 0 +
-                    if (item.hint != null) CouiPopupListWindowDefaults.HintGap.roundToPx() + CouiPopupListWindowDefaults.HintMaxWidth.roundToPx() else 0
+                    if (stateSlot) {
+                        CouiPopupListWindowDefaults.StateIconGap.roundToPx() + CouiPopupListWindowDefaults.CheckboxSize.roundToPx()
+                    } else {
+                        0 +
+                            if (item.hint != null) CouiPopupListWindowDefaults.HintGap.roundToPx() + CouiPopupListWindowDefaults.HintMaxWidth.roundToPx() else 0
+                    }
             }
         } else {
             0
@@ -284,10 +284,9 @@ fun CouiPopupListWindow(
     val subScrollState = remember { ScrollState(0) }
     val subMenuScope = rememberCoroutineScope()
     // Plain holder, not snapshot state: the content lambda parks lambdas here and the gesture
-    // evaluates them at gesture time. Using state made the values freeze at the last
-    // recomposition (and reading them in the body recomposed the menu every frame); while the
-    // open animation runs scale() starts at 0, so a frozen rect degenerates to a point and
-    // every touch was treated as "outside the menu" and dismissed it.
+    // evaluates them at gesture time, so animated bounds are read at their current values
+    // instead of freezing at the last recomposition (and reading them in the body would
+    // recompose the menu every frame).
     val gestureBounds = remember { arrayOfNulls<() -> Rect>(2) }
     val mainPanel = remember { CouiPopupPanelState(touchMotion) }
     val locate = remember { CouiPopupLocateHelper() }
@@ -304,18 +303,16 @@ fun CouiPopupListWindow(
     fun hideSubMenu() {
         menuTransition.hide()
         subTouchMotion.resetTouchOnly()
-        // Official setSubMenuGroupItemActivation(false) releases the locked hover state on both
-        // the main menu row and the sub menu's parent row, so both masks fade out from here.
+        // Fade out the press mask on both the main menu rows and the sub menu's parent row.
         mainPanel.clear()
         subPanel.clear()
     }
     fun showSubMenu(index: Int) {
         if (displayItems.getOrNull(index)?.let { it.enabled && it.subItems.isNotEmpty() } != true) return
-        // Official setSubMenuGroupItemActivation(true) only gives the SUB MENU's parent row
-        // groupState=2 (the shared mask drawable). The main menu row's mask is the touch effect
-        // and fades out on its own, so the mask visibly transfers to the sub menu's parent row -
-        // which is what makes the row's shadow appear to grow into the sub menu. Locking the main
-        // row here as well left two masks on screen at once.
+        // Only the sub menu's parent row keeps a locked highlight while the sub menu is up; the
+        // main menu row's press mask fades out on its own, which is what makes the row's shadow
+        // appear to grow into the sub menu. Locking the main row here as well would leave two
+        // masks on screen at once.
         val press = mainPanel.pressProgress
         mainPanel.clear()
         touchMotion.resetTouchOnly()
@@ -377,11 +374,6 @@ fun CouiPopupListWindow(
     }
     // Predictive back.
     //
-    // The official COUI menu has no back handling of any kind - the whole
-    // `com.coui.appcompat.poplist` package contains no `BackInvokedCallback`, no `KEYCODE_BACK`
-    // path and no `BackEvent` usage (only `COUISecurityAlertDialogBuilder` touches predictive back
-    // anywhere in com.coui). So this is our own adaptation.
-    //
     // It has to be attached to the *popup window's* back dispatcher, not the Activity's: the menu
     // lives in its own window and the system delivers the gesture to the focused window, so a
     // `NavigationBackHandler` on the inherited (Activity) dispatcher never fires. See
@@ -429,11 +421,9 @@ fun CouiPopupListWindow(
         properties = PopupProperties(focusable = true, clippingEnabled = false),
     ) {
         // Must be called *inside* the popup content: `LocalView` then belongs to the popup's own
-        // window, which is the window the system delivers the back gesture to (verified with
-        // `dumpsys window`: the popup is `ty=APPLICATION_SUB_PANEL` and holds `mCurrentFocus`).
-        // Calling it from the parent composition registered on the Activity's window instead and the
-        // gesture never reached us - the menu was closed by the legacy KEYCODE_BACK path, with no
-        // progress at all.
+        // window, which is the window the system delivers the back gesture to. Called from the
+        // parent composition it registers on the Activity's window instead and the gesture never
+        // reaches the popup.
         CouiPopupBackHandler(
             enabled = expanded,
             onProgress = { progress ->
@@ -477,9 +467,8 @@ fun CouiPopupListWindow(
                 subExpanded = menuTransition.opening,
                 subEntered = subEntered,
                 // Read at gesture time, not during composition: these change every frame while
-                // the panel animates, and reading them in the composable body recomposed the whole
-                // menu subtree on every frame (UI animation phase measured 10.5ms vs the
-                // official 4.6ms).
+                // the panel animates, and reading them in the composable body would recompose
+                // the whole menu subtree on every frame.
                 mainBounds = { gestureBounds[0]?.invoke() ?: Rect.Zero },
                 subBounds = { gestureBounds[1]?.invoke() ?: Rect.Zero },
                 onLongPress = { anchor, index -> if (anchor) hideSubMenu() else showSubMenu(index) },
@@ -560,19 +549,24 @@ fun CouiPopupListWindow(
             val childGeometry = rememberUpdatedState<() -> CouiPopupPanelGeometry> {
                 CouiPopupPanelGeometry(
                     scale = menuTransition.subScaleX,
-                    // Official onSubMenuExited removes the whole sub menu view, so the
-                    // background and the rows vanish on the same frame. Compose removal lands
-                    // a frame later; zero the content alpha here so the title cannot outlive
-                    // the material and visibly shift.
+                    // When the sub menu exits, the background and the rows must vanish on the
+                    // same frame. Compose removal lands a frame later; zero the content alpha
+                    // here so the title cannot outlive the material and visibly shift.
                     alpha = if (!menuTransition.visible) 0f else menuTransition.subAlpha,
                     pivot = Offset(menuTransition.subPivotX, menuTransition.subPivotY),
                     translation = Offset(0f, menuTransition.subTranslationY),
-                    reveal = if (!menuTransition.visible) Rect.Zero else if (menuTransition.revealActive) Rect(
-                        0f,
-                        menuTransition.revealTop,
-                        subSize.width.toFloat(),
-                        menuTransition.revealTop + menuTransition.revealHeight,
-                    ) else null,
+                    reveal = if (!menuTransition.visible) {
+                        Rect.Zero
+                    } else if (menuTransition.revealActive) {
+                        Rect(
+                            0f,
+                            menuTransition.revealTop,
+                            subSize.width.toFloat(),
+                            menuTransition.revealTop + menuTransition.revealHeight,
+                        )
+                    } else {
+                        null
+                    },
                     outlineAlpha = menuTransition.outlineAlpha,
                 )
             }
@@ -606,9 +600,9 @@ fun CouiPopupListWindow(
                 if (subMeasuredIndex == subMenuIndex && subSize != IntSize.Zero && anchorKnown) menuTransition.measured()
             }
             val subBounds = Rect(subOffset.x.toFloat(), subOffset.y.toFloat(), (subOffset.x + subSize.width).toFloat(), (subOffset.y + subSize.height).toFloat())
-            // Parked, not computed here: evaluating these in the body read
-            // visual.translation/scaleX/scaleY, which change every animated frame, and
-            // recomposed the whole menu subtree on every frame (measured: 60/60 frames).
+            // Parked, not computed here: evaluating these in the body reads
+            // visual.translation/scaleX/scaleY, which change every animated frame, and would
+            // recompose the whole menu subtree on every frame.
             gestureBounds[0] = { couiPopupTransformedBounds(panelBounds, visual) }
             gestureBounds[1] = { if (subItems.isNotEmpty()) subBounds else Rect.Zero }
             Box(
@@ -649,16 +643,12 @@ fun CouiPopupListWindow(
                         transformOrigin = TransformOrigin.Center
                         // Keep the rows inside one offscreen layer for the whole animation. Without
                         // this the layer is dropped the moment scale/alpha land exactly on their
-                        // resting values, and the text is then rasterised through a different path -
-                        // the sub menu owner's row visibly snapped 1px on that frame (measured in a
-                        // 60fps recording: band top 406 -> 407 and staying there). Android Views
-                        // (the official) always composite through a display list + GPU transform, so
-                        // they never re-rasterise.
+                        // resting values, and the text is then rasterised through a different path,
+                        // which visibly snaps a row by 1px on that frame.
                         compositingStrategy = CompositingStrategy.Offscreen
                     },
-                    // Official onSubMenuStartToExit re-enables the main menu list
-                    // (allowListViewDispatchTouchEvent / allowListViewScroll true) as soon as
-                    // the exit starts, so the user can reverse it before the spring settles.
+                    // Re-enable the main menu list as soon as the sub menu exit starts, so the
+                    // user can reverse it before the spring settles.
                     enabled = expanded && !menuTransition.opening,
                     dark = dark,
                     shape = shape,
@@ -728,12 +718,11 @@ fun CouiPopupListWindow(
                                     this.shape = CouiPopupRevealShape(subShape, subVisual.contentReveal)
                                     clip = true
                                     transformOrigin = TransformOrigin.Center
-                                    // Same reason as the main menu's layer below: keep the rows inside
-                                    // one offscreen layer for the whole animation. Dropping it the
-                                    // moment alpha/scale land exactly on their resting values
-                                    // re-rasterises the text through a different path, which is the
-                                    // "text steps a pixel right after the collapse finishes" the user
-                                    // still saw on the sub menu side.
+                                    // Same reason as the main menu's layer above: keep the rows
+                                    // inside one offscreen layer for the whole animation. Dropping
+                                    // it the moment alpha/scale land exactly on their resting values
+                                    // re-rasterises the text through a different path, which steps
+                                    // the text a pixel right after the collapse finishes.
                                     compositingStrategy = CompositingStrategy.Offscreen
                                 },
                         )
@@ -744,13 +733,10 @@ fun CouiPopupListWindow(
     }
 }
 
-// The official panel surface is `RoundFrameLayout`, which gives its root an opaque material
-// background (`setClipMode(1)` -> `setBackgroundColor(-1)`) and only then replaces it with the
-// background blur drawable (`COUIBackgroundBlurBuilder.applyBlurBackground()` ->
-// `View.setBackground(blurDrawable)`). The framework drawable emits nothing for its first frames,
-// so this Compose base paints the same material colour underneath until
-// `CouiPopupVisualState.materialLive` reports that the platform material has produced a frame;
-// from then on the base is gone and the panel is exactly the platform material.
+// The panel surface paints an opaque material colour first and only then swaps in the background
+// blur. The blur emits nothing for its first frames, so this base paints the material colour
+// underneath until `CouiPopupVisualState.materialLive` reports that the platform material has
+// produced a frame; from then on the base is gone and the panel is exactly the platform material.
 
 @Composable
 private fun BoxScope.CouiPopupPanelBase(

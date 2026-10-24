@@ -1,8 +1,7 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.basic
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.foundation.Canvas
@@ -40,49 +39,42 @@ import io.github.wfc35286.coui.kmp.motion.toSpringSpec
 import io.github.wfc35286.coui.kmp.shape.couiCapsulePath
 import io.github.wfc35286.coui.kmp.shape.createCouiCapsuleShader
 import io.github.wfc35286.coui.kmp.theme.CouiTheme
-import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlinx.coroutines.launch
+
 
 /**
  * Defaults for [CouiSwitch].
  *
- * The geometry is what `COUISwitch.onMeasure` computes: it extends `SwitchCompat` and sizes
- * itself as `switchMinWidth x barHeight` plus `2 * coui_switch_padding`, where
- * `coui_switch_padding` is 0dp and the other two come from `COUISwitchStyle`
- * (`@dimen/bar_width` = 44dp, `@dimen/bar_height` = 24dp).
+ * The track is 44 x 24dp with no extra inner padding between the track and the thumb.
  */
 object CouiSwitchDefaults {
-    /** `bar_width` - the full track width. */
+    /** The full track width. */
     val Width: Dp = 44.dp
 
-    /** `bar_height` - the full track height. */
+    /** The full track height. */
     val Height: Dp = 24.dp
 
-    /** `outer_circle_width` - the thumb diameter. */
+    /** The thumb diameter. */
     val ThumbSize: Dp = 18.dp
 
-    /** `circle_padding` - the gap between the thumb and the track edge. */
+    /** The gap between the thumb and the track edge. */
     val ThumbPadding: Dp = 3.dp
 
-    /**
-     * `COUISwitchParams.toggleSpring` - `(bounce 0.3, response 0.4)` - with the minimum visible
-     * change of 0.1 that `COUISwitch.animateWhenStateChanged` passes.
-     */
+    /** The toggle spring, with a minimum visible change of `0.1`. */
     val ToggleSpec: SpringSpec<Float> = CouiComponentSprings.SwitchToggle
         .toSpringSpec(CouiComponentSprings.SwitchToggleMinVisibleChange)
 
     /**
      * The toggle spring with its minimum visible change converted to a fraction of the travel.
      *
-     * `COUISwitch.initToggleSpringAnim` calls `setMinimumVisibleChange(0.1f)` on an animator whose
-     * value is `circleTranslation` **in pixels**, so 0.1 means a tenth of a pixel. Our animated
-     * quantity is a normalised `0..1` fraction, so the threshold has to be divided by the travel
-     * in pixels. Passing 0.1 straight through tells Compose to stop once it is within 10% of the
-     * target, which cuts the spring's overshoot short - and with it the thumb-stretch deformation
-     * that only happens while the spring is in flight.
+     * The spring's minimum visible change is expressed in pixels, while the animated quantity
+     * is a normalised `0..1` fraction, so the threshold has to be divided by the travel in
+     * pixels. Passing `0.1` straight through would stop the animation once it is within 10% of
+     * the target, cutting the spring's overshoot short - and with it the thumb-stretch
+     * deformation that only happens while the spring is in flight.
      *
-     * @param travelPx The thumb's travel in pixels (`switchMinWidth - 2 * circlePadding -
-     *   outerCircleWidth`, i.e. `mDefaultTranslation`).
+     * @param travelPx The thumb's travel in pixels.
      */
     fun toggleSpec(travelPx: Float): SpringSpec<Float> = CouiComponentSprings.SwitchToggle
         .toSpringSpec(CouiComponentSprings.SwitchToggleMinVisibleChange / travelPx.coerceAtLeast(1f))
@@ -90,21 +82,17 @@ object CouiSwitchDefaults {
     /**
      * The drag spring, with the same pixel-to-fraction conversion applied.
      *
-     * `COUISpringDragHelper` leaves the minimum visible change at `COUIDynamicAnimation`'s default
-     * of `MIN_VISIBLE_CHANGE_PIXELS` (1.0px), again on a pixel-valued animator.
-     *
      * @param travelPx The thumb's travel in pixels.
      */
     fun dragSpec(travelPx: Float): SpringSpec<Float> = CouiComponentSprings.SwitchDrag
         .toSpringSpec(CouiMinVisibleChange.Pixels / travelPx.coerceAtLeast(1f))
 
     /**
-     * The spring a drag release snaps to its anchor with, converted from pixels to a fraction.
+     * The spring a drag release snaps to its anchor with.
      *
-     * `COUISpringDragHelper.dragTo(x, y, isAttach = true)` swaps in `responseAttach` /
-     * `bounceAttach` (0.4 / 0.2) before animating to the anchor. It is bouncier than
-     * [dragSpec], which is where the release overshoot comes from - but the overshoot is
-     * rendered **without** deformation, because the drag callback never writes `mCircleScaleX`.
+     * Bouncier than [dragSpec], which is where the release overshoot comes from - but the
+     * overshoot is rendered **without** deformation, because the drag callback does not stretch
+     * the thumb.
      *
      * @param travelPx The thumb's travel in pixels.
      */
@@ -114,9 +102,8 @@ object CouiSwitchDefaults {
     /**
      * The track colour at one end of the travel.
      *
-     * On and off come from different places in the real implementation: the "on" colour is the
-     * theme's `couiColorPrimary`, while the "off" colours are the switch's own resources
-     * (`switch_unchecked_bar_color` and `switch_unchecked_inner_circle_disabled_color`).
+     * The checked colour is the theme's primary; the unchecked and disabled colours come from
+     * the switch's own component palette.
      */
     @Composable
     fun trackColorAt(
@@ -136,14 +123,9 @@ object CouiSwitchDefaults {
     /**
      * The track colour mid-animation.
      *
-     * This is `ColorUtils.blendARGB(mBarUnCheckedColor, mBarCheckedColor, fraction)` from
-     * `COUISwitch$2.setValue` - the track **cross-fades with the thumb's spring**, it does not
-     * snap when the state flips. `setBarColor` itself is only a field write plus `invalidate()`,
-     * so the interpolation has to happen in the animator's callback, which is exactly where the
-     * original puts it.
+     * The track **cross-fades with the thumb's spring**; it does not snap when the state flips.
      *
-     * @param fraction The normalised travel, clamped to `0..1`. The original clamps for the
-     *   colour and the inner-circle alpha even though it does *not* clamp for the stretch.
+     * @param fraction The normalised travel, clamped to `0..1`.
      */
     @Composable
     fun trackColor(
@@ -155,11 +137,7 @@ object CouiSwitchDefaults {
         fraction = fraction.coerceIn(0f, 1f),
     )
 
-    /**
-     * The thumb colour for the given state.
-     *
-     * `switch_outer_circle_color` / `switch_outer_circle_disable_color`.
-     */
+    /** The thumb colour for the given state. */
     @Composable
     fun thumbColor(
         checked: Boolean,
@@ -204,25 +182,22 @@ fun CouiSwitch(
     // would appear dead until the row was tapped instead.
     val currentChecked by rememberUpdatedState(checked)
 
-    // The attach-animation flag, mirroring `mIsAttachAnimRunning`. While a drag release is
-    // snapping to its anchor the stretch must stay off: `COUISwitch$3.onSizeChange`, the drag
-    // callback, never touches `setCircleScaleX`, so the official release shows **no** trailing
-    // deformation even though the thumb does overshoot.
+    // The attach-animation flag. While a drag release is snapping to its anchor the stretch
+    // must stay off: the release overshoots but shows no trailing deformation.
     var attachAnimating by remember { mutableStateOf(false) }
 
     val thumbPx = with(LocalDensity.current) { CouiSwitchDefaults.ThumbSize.toPx() }
     val paddingPx = with(LocalDensity.current) { CouiSwitchDefaults.ThumbPadding.toPx() }
 
-    // `mDefaultTranslation`: how far the thumb centre can travel, in pixels. The real class
-    // computes it as `max(switchMinWidth - circlePadding - outerCircleWidth, 0)`, which for the
-    // 44x24dp track is the same span the drag handler uses. Both springs' minimum visible changes
-    // are expressed in these pixels, so everything else is derived from it.
+    // How far the thumb centre can travel, in pixels: track width minus two thumb paddings and
+    // the thumb size. Both springs' minimum visible changes are expressed in these pixels, so
+    // everything else is derived from it.
     val travelPx = (trackWidth - 2 * paddingPx - thumbPx).coerceAtLeast(1f)
 
     // The single animation driver: every path (tap, external change, drag release) ends up here,
     // always targeting `checked`. The drag release selects the bouncier attach spring via
     // `attachAnimating`; a second coroutine would race this one and could leave the thumb
-    // stranded away from `checked` (observed as "switch stuck off until the row was tapped").
+    // stranded away from `checked`.
     LaunchedEffect(checked, dragging, travelPx) {
         if (!dragging) {
             fraction.animateTo(
@@ -271,11 +246,10 @@ fun CouiSwitch(
                         dragging = true
                     },
                     onDragEnd = {
-                        // `handleActionUp` + `springDrag(UP)`: snap to the nearest anchor with the
-                        // attach spring (0.4 / 0.2) and no deformation. The LaunchedEffect below is
-                        // the single animation driver; setting `attachAnimating` here just swaps
-                        // the spring it uses. The state flips immediately (`onCheckedChange`),
-                        // matching `setChecked(fromUser = true)` in the original.
+                        // Snap to the nearest anchor with the attach spring and no deformation.
+                        // The LaunchedEffect below is the single animation driver; setting
+                        // `attachAnimating` here just swaps the spring it uses. The state flips
+                        // immediately.
                         dragging = false
                         attachAnimating = true
                         haptics.granularShort()
@@ -283,7 +257,7 @@ fun CouiSwitch(
                     },
                     onDragCancel = { dragging = false },
                     onHorizontalDrag = { change, _ ->
-                        // `COUISpringDragHelper.dragTo` ignores movement inside a 4px dead zone.
+                        // Ignore movement inside a 4px dead zone.
                         if (abs(change.position.x - downX) >= CouiComponentSprings.SwitchTransformDistance) {
                             val target = targetAt(change.position.x)
                             scope.launch {
@@ -296,16 +270,14 @@ fun CouiSwitch(
             .pointerInput(enabled) {
                 if (!enabled) return@pointerInput
                 detectTapGestures(onTap = {
-                    // `handleClickToggle` → setChecked(fromUser = true) → performFeedBack().
+                    // Toggle the state and fire the tap haptic.
                     haptics.granularShort()
                     onCheckedChange(!currentChecked)
                 })
             },
     ) {
-        // COUISwitch.initOutLine -> COUISwitch$1 -> OplusOutlineAdapter(style=1).
-        // On C17's material branch the GradientDrawable has radius=0; the RenderNode's
-        // full-round G2 outline shapes the track. Its weight=1 selects libhwui sdCapsule.
-        // See COUI-Switch圆角调用链.md for smali and hardware-rendered comparisons.
+        // The track is a full-round capsule: use the shader brush when available, otherwise the
+        // capsule path.
         if (capsuleShader != null) {
             drawRect(brush = capsuleShader.brush(size, trackColor))
         } else {
@@ -318,8 +290,7 @@ fun CouiSwitch(
         val endCenterX = size.width - paddingPx - thumbHeight / 2f
         val centerX = startCenterX + (endCenterX - startCenterX) * travel
 
-        // drawOuterCircle itself uses ordinary roundRect geometry. The View's smooth
-        // outline clips all content, including the thumb when the spring overshoots.
+        // The track path clips all content, including the thumb when the spring overshoots.
 
         val thumbLeft = centerX - thumbWidth / 2f
         val thumbTop = size.height / 2f - thumbHeight / 2f

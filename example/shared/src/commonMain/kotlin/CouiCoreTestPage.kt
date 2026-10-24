@@ -1,6 +1,13 @@
 // Copyright 2026, COUI contributors
 // SPDX-License-Identifier: Apache-2.0
 
+
+/**
+ * A component gallery with neutral placeholder content.
+ *
+ * Switch, list, menu and slider variants expose only local demo state. The
+ * page uses **nothing from Miuix** - every colour, radius and spring comes from `coui-core`.
+ */
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -38,45 +45,38 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import component.CouiBlurSection
-import io.github.wfc35286.coui.kmp.component.CouiBottomFloatingBar
-import io.github.wfc35286.coui.kmp.component.CouiBottomFloatingNavigationBar
-import io.github.wfc35286.coui.kmp.component.couiBackdrop
-import io.github.wfc35286.coui.kmp.component.rememberCouiBackdrop
-import io.github.wfc35286.coui.kmp.component.CouiBottomFloatingNavigationBarDefaults
-import io.github.wfc35286.coui.kmp.component.CouiBottomFloatingNavigationBarItem
-import io.github.wfc35286.coui.kmp.component.CouiButton
-import io.github.wfc35286.coui.kmp.component.CouiButtonSize
-import io.github.wfc35286.coui.kmp.component.CouiButtonType
-import io.github.wfc35286.coui.kmp.component.CouiCard
-import io.github.wfc35286.coui.kmp.component.CouiCardDefaults
-import io.github.wfc35286.coui.kmp.component.CouiMenuPreference
-import io.github.wfc35286.coui.kmp.component.CouiPopupItemType
-import io.github.wfc35286.coui.kmp.component.CouiPopupListItem
-import io.github.wfc35286.coui.kmp.component.CouiPopupListWindow
-import io.github.wfc35286.coui.kmp.component.CouiPreferenceDefaults
-import io.github.wfc35286.coui.kmp.component.CouiPreferenceItem
-import io.github.wfc35286.coui.kmp.component.CouiPreferencePosition
-import io.github.wfc35286.coui.kmp.component.CouiRedDotType
-import io.github.wfc35286.coui.kmp.component.CouiSectionSeekBar
-import io.github.wfc35286.coui.kmp.component.CouiSeekBar
-import io.github.wfc35286.coui.kmp.component.CouiSeekBarDefaults
-import io.github.wfc35286.coui.kmp.component.CouiSeekBarMoveType
-import io.github.wfc35286.coui.kmp.component.CouiSmallTitle
-import io.github.wfc35286.coui.kmp.component.CouiStatusBarToggleSlider
-import io.github.wfc35286.coui.kmp.component.CouiSwitch
-import io.github.wfc35286.coui.kmp.component.CouiText
-import io.github.wfc35286.coui.kmp.effect.CouiSpotLightDefaults
-import io.github.wfc35286.coui.kmp.effect.couiSpotLight
+import io.github.wfc35286.coui.kmp.basic.CouiBottomFloatingBar
+import io.github.wfc35286.coui.kmp.basic.CouiBottomFloatingNavigationBar
+import io.github.wfc35286.coui.kmp.basic.CouiBottomFloatingNavigationBarDefaults
+import io.github.wfc35286.coui.kmp.basic.CouiBottomFloatingNavigationBarItem
+import io.github.wfc35286.coui.kmp.basic.CouiButton
+import io.github.wfc35286.coui.kmp.basic.CouiButtonSize
+import io.github.wfc35286.coui.kmp.basic.CouiButtonType
+import io.github.wfc35286.coui.kmp.basic.CouiCard
+import io.github.wfc35286.coui.kmp.basic.CouiCardDefaults
+import io.github.wfc35286.coui.kmp.basic.CouiRedDotType
+import io.github.wfc35286.coui.kmp.basic.CouiSectionSeekBar
+import io.github.wfc35286.coui.kmp.basic.CouiSeekBar
+import io.github.wfc35286.coui.kmp.basic.CouiSeekBarDefaults
+import io.github.wfc35286.coui.kmp.basic.CouiSeekBarMoveType
+import io.github.wfc35286.coui.kmp.basic.CouiSmallTitle
+import io.github.wfc35286.coui.kmp.basic.CouiStatusBarToggleSlider
+import io.github.wfc35286.coui.kmp.basic.CouiSwitch
+import io.github.wfc35286.coui.kmp.basic.CouiText
+import io.github.wfc35286.coui.kmp.graphics.CouiSpotLightDefaults
+import io.github.wfc35286.coui.kmp.graphics.couiBackdrop
+import io.github.wfc35286.coui.kmp.graphics.couiSpotLight
+import io.github.wfc35286.coui.kmp.graphics.rememberCouiBackdrop
+import io.github.wfc35286.coui.kmp.popup.CouiPopupItemType
+import io.github.wfc35286.coui.kmp.popup.CouiPopupListItem
+import io.github.wfc35286.coui.kmp.popup.CouiPopupListWindow
+import io.github.wfc35286.coui.kmp.preference.CouiMenuPreference
+import io.github.wfc35286.coui.kmp.preference.CouiPreferenceDefaults
+import io.github.wfc35286.coui.kmp.preference.CouiPreferenceItem
+import io.github.wfc35286.coui.kmp.preference.CouiPreferencePosition
 import io.github.wfc35286.coui.kmp.theme.CouiTheme
 import io.github.wfc35286.coui.kmp.token.CouiTextEmphasis
 import io.github.wfc35286.coui.kmp.token.CouiTypography
-
-/**
- * A component gallery with neutral placeholder content.
- *
- * Switch, list, menu and slider variants expose only local demo state. The
- * page uses **nothing from Miuix** - every colour, radius and spring comes from `coui-core`.
- */
 @Composable
 fun CouiCoreTestPage(
     padding: PaddingValues,

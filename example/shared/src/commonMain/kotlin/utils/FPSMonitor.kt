@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package utils
-
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -33,10 +32,11 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.squircle.squircleBackground
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import kotlin.math.roundToInt
+
 
 /**
  * Frame timing overlay that shows the average FPS and the 1% low FPS over a

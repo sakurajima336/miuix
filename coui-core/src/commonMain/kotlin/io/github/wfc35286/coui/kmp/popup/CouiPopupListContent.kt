@@ -1,6 +1,7 @@
+// Copyright 2026, compose-miuix-ui contributors
+// SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.popup
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
@@ -39,10 +40,12 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
-
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import io.github.wfc35286.coui.kmp.basic.CouiScrollBar
+import io.github.wfc35286.coui.kmp.basic.toTextStyle
+import io.github.wfc35286.coui.kmp.token.CouiTextStyle
 
 @Composable
 internal fun CouiPopupListContent(
@@ -84,10 +87,9 @@ internal fun CouiPopupListContent(
         Canvas(Modifier.matchParentSize()) {
             if (panelState.initialized && panelState.pressProgress > 0f) {
                 val rect = panelState.maskRect
-                // margin = coui_popup_list_window_mask_margin_horizontal (8dp), rect = (margin, 0,
-                // w - margin, h). The dimen radius (28dp) with weight 3 rendered visibly squarer
-                // than the official on a row that is shorter than 2*radius, so the capsule form is
-                // kept for single line rows.
+                // The press mask is inset by an 8dp horizontal margin. On single line rows
+                // (shorter than twice the multi-line radius) a fixed radius reads visibly
+                // squarer, so those rows keep the full capsule form instead.
                 val margin = 8.dp.toPx()
                 val inset = Rect(rect.left + margin, rect.top, rect.right - margin, rect.bottom)
                 val radius = if (panelState.singleLine) inset.height / 2f else CouiPopupListWindowDefaults.MaskRadiusVerticalMultiLine.roundToPx().toFloat()
@@ -240,11 +242,10 @@ internal fun CouiPopupListContent(
         if (scrollState != null && showScrollBar) {
             // The bar must NOT contribute to this Box's size: the menu wraps its content, and a
             // child with `fillMaxHeight` would force the Box up to its maximum constraint (which
-            // pushed the sub menu panel down and hid the bar). `matchParentSize` overlays it on the
-            // already measured content instead, exactly like the official's `dispatchDrawOver`.
+            // pushed the sub menu panel down and hid the bar). `matchParentSize` overlays it on
+            // the already measured content instead.
             Box(Modifier.matchParentSize(), contentAlignment = Alignment.CenterEnd) {
-                // COUITouchListView.createCOUIScrollDelegate: marginTop = marginBottom =
-                // coui_popup_list_window_scrollbar_vertical_padding (12dp).
+                // The scroll bar sits 12dp in from the top and bottom of the panel.
                 CouiScrollBar(
                     state = scrollState,
                     dark = dark,

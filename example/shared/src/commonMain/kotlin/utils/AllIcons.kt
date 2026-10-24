@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package utils
-
 import androidx.compose.ui.graphics.vector.ImageVector
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Add
@@ -161,6 +160,7 @@ import top.yukonga.miuix.kmp.icon.extended.Weeks
 import top.yukonga.miuix.kmp.icon.extended.WorldClock
 import top.yukonga.miuix.kmp.icon.extended.Years
 import top.yukonga.miuix.kmp.icon.extended.ZoomOut
+
 
 val MiuixIcons.All: Map<String, List<ImageVector>>
     get() = mapOf(

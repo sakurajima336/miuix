@@ -1,7 +1,6 @@
 // Copyright 2026, COUI contributors
 // SPDX-License-Identifier: Apache-2.0
 package component
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,16 +31,17 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import io.github.wfc35286.coui.kmp.component.CouiBottomFloatingNavigationBar
-import io.github.wfc35286.coui.kmp.component.CouiBottomFloatingNavigationBarDefaults
-import io.github.wfc35286.coui.kmp.component.CouiBottomFloatingNavigationBarItem
-import io.github.wfc35286.coui.kmp.component.CouiRedDotType
-import io.github.wfc35286.coui.kmp.component.CouiText
-import io.github.wfc35286.coui.kmp.component.couiBackdrop
-import io.github.wfc35286.coui.kmp.component.rememberCouiBackdrop
+import androidx.compose.ui.unit.dp as iconDp
+import io.github.wfc35286.coui.kmp.basic.CouiBottomFloatingNavigationBar
+import io.github.wfc35286.coui.kmp.basic.CouiBottomFloatingNavigationBarDefaults
+import io.github.wfc35286.coui.kmp.basic.CouiBottomFloatingNavigationBarItem
+import io.github.wfc35286.coui.kmp.basic.CouiRedDotType
+import io.github.wfc35286.coui.kmp.basic.CouiText
+import io.github.wfc35286.coui.kmp.graphics.couiBackdrop
+import io.github.wfc35286.coui.kmp.graphics.rememberCouiBackdrop
 import io.github.wfc35286.coui.kmp.theme.CouiTheme
 import io.github.wfc35286.coui.kmp.token.CouiTypography
-import androidx.compose.ui.unit.dp as iconDp
+
 
 /** A neutral placeholder glyph (rounded square), so the probe does not depend on the gallery icons. */
 private val CouiProbeIcon: ImageVector by lazy {

@@ -1,8 +1,7 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package io.github.wfc35286.coui.kmp.shape
-
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
@@ -13,24 +12,19 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlin.math.min
 
+
 /*
- * ColorOS's rounded-rectangle geometry, for radii below half the short side.
+ * COUI rounded-rectangle geometry, for radii below half the short side.
  *
- * This is `COUIShapePath.getRoundRectPath(Path, RectF, float, Z, Z, Z, Z)`: a table of cubic
- * Béziers built on the CPU with no native call, which is what makes it reproducible here.
+ * A table of cubic Béziers evaluated on the CPU, with no native call.
  *
  * ## Which corner routine to use
  *
  * * **radius < half the short side** - this one ([couiRoundRect]).
  * * **radius >= half the short side (a pill)** - [couiCapsulePath] / [createCouiCapsuleShader].
- *   libhwui's `g2RoundRectMask` switches to `sdCapsule` at exactly that point, so this table
- *   does not describe a pill. COUI's buttons, chips and seek bar tracks are all pills
- *   (radius = height / 2).
+ *   A pill drawn from this table is the wrong shape; COUI's buttons, chips and seek bar tracks
+ *   are all pills (radius = height / 2).
  * * **cards** - [couiCardPath], a 2.5-exponent Lp norm, yet another routine.
- *
- * A widget only reaches this table when it is *not* on the smooth-round branch: with
- * `couiRoundType = smooth` on ColorOS 16+, `updateRoundRectPath`-style callers use
- * `getSmoothRoundRectPath` (the GPU superellipse) instead, and this is the fallback.
  *
  * ## The geometry
  *
@@ -46,18 +40,13 @@ import kotlin.math.min
  * `A` multiplies the *far* span `128.19·s` (where the straight edge stops), `C` multiplies the
  * *near* span `83.62·s` (the control point closest to the corner). The straight-edge endpoints
  * are clamped with `min(halfExtent, value)`; the cubic control points are **not** clamped.
- *
- * Verified on a real device by rendering the official path and this one into bitmaps and
- * comparing pixel by pixel: identical for every tested combination, including `radius == 0`,
- * `radius >= halfExtent`, non-square rects and 16x16 px shapes.
  */
 
 /**
- * `COUIShapePath`'s control-point table, in units of `radius / 100`.
+ * The control-point table of the corner curve, in units of `radius / 100`.
  *
  * `128.19` is where the straight edge ends, `83.62` is the outermost control point of the
- * corner, and the rest walk around the quarter turn. They are literal constants in the
- * decompiled `cubicTo` sequence - not derived from an arc approximation.
+ * corner, and the rest walk around the quarter turn.
  */
 private val TABLE = floatArrayOf(
     128.19f, // [0] far span (straight edge end)
@@ -70,17 +59,14 @@ private val TABLE = floatArrayOf(
     4.64f, // [7] last control point before the edge
 )
 
-/** `0x3e0e1bf0` - the shrink factor applied to the far span. */
+/** The shrink factor applied to the far span. */
 private const val SHRINK = 0.1387784f
 
-/** `0x3d2de440` - the expand factor applied to the near span. */
+/** The expand factor applied to the near span. */
 private const val EXPAND = 0.0424540f
 
 /**
  * Appends a COUI rounded rectangle to this [Path].
- *
- * The result is bit-identical to
- * `COUIShapePath.getRoundRectPath(path, rect, radius)` on ColorOS 17.
  *
  * @param left Left edge, in pixels.
  * @param top Top edge, in pixels.
@@ -102,8 +88,8 @@ fun Path.couiRoundRect(
     val halfH = h / 2f
     val m = min(halfW, halfH)
 
-    // u = radius / min(halfW, halfH). ColorOS uses the *half* extents here, not the full
-    // ones, so a radius of half the short side is already u = 1.
+    // u = radius / min(halfW, halfH) - the *half* extents, so a radius of half the short side
+    // is already u = 1.
     val u = if (m != 0f) radius / m else 0f
 
     val a = if (u > 0.5f) 1f - min(1f, (u - 0.5f) / 0.4f) * SHRINK else 1f
@@ -159,8 +145,8 @@ fun Path.couiRoundRect(
  * The corner geometry for [radius], routed to whichever routine owns that radius: the capsule
  * once it reaches half the shorter side, the cubic table below that.
  *
- * libhwui switches masks at exactly that point, so this is not a stylistic choice - a pill drawn
- * from the table is the wrong shape.
+ * A pill drawn from the table is the wrong shape, so this routing is a hard requirement, not a
+ * stylistic choice.
  */
 private fun couiShapePath(size: Size, radius: Float): Path {
     val half = min(size.width, size.height) / 2f
@@ -174,7 +160,7 @@ private fun couiShapePath(size: Size, radius: Float): Path {
 /**
  * A COUI rounded rectangle as a Compose [Shape].
  *
- * Drop-in replacement for `RoundedCornerShape` that produces ColorOS's actual corner geometry
+ * Drop-in replacement for `RoundedCornerShape` that draws the COUI corner geometry
  * (see [couiRoundRect] for the maths and for which routine owns which radius).
  *
  * @param corner The corner radius, applied to all four corners.

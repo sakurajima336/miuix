@@ -1,9 +1,12 @@
-package io.github.wfc35286.coui.kmp.component
+// Copyright 2026, compose-miuix-ui contributors
+// SPDX-License-Identifier: Apache-2.0
 
+package io.github.wfc35286.coui.kmp.popup
 import androidx.compose.ui.geometry.Rect
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+
 
 /**
  * Official `COUIPopupListWindow.triggerShowSubMenu` (COUIPopupListWindow.smali:3321-3378) reads the

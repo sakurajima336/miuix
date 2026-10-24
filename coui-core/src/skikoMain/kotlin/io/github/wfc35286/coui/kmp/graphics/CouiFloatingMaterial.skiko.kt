@@ -1,21 +1,21 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.graphics
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
+
 
 /**
  * The caustic glow for the flat fallback panel.
@@ -42,14 +42,14 @@ private fun DrawScope.drawCouiCausticGlow(density: Float) {
     val edge = ((h - top) / (end - top)).coerceIn(0.01f, 0.99f)
     drawRoundRect(
         brush =
-            Brush.verticalGradient(
-                0f to Color.Transparent,
-                edge * 0.5f to peak.copy(alpha = peak.alpha * 0.35f),
-                edge to peak,
-                1f to Color.Transparent,
-                startY = top,
-                endY = end,
-            ),
+        Brush.verticalGradient(
+            0f to Color.Transparent,
+            edge * 0.5f to peak.copy(alpha = peak.alpha * 0.35f),
+            edge to peak,
+            1f to Color.Transparent,
+            startY = top,
+            endY = end,
+        ),
         topLeft = Offset(0f, top),
         size = Size(w, end - top),
         cornerRadius = CornerRadius(radius),

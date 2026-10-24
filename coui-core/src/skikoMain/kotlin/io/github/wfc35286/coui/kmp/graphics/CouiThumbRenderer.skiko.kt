@@ -1,8 +1,7 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.graphics
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Canvas
@@ -11,16 +10,17 @@ import androidx.compose.ui.graphics.LinearGradientShader
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.skiaCanvas
 import androidx.compose.ui.graphics.toArgb
+import kotlin.math.ceil
 import org.jetbrains.skia.FilterBlurMode
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.MaskFilter
+import org.jetbrains.skia.Paint as SkiaPaint
 import org.jetbrains.skia.PaintMode
 import org.jetbrains.skia.RRect
+import org.jetbrains.skia.Rect as SkiaRect
 import org.jetbrains.skia.SamplingMode
 import org.jetbrains.skia.Surface
-import kotlin.math.ceil
-import org.jetbrains.skia.Paint as SkiaPaint
-import org.jetbrains.skia.Rect as SkiaRect
+
 
 /** Skia equivalent of the Android bitmap, blurred stroke and isolated A+B group. */
 internal actual class CouiThumbRenderer actual constructor() {

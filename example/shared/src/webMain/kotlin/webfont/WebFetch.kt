@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package webfont
-
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.js.ExperimentalWasmJsInterop
+import kotlinx.coroutines.suspendCancellableCoroutine
+
 
 @OptIn(ExperimentalWasmJsInterop::class)
 @JsFun(

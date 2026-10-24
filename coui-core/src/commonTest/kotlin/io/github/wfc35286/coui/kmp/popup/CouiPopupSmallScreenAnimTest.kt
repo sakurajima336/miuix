@@ -1,9 +1,11 @@
+// Copyright 2026, compose-miuix-ui contributors
+// SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.popup
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+
 
 class CouiPopupSmallScreenAnimTest {
 
@@ -21,8 +23,8 @@ class CouiPopupSmallScreenAnimTest {
     @Test
     fun `reveal window starts one row tall and ends full height`() {
         val (h, c) = fixture()
-        h.domain.mainMenu.set(0, 100, 400, 900)      // 800 tall
-        h.domain.subMenu.set(0, 400, 400, 1000)      // 600 tall
+        h.domain.mainMenu.set(0, 100, 400, 900) // 800 tall
+        h.domain.subMenu.set(0, 400, 400, 1000) // 600 tall
         h.setAnchorRow(rowTopInList = 2 * 120, rowHeight = 120, scrollY = 0)
         c.configSubMenuAnimationPropertiesForSubMenuEnter()
         assertEquals(8, c.subMenuClippedTopStart)
@@ -82,8 +84,8 @@ class CouiPopupSmallScreenAnimTest {
     @Test
     fun `main menu target translation keeps the twelve dp gap`() {
         val (h, c) = fixture()
-        h.domain.mainMenu.set(0, 100, 400, 900)      // top 100
-        h.domain.subMenu.set(0, 400, 400, 1000)      // top 400
+        h.domain.mainMenu.set(0, 100, 400, 900) // top 100
+        h.domain.subMenu.set(0, 400, 400, 1000) // top 400
         c.setSubMenuView()
         assertEquals(0f, c.computeMainMenuTargetTranslationY())
     }
@@ -140,7 +142,7 @@ class CouiPopupSmallScreenAnimTest {
     fun `menu scale comes from the relocated ratio`() {
         val (h, c) = fixture()
         h.domain.mainMenu.set(0, 0, 400, 800)
-        h.domain.mainMenuRelocated.set(0, 0, 360, 800)   // 400 -> 360, ratio 0.9
+        h.domain.mainMenuRelocated.set(0, 0, 360, 800) // 400 -> 360, ratio 0.9
         c.configMainMenuAnimationPropertiesForSubMenuEnter()
         assertEquals(0.3f, c.mainMenuAlphaPercent)
         assertEquals(0.9f, c.mainMenuScalePercent, 0.0001f)
@@ -151,13 +153,13 @@ class CouiPopupSmallScreenAnimTest {
         val (h, c) = fixture()
         h.domain.mainMenu.set(0, 0, 400, 800)
 
-        h.domain.mainMenuRelocated.set(0, 0, 360, 800)          // left unchanged
+        h.domain.mainMenuRelocated.set(0, 0, 360, 800) // left unchanged
         assertEquals(0, c.mainMenuEnterPivotX())
 
-        h.domain.mainMenuRelocated.set(40, 0, 400, 800)         // right unchanged
+        h.domain.mainMenuRelocated.set(40, 0, 400, 800) // right unchanged
         assertEquals(400, c.mainMenuEnterPivotX())
 
-        h.domain.mainMenuRelocated.set(20, 0, 380, 800)         // both moved
+        h.domain.mainMenuRelocated.set(20, 0, 380, 800) // both moved
         assertEquals(200, c.mainMenuEnterPivotX())
 
         assertEquals(0, c.mainMenuEnterPivotY())

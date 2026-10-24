@@ -1,8 +1,7 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package io.github.wfc35286.coui.kmp.shape
-
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -21,10 +20,12 @@ import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sin
 
+
 /**
- * COUICardListSelectedItemLayout on C17: XL normal 16_1 radius, OplusPathAdapter style 1,
- * explicit weight 2.5. HWUI uses the Lp rounded rectangle, not COUIShapePath's cubic table.
- * The radius is rounded to integer pixels, matching Resources.getDimensionPixelSize.
+ * A [Shape] that renders card corners with a superellipse-style profile.
+ *
+ * The corner curve uses a weighted exponent of 2.5 instead of a circular arc, giving the corners
+ * a slightly fuller look, and the radius is rounded to whole pixels before use.
  */
 @Immutable
 class CouiCardShape(val cornerRadius: Dp = 24.dp) : Shape {
@@ -55,8 +56,9 @@ internal fun couiCardPath(size: Size, radius: Float): Path {
     return path
 }
 
-// sdRoundRect / lpNorm and g2RoundRectMask from the device's libhwui.so. Finite differences
-// replace fwidth, which RuntimeShader cannot expose. GPU oracle: <= 2/255 alpha at full corners.
+// GPU approximation of the same weighted-corner profile as [couiCardPath]. Finite differences
+// replace fwidth, which RuntimeShader cannot expose; coverage stays within 2/255 alpha of the
+// CPU outline at full corners.
 internal const val COUI_CARD_SHADER_SOURCE = """
     uniform float2 halfSize;
     uniform float radius;

@@ -1,10 +1,12 @@
+// Copyright 2026, compose-miuix-ui contributors
+// SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.popup
 import androidx.compose.ui.geometry.Rect
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+
 
 internal class CouiPopupRect(
     var left: Int = 0,
@@ -13,13 +15,19 @@ internal class CouiPopupRect(
     var bottom: Int = 0,
 ) {
     fun set(l: Int, t: Int, r: Int, b: Int) {
-        left = l; top = t; right = r; bottom = b
+        left = l
+        top = t
+        right = r
+        bottom = b
     }
 
     fun set(other: CouiPopupRect) = set(other.left, other.top, other.right, other.bottom)
 
     fun offset(dx: Int, dy: Int) {
-        left += dx; top += dy; right += dx; bottom += dy
+        left += dx
+        top += dy
+        right += dx
+        bottom += dy
     }
 
     fun width(): Int = right - left
@@ -163,9 +171,11 @@ internal class CouiPopupDomain {
         else -> CouiPopupDomainConstants.PATH_ANCHOR_SLOT_CENTER
     }
 
-    fun resolvePathAnchorMode(fraction: Float): Int =
-        if (fraction <= 1f) CouiPopupDomainConstants.PATH_ANCHOR_MODE_CENTER
-        else CouiPopupDomainConstants.PATH_ANCHOR_MODE_AUTO
+    fun resolvePathAnchorMode(fraction: Float): Int = if (fraction <= 1f) {
+        CouiPopupDomainConstants.PATH_ANCHOR_MODE_CENTER
+    } else {
+        CouiPopupDomainConstants.PATH_ANCHOR_MODE_AUTO
+    }
 
     private fun resolvePathAnchorModeWithOverride(fraction: Float): Int {
         if (pathAnchorModeOverride != CouiPopupDomainConstants.PATH_ANCHOR_MODE_OVERRIDE_NONE) {
@@ -218,11 +228,19 @@ internal class CouiPopupDomain {
 
     fun getMainMenuHorizontalAlignment(): Int = when (forcedHorizontalEdge) {
         CouiPopupDomainConstants.FORCED_HORIZONTAL_START ->
-            if (isLayoutRtl()) CouiPopupDomainConstants.HORIZONTAL_ALIGN_RIGHT
-            else CouiPopupDomainConstants.HORIZONTAL_ALIGN_LEFT
+            if (isLayoutRtl()) {
+                CouiPopupDomainConstants.HORIZONTAL_ALIGN_RIGHT
+            } else {
+                CouiPopupDomainConstants.HORIZONTAL_ALIGN_LEFT
+            }
+
         CouiPopupDomainConstants.FORCED_HORIZONTAL_END ->
-            if (isLayoutRtl()) CouiPopupDomainConstants.HORIZONTAL_ALIGN_LEFT
-            else CouiPopupDomainConstants.HORIZONTAL_ALIGN_RIGHT
+            if (isLayoutRtl()) {
+                CouiPopupDomainConstants.HORIZONTAL_ALIGN_LEFT
+            } else {
+                CouiPopupDomainConstants.HORIZONTAL_ALIGN_RIGHT
+            }
+
         else -> CouiPopupDomainConstants.HORIZONTAL_ALIGN_CENTER
     }
 
@@ -248,6 +266,7 @@ internal class CouiPopupDomain {
                 val span = min(anchor.height(), mainMenu.height())
                 span * 0.5f - 0.5f
             }
+
             else -> {
                 val span = min(anchor.width(), mainMenu.width())
                 span * 0.5f - 0.5f
@@ -301,14 +320,17 @@ internal class CouiPopupDomain {
                 x = anchor.left - fraction
                 y = resolveTangentCoordOnVerticalEdge(slot, padding, rtl)
             }
+
             CouiPopupDomainConstants.MAIN_MENU_POPUP_SIDE_RIGHT -> {
                 x = anchor.right + fraction
                 y = resolveTangentCoordOnVerticalEdge(slot, padding, rtl)
             }
+
             CouiPopupDomainConstants.MAIN_MENU_POPUP_SIDE_BELOW -> {
                 x = resolveTangentCoordOnHorizontalEdge(slot, padding, rtl)
                 y = anchor.top - fraction
             }
+
             else -> {
                 x = resolveTangentCoordOnHorizontalEdge(slot, padding, rtl)
                 y = anchor.bottom + fraction

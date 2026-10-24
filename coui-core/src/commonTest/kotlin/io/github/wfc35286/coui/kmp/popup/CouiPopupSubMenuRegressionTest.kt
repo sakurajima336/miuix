@@ -1,11 +1,14 @@
-package io.github.wfc35286.coui.kmp.component
+// Copyright 2026, compose-miuix-ui contributors
+// SPDX-License-Identifier: Apache-2.0
 
+package io.github.wfc35286.coui.kmp.popup
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+
 
 class CouiPopupSubMenuRegressionTest {
     private fun driver(): CouiPopupTransitionDriver {
@@ -144,6 +147,7 @@ class CouiPopupSubMenuRegressionTest {
         h.domain.window.right = 1200
         assertEquals(214, h.subMenuOffsetX(400))
     }
+
     @Test
     fun `detaching an exited submenu never restores its full outline`() {
         val d = driver()
@@ -165,6 +169,7 @@ class CouiPopupSubMenuRegressionTest {
         assertEquals(0f, visual.contentReveal?.height)
         assertTrue(d.revealActive)
     }
+
     @Test
     fun `center based transform matches the official top pivot bounds`() {
         val visual = CouiPopupVisualState({ 1f }, { 1f }, { 1f }, { Offset.Zero }, CouiPopupTouchMotion())
@@ -215,9 +220,15 @@ class CouiPopupSubMenuRegressionTest {
 
     @Test
     fun `compact submenu includes the parent group boundary without sorting it`() {
-        val parent = CouiPopupListItem("Parent", groupId = 1, subItems = listOf(
-            CouiPopupListItem("A"), CouiPopupListItem("B"), CouiPopupListItem("C"),
-        ))
+        val parent = CouiPopupListItem(
+            "Parent",
+            groupId = 1,
+            subItems = listOf(
+                CouiPopupListItem("A"),
+                CouiPopupListItem("B"),
+                CouiPopupListItem("C"),
+            ),
+        )
         val compact = couiPopupSubMenuItems(parent, compact = true)
         assertEquals(listOf("Parent", "", "A", "B", "C"), compact.map { it.title })
         assertEquals(CouiPopupItemType.GroupDivider, compact[1].type)
@@ -231,5 +242,4 @@ class CouiPopupSubMenuRegressionTest {
         p.visibleWindow = androidx.compose.ui.unit.IntRect(0, 139, 1240, 2724)
         assertEquals(androidx.compose.ui.unit.IntRect(48, 187, 1192, 2629), p.availableBounds(androidx.compose.ui.unit.IntSize(1240, 2772)))
     }
-
 }

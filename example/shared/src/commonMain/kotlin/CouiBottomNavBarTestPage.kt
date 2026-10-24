@@ -1,5 +1,14 @@
 // Copyright 2026, COUI contributors
 // SPDX-License-Identifier: Apache-2.0
+
+/**
+ * The **dedicated** floating-navigation-bar test page.
+ *
+ * A scrolling body runs *under* the pill so the material's backdrop blur, the inner stroke and the
+ * press/spotlight feedback can all be judged in place. A centred button opens a COUI popup menu
+ * that reconfigures the bench live: page background (including a custom colour), item count,
+ * per-item colouring, bar orientation, dark/light theme and the material/shadow bisect switches.
+ */
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -40,36 +49,27 @@ import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import io.github.wfc35286.coui.kmp.component.CouiBottomFloatingNavigationBar
-import io.github.wfc35286.coui.kmp.component.CouiBottomFloatingNavigationBarDefaults
-import io.github.wfc35286.coui.kmp.component.CouiBottomFloatingNavigationBarItem
-import io.github.wfc35286.coui.kmp.component.CouiCard
-import io.github.wfc35286.coui.kmp.component.CouiCardDefaults
-import io.github.wfc35286.coui.kmp.component.CouiPopupListItem
-import io.github.wfc35286.coui.kmp.component.CouiPopupListWindow
-import io.github.wfc35286.coui.kmp.component.couiBackdrop
-import io.github.wfc35286.coui.kmp.component.LocalCouiSceneTransition
-import io.github.wfc35286.coui.kmp.component.CouiPreferenceItem
-import io.github.wfc35286.coui.kmp.component.CouiPreferencePosition
-import io.github.wfc35286.coui.kmp.component.CouiRedDotType
-import io.github.wfc35286.coui.kmp.component.CouiSmallTitle
-import io.github.wfc35286.coui.kmp.component.CouiSwitch
-import io.github.wfc35286.coui.kmp.component.CouiText
-import io.github.wfc35286.coui.kmp.component.CouiToolbar
+import io.github.wfc35286.coui.kmp.basic.CouiBottomFloatingNavigationBar
+import io.github.wfc35286.coui.kmp.basic.CouiBottomFloatingNavigationBarDefaults
+import io.github.wfc35286.coui.kmp.basic.CouiBottomFloatingNavigationBarItem
+import io.github.wfc35286.coui.kmp.basic.CouiCard
+import io.github.wfc35286.coui.kmp.basic.CouiCardDefaults
+import io.github.wfc35286.coui.kmp.basic.CouiRedDotType
+import io.github.wfc35286.coui.kmp.basic.CouiSmallTitle
+import io.github.wfc35286.coui.kmp.basic.CouiSwitch
+import io.github.wfc35286.coui.kmp.basic.CouiText
+import io.github.wfc35286.coui.kmp.basic.CouiToolbar
+import io.github.wfc35286.coui.kmp.graphics.LocalCouiSceneTransition
+import io.github.wfc35286.coui.kmp.graphics.couiBackdrop
+import io.github.wfc35286.coui.kmp.popup.CouiPopupListItem
+import io.github.wfc35286.coui.kmp.popup.CouiPopupListWindow
+import io.github.wfc35286.coui.kmp.preference.CouiPreferenceItem
+import io.github.wfc35286.coui.kmp.preference.CouiPreferencePosition
 import io.github.wfc35286.coui.kmp.theme.CouiTheme
 import io.github.wfc35286.coui.kmp.token.CouiColorTokens
 import io.github.wfc35286.coui.kmp.token.CouiComponentColors
 import io.github.wfc35286.coui.kmp.token.CouiTypography
 import top.yukonga.miuix.kmp.nav.core.LocalNavTransitionScope
-
-/**
- * The **dedicated** floating-navigation-bar test page.
- *
- * A scrolling body runs *under* the pill so the material's backdrop blur, the inner stroke and the
- * press/spotlight feedback can all be judged in place. A centred button opens a COUI popup menu
- * that reconfigures the bench live: page background (including a custom colour), item count,
- * per-item colouring, bar orientation, dark/light theme and the material/shadow bisect switches.
- */
 @Composable
 fun CouiBottomNavBarTestPage(
     padding: PaddingValues,
@@ -79,7 +79,7 @@ fun CouiBottomNavBarTestPage(
     // The page captures itself into a GraphicsLayer so the pill can blur it *inside* Compose. That
     // is what keeps the material alive through predictive back and on devices without the Oplus
     // material framework (see `CouiBackdrop`).
-    val backdrop = io.github.wfc35286.coui.kmp.component.rememberCouiBackdrop()
+    val backdrop = io.github.wfc35286.coui.kmp.graphics.rememberCouiBackdrop()
     var materialEnabled by rememberSaveable { mutableStateOf(true) }
     var shadowEnabled by rememberSaveable { mutableStateOf(true) }
     // Bench knobs driven from the popup menu.
@@ -204,7 +204,7 @@ fun CouiBottomNavBarTestPage(
     val navTransition = LocalNavTransitionScope.current
     androidx.compose.runtime.CompositionLocalProvider(
         LocalCouiSceneTransition provides { navTransition.isRunning },
-        io.github.wfc35286.coui.kmp.component.LocalCouiBackdrop provides backdrop,
+        io.github.wfc35286.coui.kmp.graphics.LocalCouiBackdrop provides backdrop,
     ) {
     CouiTheme(colors = palette, componentColors = componentPalette) {
         val scrollState = rememberScrollState()

@@ -1,6 +1,7 @@
 // Copyright 2025, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
+
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -16,7 +17,6 @@ import kotlinx.coroutines.flow.drop
 import top.yukonga.miuix.kmp.squircle.LocalSquircleEnabled
 import ui.AppTheme
 import ui.keyColorFor
-
 @Composable
 fun App(
     padding: PaddingValues = PaddingValues(0.dp),

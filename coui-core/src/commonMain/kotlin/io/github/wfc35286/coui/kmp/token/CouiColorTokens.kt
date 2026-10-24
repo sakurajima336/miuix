@@ -1,236 +1,236 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package io.github.wfc35286.coui.kmp.token
-
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 
+
 /**
- * The complete COUI colour palette, transcribed from the ColorOS theme rather than eyeballed.
+ * The complete ColorOS colour palette used across the coui components.
  *
  * COUI's neutrals are alpha-based (one ink colour at many opacities) instead of a set of
  * distinct greys, which is why so many entries look like the same colour at different alphas.
  */
 @Immutable
 data class CouiColorTokens(
-    /** `couiBtnDefaultTextColorDisable` */
+    /** The text colour of a default button in its disabled state. */
     val couiBtnDefaultTextColorDisable: Color,
-    /** `couiBtnDrawableColorDisabled` */
+    /** The drawable tint of a button in its disabled state. */
     val couiBtnDrawableColorDisabled: Color,
-    /** `couiBtnPartCheckInnerColorOnDisabled` */
+    /** The inner fill of a checkbox that is checked but disabled. */
     val couiBtnPartCheckInnerColorOnDisabled: Color,
-    /** `couiBtnRadioColorOn` */
+    /** The fill colour of a radio button in its on state. */
     val couiBtnRadioColorOn: Color,
-    /** `couiBtnSecondaryTextColorDisable` */
+    /** The text colour of a secondary button in its disabled state. */
     val couiBtnSecondaryTextColorDisable: Color,
-    /** `couiColorAdditional` */
+    /** An additional accent colour. */
     val additional: Color,
-    /** `couiColorAiPaymentDialogMessage` */
+    /** The message text colour in AI payment dialogs. */
     val aiPaymentDialogMessage: Color,
-    /** `couiColorAiPaymentDialogTitle` */
+    /** The title text colour in AI payment dialogs. */
     val aiPaymentDialogTitle: Color,
-    /** `couiColorAiPaymentPrimary` */
+    /** The primary background of AI payment content. */
     val aiPaymentPrimary: Color,
-    /** `couiColorAiPaymentPrimaryDisabled` */
+    /** The disabled variant of the AI payment primary background. */
     val aiPaymentPrimaryDisabled: Color,
-    /** `couiColorAiPaymentPrimaryText` */
+    /** The text colour on AI payment primary surfaces. */
     val aiPaymentPrimaryText: Color,
-    /** `couiColorAiPaymentPrimaryTextDisabled` */
+    /** The disabled variant of the AI payment primary text colour. */
     val aiPaymentPrimaryTextDisabled: Color,
-    /** `couiColorAiPaymentSecondary` */
+    /** The secondary background of AI payment content. */
     val aiPaymentSecondary: Color,
-    /** `couiColorAiPaymentSecondaryDisabled` */
+    /** The disabled variant of the AI payment secondary background. */
     val aiPaymentSecondaryDisabled: Color,
-    /** `couiColorAiPaymentSecondaryText` */
+    /** The text colour on AI payment secondary surfaces. */
     val aiPaymentSecondaryText: Color,
-    /** `couiColorAiPaymentSecondaryTextDisabled` */
+    /** The disabled variant of the AI payment secondary text colour. */
     val aiPaymentSecondaryTextDisabled: Color,
-    /** `couiColorAssist` */
+    /** The assistant accent colour. */
     val assist: Color,
-    /** `couiColorAzure` */
+    /** The azure accent colour. */
     val azure: Color,
-    /** `couiColorAzureVariant` */
+    /** A variant of [azure]. */
     val azureVariant: Color,
-    /** `couiColorBackground` */
+    /** The default window background. */
     val background: Color,
-    /** `couiColorBackgroundElevated` */
+    /** The background of elevated surfaces. */
     val backgroundElevated: Color,
-    /** `couiColorBackgroundElevatedWithCard` */
+    /** The background of elevated surfaces on pages that host cards. */
     val backgroundElevatedWithCard: Color,
-    /** `couiColorBackgroundTop` */
+    /** The background of the window's top area. */
     val backgroundTop: Color,
-    /** `couiColorBackgroundWithCard` */
+    /** The background on pages that host cards. */
     val backgroundWithCard: Color,
-    /** `couiColorBar` */
+    /** The background of top and bottom bars. */
     val bar: Color,
-    /** `couiColorBlue` */
+    /** The blue accent colour. */
     val blue: Color,
-    /** `couiColorBlueVariant` */
+    /** A variant of [blue]. */
     val blueVariant: Color,
-    /** `couiColorBottomBar` */
+    /** The background of the bottom bar. */
     val bottomBar: Color,
-    /** `couiColorCard` */
+    /** The fill colour of cards. */
     val card: Color,
-    /** `couiColorCardBackground` */
+    /** The background colour of a card. */
     val cardBackground: Color,
-    /** `couiColorCardPressed` */
+    /** The fill colour of a card while pressed. */
     val cardPressed: Color,
-    /** `couiColorContainer12` */
+    /** A neutral container overlay at 12% alpha. */
     val container12: Color,
-    /** `couiColorContainer16` */
+    /** A neutral container overlay at 16% alpha. */
     val container16: Color,
-    /** `couiColorContainer4` */
+    /** A neutral container overlay at 4% alpha. */
     val container4: Color,
-    /** `couiColorContainer8` */
+    /** A neutral container overlay at 8% alpha. */
     val container8: Color,
-    /** `couiColorContainerAzure` */
+    /** The container fill for azure-tinted content. */
     val containerAzure: Color,
-    /** `couiColorContainerBlue` */
+    /** The container fill for blue-tinted content. */
     val containerBlue: Color,
-    /** `couiColorContainerCyan` */
+    /** The container fill for cyan-tinted content. */
     val containerCyan: Color,
-    /** `couiColorContainerGreen` */
+    /** The container fill for green-tinted content. */
     val containerGreen: Color,
-    /** `couiColorContainerMint` */
+    /** The container fill for mint-tinted content. */
     val containerMint: Color,
-    /** `couiColorContainerOrange` */
+    /** The container fill for orange-tinted content. */
     val containerOrange: Color,
-    /** `couiColorContainerPurple` */
+    /** The container fill for purple-tinted content. */
     val containerPurple: Color,
-    /** `couiColorContainerRed` */
+    /** The container fill for red-tinted content. */
     val containerRed: Color,
-    /** `couiColorContainerSolid` */
+    /** The solid neutral container fill. */
     val containerSolid: Color,
-    /** `couiColorContainerTheme` */
+    /** The theme-coloured container fill. */
     val containerTheme: Color,
-    /** `couiColorContainerThemeHalftone` */
+    /** A semi-transparent (halftone) theme-coloured container fill. */
     val containerThemeHalftone: Color,
-    /** `couiColorContainerViolet` */
+    /** The container fill for violet-tinted content. */
     val containerViolet: Color,
-    /** `couiColorContainerYellow` */
+    /** The container fill for yellow-tinted content. */
     val containerYellow: Color,
-    /** `couiColorControls` */
+    /** The neutral fill of controls such as sliders and switch tracks. */
     val controls: Color,
-    /** `couiColorCyan` */
+    /** The cyan accent colour. */
     val cyan: Color,
-    /** `couiColorCyanVariant` */
+    /** A variant of [cyan]. */
     val cyanVariant: Color,
-    /** `couiColorDisable` */
+    /** The disabled variant of the theme colour. */
     val disable: Color,
-    /** `couiColorDisabledNeutral` */
+    /** The neutral colour for disabled content. */
     val disabledNeutral: Color,
-    /** `couiColorDivider` */
+    /** The colour of dividers. */
     val divider: Color,
-    /** `couiColorError` */
+    /** The error accent colour. */
     val error: Color,
-    /** `couiColorErrorDisabled` */
+    /** The disabled variant of [error]. */
     val errorDisabled: Color,
-    /** `couiColorErrorTextBg` */
+    /** The background colour behind error text. */
     val errorTextBg: Color,
-    /** `couiColorFillSolid` */
+    /** The solid neutral fill colour. */
     val fillSolid: Color,
-    /** `couiColorFillThin` */
+    /** The thin (4%-alpha) neutral fill colour. */
     val fillThin: Color,
-    /** `couiColorFocus` */
+    /** The focus highlight colour. */
     val focus: Color,
-    /** `couiColorFocusOutline` */
+    /** The outline colour drawn around focused content. */
     val focusOutline: Color,
-    /** `couiColorGreen` */
+    /** The green accent colour. */
     val green: Color,
-    /** `couiColorGreenVariant` */
+    /** A variant of [green]. */
     val greenVariant: Color,
-    /** `couiColorHintNeutral` */
+    /** The neutral hint text colour. */
     val hintNeutral: Color,
-    /** `couiColorHover` */
+    /** The overlay colour applied while hovered. */
     val hover: Color,
-    /** `couiColorLabelOnColor` */
+    /** The label colour used on top of theme-coloured surfaces. */
     val labelOnColor: Color,
-    /** `couiColorLabelPrimary` */
+    /** The primary label colour. */
     val labelPrimary: Color,
-    /** `couiColorLabelPrimaryVariant` */
+    /** A variant of [labelPrimary]. */
     val labelPrimaryVariant: Color,
-    /** `couiColorLabelQuaternary` */
+    /** The quaternary label colour. */
     val labelQuaternary: Color,
-    /** `couiColorLabelSecondary` */
+    /** The secondary label colour. */
     val labelSecondary: Color,
-    /** `couiColorLabelSecondaryVariant` */
+    /** A variant of [labelSecondary]. */
     val labelSecondaryVariant: Color,
-    /** `couiColorLabelTertiary` */
+    /** The tertiary label colour. */
     val labelTertiary: Color,
-    /** `couiColorLabelTheme` */
+    /** The theme-coloured label colour. */
     val labelTheme: Color,
-    /** `couiColorLink` - theme alias of `couiColorLabelTheme` */
+    /** The link colour; an alias of [labelTheme]. */
     val link: Color,
-    /** `couiColorMask` */
+    /** The scrim (mask) colour drawn over content. */
     val mask: Color,
-    /** `couiColorMint` */
+    /** The mint accent colour. */
     val mint: Color,
-    /** `couiColorMintVariant` */
+    /** A variant of [mint]. */
     val mintVariant: Color,
-    /** `couiColorOnPrimary` */
+    /** The content colour drawn on top of [primary]. */
     val onPrimary: Color,
-    /** `couiColorOnSecondary` - theme alias of `couiColorPrimaryText` */
+    /** The content colour drawn on top of [secondary]; an alias of [primaryText]. */
     val onSecondary: Color,
-    /** `couiColorOrange` */
+    /** The orange accent colour. */
     val orange: Color,
-    /** `couiColorOrangeVariant` */
+    /** A variant of [orange]. */
     val orangeVariant: Color,
-    /** `couiColorPress` */
+    /** The overlay colour applied while pressed. */
     val press: Color,
-    /** `couiColorPressBackground` */
+    /** The background colour applied while pressed. */
     val pressBackground: Color,
-    /** `couiColorPrimary` */
+    /** The theme primary colour. */
     val primary: Color,
-    /** `couiColorPrimaryNeutral` */
+    /** The neutral primary colour. */
     val primaryNeutral: Color,
-    /** `couiColorPrimaryText` */
+    /** The primary text colour. */
     val primaryText: Color,
-    /** `couiColorPrimaryTextOnPopup` */
+    /** The primary text colour used on popups. */
     val primaryTextOnPopup: Color,
-    /** `couiColorPurple` */
+    /** The purple accent colour. */
     val purple: Color,
-    /** `couiColorPurpleVariant` */
+    /** A variant of [purple]. */
     val purpleVariant: Color,
-    /** `couiColorQuarternaryNeutral` */
+    /** The quaternary neutral colour. */
     val quarternaryNeutral: Color,
-    /** `couiColorRed` */
+    /** The red accent colour. */
     val red: Color,
-    /** `couiColorRedVariant` */
+    /** A variant of [red]. */
     val redVariant: Color,
-    /** `couiColorRipplePressBackground` */
+    /** The ripple colour used while pressed. */
     val ripplePressBackground: Color,
-    /** `couiColorSecondNeutral` */
+    /** The secondary neutral colour. */
     val secondNeutral: Color,
-    /** `couiColorSecondary` */
+    /** The secondary theme colour. */
     val secondary: Color,
-    /** `couiColorSuccess` */
+    /** The success accent colour. */
     val success: Color,
-    /** `couiColorSurface` */
+    /** The surface colour. */
     val surface: Color,
-    /** `couiColorSurfaceTop` */
+    /** The surface colour of the window's top area. */
     val surfaceTop: Color,
-    /** `couiColorSurfaceWithCard` */
+    /** The surface colour on pages that host cards. */
     val surfaceWithCard: Color,
-    /** `couiColorTips` */
+    /** The accent colour for tips. */
     val tips: Color,
-    /** `couiColorViolet` */
+    /** The violet accent colour. */
     val violet: Color,
-    /** `couiColorVioletVariant` */
+    /** A variant of [violet]. */
     val violetVariant: Color,
-    /** `couiColorYellow` */
+    /** The yellow accent colour. */
     val yellow: Color,
-    /** `couiColorYellowVariant` */
+    /** A variant of [yellow]. */
     val yellowVariant: Color,
-    /** `couiDefaultTextColor` */
+    /** The default text colour. */
     val couiDefaultTextColor: Color,
-    /** `couiEditTextDeleteBgColorNormal` - theme alias of `couiColorLabelTertiary` */
+    /** The background of an edit text's clear button; an alias of [labelTertiary]. */
     val couiEditTextDeleteBgColorNormal: Color,
-    /** `couiPrimaryTextColor` */
+    /** The primary text colour. */
     val couiPrimaryTextColor: Color,
 ) {
     companion object {
-        /** `Theme.COUI.Main` */
+        /** The light colour scheme. */
         val Light: CouiColorTokens = CouiColorTokens(
             couiBtnDefaultTextColorDisable = Color(0x8AFFFFFF),
             couiBtnDrawableColorDisabled = Color(0x14000000),
@@ -341,7 +341,7 @@ data class CouiColorTokens(
             couiPrimaryTextColor = Color(0xFF000000),
         )
 
-        /** `Theme.COUI.Main.Dark` */
+        /** The dark colour scheme. */
         val Dark: CouiColorTokens = CouiColorTokens(
             couiBtnDefaultTextColorDisable = Color(0x28FFFFFF),
             couiBtnDrawableColorDisabled = Color(0x26FFFFFF),

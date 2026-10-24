@@ -1,6 +1,8 @@
+// Copyright 2026, compose-miuix-ui contributors
+// SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.popup
+import io.github.wfc35286.coui.kmp.graphics.AndroidCouiSpotLightShader
 import android.content.Context
 import android.graphics.BlendMode
 import android.graphics.Canvas
@@ -25,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline as ComposeOutline
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -38,7 +41,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import java.lang.reflect.Method
-import androidx.compose.ui.graphics.Outline as ComposeOutline
+
 
 @Composable
 internal actual fun CouiPopupRootAlpha(visual: CouiPopupVisualState) {
@@ -134,8 +137,6 @@ private class CouiPopupMaterialView(context: Context) : View(context) {
         frameScheduled = true
         choreographer?.postFrameCallback(syncVisual)
     }
-
-
 
     private fun synchronizeFrame() {
         val state = visual ?: return

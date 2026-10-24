@@ -1,18 +1,17 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
+package io.github.wfc35286.coui.kmp.graphics
 
 /**
- * `com.coui.appcompat.spotlight.agsl.SpotLight.AGSL_SOURCE`, copied verbatim out of
- * `设置_17.0.0.apk` (`com.coui.appcompat.spotlight.agsl.SpotLight`, field `AGSL_SOURCE`).
+ * The AGSL source of the COUI spot-light shader.
  *
  * `u_lightPosAndHeight` packs `(x, y, radius, intensity)`, `u_lightColorAndAmbient` packs
  * `(r, g, b, ambientStrength)`, and `u_lightingParams` packs
- * `(diffuseStrength, lightHeight, noise, ditherN)` - the same vec4 packing the original uses to
- * keep the uniform count down. The caller supplies light position in pixels, after the original
- * normalized-position conversion. `COUISpotLightEffect` animates position/radius/intensity and lets
- * this shader do the lighting maths; the result is drawn with `BlendMode.OVERLAY`.
+ * `(diffuseStrength, lightHeight, noise, ditherN)` - the vec4 packing keeps the uniform count
+ * down. The caller supplies light position in normalized coordinates; the shader wrapper
+ * converts them to pixels. The effect animates position/radius/intensity and lets this shader
+ * do the lighting maths; the result is drawn with `BlendMode.OVERLAY`.
  */
 internal const val COUI_SPOT_LIGHT_SHADER_SOURCE: String = """
         // ═════════════════════════════════════════════════════════════════════════════════
@@ -137,26 +136,24 @@ internal expect fun spotLightBrush(shader: CouiSpotLightShader): androidx.compos
 /**
  * The COUI spot-light shader.
  *
- * `COUISpotLightEffect` drives these uniforms and lets the fragment shader do the lighting
- * maths: a point light at `(x, y, lightHeight)` whose `radius` bounds its reach, an `intensity`
- * scale, an ambient + diffuse term, and optional noise/dither post-processing.
+ * Callers drive the uniforms below and let the fragment shader do the lighting maths: a point
+ * light at `(x, y, lightHeight)` whose `radius` bounds its reach, an `intensity` scale, an
+ * ambient + diffuse term, and optional noise/dither post-processing.
  */
 internal interface CouiSpotLightShader {
     /**
-     * Sets the light position in **normalized** coordinates (0..1), exactly what the official
-     * `SpotLightShader.setLightPosition` stores in `mLightPos`. `flushIfDirty` multiplies them by
-     * the resolution before they reach the shader:
+     * Sets the light position in **normalized** coordinates (0..1). The wrapper multiplies them
+     * by the resolution before they reach the shader:
      *
      * ```
-     * u_lightPosAndHeight = (mLightPos[0] * mResolution[0],
-     *                        mLightPos[1] * mResolution[1],
-     *                        mLightRadius * mLevel,
-     *                        mIntensity  * mLevel)
+     * u_lightPosAndHeight = (x * width,
+     *                        y * height,
+     *                        radius * level,
+     *                        intensity * level)
      * ```
      *
-     * The pixel conversion therefore lives **inside** the shader wrapper, and callers must hand it
-     * the same normalized value the official `COUISpotLightEffectDrawable` does - it divides the
-     * `MotionEvent` coordinates by the drawable bounds before calling in.
+     * The pixel conversion therefore lives **inside** the shader wrapper, and callers must pass
+     * pointer coordinates divided by the drawable bounds before calling in.
      */
     fun setLightPosition(x: Float, y: Float)
     fun setLightRadius(radius: Float)

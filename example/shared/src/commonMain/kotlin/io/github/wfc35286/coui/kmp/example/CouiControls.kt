@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package io.github.wfc35286.coui.kmp.example
-
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -59,6 +58,7 @@ import top.yukonga.miuix.kmp.squircle.SquircleDefaults
 import top.yukonga.miuix.kmp.squircle.squircleBackground
 import top.yukonga.miuix.kmp.squircle.squircleClip
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+
 
 // region Vector assets
 //
@@ -223,7 +223,7 @@ fun CouiSwitch(
     enabled: Boolean = true,
 ) {
     io.github.wfc35286.coui.kmp.theme.CouiTheme {
-        io.github.wfc35286.coui.kmp.component.CouiSwitch(
+        io.github.wfc35286.coui.kmp.basic.CouiSwitch(
             checked = checked,
             onCheckedChange = onCheckedChange,
             modifier = modifier,

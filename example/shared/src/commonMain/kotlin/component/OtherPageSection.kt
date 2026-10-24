@@ -2,17 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package component
-
 import LocalNavigator
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlin.random.Random
 import navigation.Route
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.preference.ArrowPreference
-import kotlin.random.Random
+
 
 fun LazyListScope.otherPageSection() {
     item(key = "other") {

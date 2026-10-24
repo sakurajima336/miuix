@@ -1,6 +1,5 @@
 // Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
-
 @file:OptIn(ExperimentalScrollBarApi::class)
 
 import androidx.compose.foundation.background
@@ -24,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import component.BackNavigationIcon
+import kotlin.random.Random
 import kotlinx.serialization.Serializable
 import navigation.Route
 import top.yukonga.miuix.kmp.basic.BasicComponent
@@ -46,7 +46,7 @@ import utils.AdaptiveTopAppBar
 import utils.BlurredBar
 import utils.pageContentPadding
 import utils.pageScrollModifiers
-import kotlin.random.Random
+
 
 @Serializable
 private sealed interface InnerRoute : NavKey {

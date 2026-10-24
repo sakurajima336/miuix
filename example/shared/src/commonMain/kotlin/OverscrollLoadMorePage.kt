@@ -1,6 +1,7 @@
 // Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,6 +31,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import component.BackNavigationIcon
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import top.yukonga.miuix.kmp.basic.Card
@@ -45,8 +47,6 @@ import utils.AdaptiveTopAppBar
 import utils.BlurredBar
 import utils.pageContentPadding
 import utils.rememberBlurBackdrop
-import kotlin.time.Duration.Companion.milliseconds
-
 @Composable
 fun OverscrollLoadMorePage(
     padding: PaddingValues,

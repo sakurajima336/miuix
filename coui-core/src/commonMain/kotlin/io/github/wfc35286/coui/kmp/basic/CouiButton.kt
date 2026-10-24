@@ -1,8 +1,7 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.basic
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -38,33 +37,31 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
+
 /**
- * `COUIButton$ButtonType` - the button variants COUI ships.
+ * The button variants.
  *
- * The integer values are the ones the enum carries (`ButtonType.mValue`), so a style that says
+ * The integer values match the style attribute values, so a style that says
  * `buttonType=secondary` resolves to the same variant here.
  */
 enum class CouiButtonType(val value: Int) {
-    /** `PRIMARY` - filled with the theme accent. */
+    /** Filled with the theme accent. */
     Primary(1),
 
-    /** `SECONDARY` - filled with `couiColorContainer8`. */
+    /** Filled with the secondary container colour. */
     Secondary(2),
 
-    /** `TRANSPARENT` - the "translate" variant, a translucent white over imagery. */
+    /** A translucent white overlay for use over imagery. */
     Transparent(3),
 
-    /** `AI_PAYMENT` - the dark navy AI-payment pill. */
+    /** The dark navy AI-payment pill. */
     AiPayment(4),
 
-    /** `AI_PAYMENT_SECONDARY`. */
+    /** The secondary AI-payment pill. */
     AiPaymentSecondary(5),
 }
 
-/**
- * The two sizes the standard styles define: `Widget.COUI.Button.Large` and
- * `Widget.COUI.Button.Small`.
- */
+/** The two standard button sizes. */
 enum class CouiButtonSize {
     /** 44dp tall, 132dp minimum width, 16sp text. */
     Large,
@@ -73,40 +70,34 @@ enum class CouiButtonSize {
     Small,
 }
 
-/**
- * The measured values behind [CouiButton], all read from the ColorOS 17.0.0 resource table.
- *
- * Sources: `Widget.COUI.Button{.Large,.Small,.Large.ButtonNew,.Small.ButtonNew}` in
- * `res/values/styles.xml` and the `coui_btn_*` / `coui_*btn*` dimens.
- */
+/** The measured values behind [CouiButton]. */
 object CouiButtonDefaults {
-    /** `coui_btn_large_height_min`. */
+    /** The minimum height of a large button. */
     val LargeHeight: Dp = 44.dp
 
-    /** `coui_btn_large_width_min`. */
+    /** The minimum width of a large button. */
     val LargeMinWidth: Dp = 132.dp
 
-    /** `Widget.COUI.Button.Large`'s `paddingLeft` / `paddingRight`. */
+    /** The large button's horizontal padding. */
     val LargePaddingHorizontal: Dp = 12.dp
 
-    /** `coui_btn_padding_vertical`. */
+    /** The large button's vertical padding. */
     val LargePaddingVertical: Dp = 8.dp
 
-    /** `coui_btn_small_height_min`. */
+    /** The minimum height of a small button. */
     val SmallHeight: Dp = 28.dp
 
-    /** `coui_btn_small_width_min`. */
+    /** The minimum width of a small button. */
     val SmallMinWidth: Dp = 52.dp
 
-    /** `Widget.COUI.Button.Small`'s `paddingLeft` / `paddingRight`. */
+    /** The small button's horizontal padding. */
     val SmallPaddingHorizontal: Dp = 12.dp
 
-    /** `Widget.COUI.Button.Small`'s `paddingTop` / `paddingBottom`. */
+    /** The small button's vertical padding. */
     val SmallPaddingVertical: Dp = 4.dp
 
     /**
-     * The aspect ratio at which `COUIPressAnimatorUnit.useCandyMaterialRealtime()` switches from
-     * the jelly springs to the candy ones.
+     * The aspect ratio at which the press scale switches from the jelly springs to the candy ones.
      */
     const val CandyAspectRatio: Float = 2f
 
@@ -149,12 +140,10 @@ object CouiButtonDefaults {
     }
 
     /**
-     * The button's fill, i.e. `COUIButton.mDrawableColor` / `mDisabledColor`.
+     * The button's fill.
      *
-     * Those come straight out of the style: `drawableColor` and `disabledColor`. The `primary`
-     * pair is `couiColorContainerTheme` / `couiColorDisable`, the `secondary` pair is
-     * `couiColorContainer8` twice (the secondary button does *not* change its fill when
-     * disabled - only its text fades).
+     * The primary button uses the theme accent and fades when disabled; the secondary button
+     * keeps its container fill when disabled - only its text fades.
      */
     @Composable
     fun containerColor(type: CouiButtonType, enabled: Boolean = true): Color {
@@ -170,10 +159,9 @@ object CouiButtonDefaults {
     }
 
     /**
-     * The button's text colour, i.e. the `coui_btn_*_text_color` `ColorStateList`s.
+     * The button's text colour.
      *
-     * The selectors only branch on `state_enabled`; `state_pressed` and `state_selected` resolve
-     * to the same colour as the default branch, so pressing does not change the text colour.
+     * The colour only depends on the enabled state - pressing does not change the text colour.
      */
     @Composable
     fun contentColor(type: CouiButtonType, enabled: Boolean = true): Color {
@@ -185,8 +173,7 @@ object CouiButtonDefaults {
             CouiButtonType.Secondary ->
                 if (enabled) colors.labelPrimary else colors.couiBtnSecondaryTextColorDisable
 
-            // `coui_btn_tiny_translate_text_color`: `?couiColorLabelOnColor` when enabled,
-            // `@color/coui_color_label_tertiary_dark` (#4DFFFFFF) when disabled.
+            // Label-on colour when enabled, tertiary label when disabled.
             CouiButtonType.Transparent -> if (enabled) colors.labelOnColor else TransparentDisabledText
 
             CouiButtonType.AiPayment ->
@@ -197,26 +184,22 @@ object CouiButtonDefaults {
         }
     }
 
-    /** `coui_button_translate_color` - `#33FFFFFF`, no `-night` variant. */
+    /** The translucent white fill of the [CouiButtonType.Transparent] variant. */
     private val TransparentContainer = Color(0x33FFFFFF)
 
-    /** `coui_color_label_tertiary_dark` - `#4DFFFFFF`, no `-night` variant. */
+    /** The disabled text colour of the [CouiButtonType.Transparent] variant. */
     private val TransparentDisabledText = Color(0x4DFFFFFF)
 }
 
 /**
- * A COUI button.
+ * A [CouiButton] component with COUI style.
  *
- * This is the Compose counterpart of `com.coui.appcompat.button.COUIButton`, a
- * `AppCompatButton` subclass that draws its own background, press mask and stroke. The geometry
- * is a pill: both standard styles set `drawableRadius = -1.0dp`, and `getDrawableRadius()`
- * resolves a negative radius to `height / 2` on ColorOS 16 and later.
+ * The geometry is a pill: the corner radius resolves to half the button's height, producing a
+ * full-round silhouette.
  *
- * Press feedback has two independent halves, exactly as in the original: a translucent
- * `couiColorPress` mask drawn over the fill (`COUIMaskEffectDrawable`, spring 0.3/0), and a
- * scale whose amount depends on the button's measured size (`PressCalc` /
- * `PressPhysicsEngine`). The spring used for the scale is picked by aspect ratio, matching
- * `COUIPressAnimatorUnit.useCandyMaterialRealtime()`.
+ * Press feedback has two independent halves: a translucent press mask drawn over the fill on a
+ * response-0.3/bounce-0 spring, and a scale whose amount depends on the button's measured size.
+ * The spring used for the scale is picked by aspect ratio (see [CandyAspectRatio]).
  *
  * @param text The button label.
  * @param onClick Called when the button is clicked.
@@ -301,16 +284,10 @@ fun CouiButton(
             )
             .onSizeChanged { buttonSize = it }
             .drawBehind {
-                // Both standard button styles set `drawableRadius = -1.0dp`, and
-                // `getDrawableRadius()` resolves a negative radius to `height / 2` on ColorOS 16+,
-                // i.e. a full-round rectangle. libhwui's `g2RoundRectMask` selects the `sdCapsule`
-                // shader once the radius reaches half the short side, so the official silhouette is
-                // a capsule whose straight-edge/cap junction is softened - not a circular arc, and
-                // not the COUIShapePath cubic table (that one is only reached when
-                // `supportAddOnSmoothRound()` is false, which it is not on C17).
+                // The silhouette is a full-round rectangle: a capsule whose straight-edge/cap
+                // junction is softened, not a plain circular arc.
                 val mask = maskProgress.value
-                // `onDraw` paints the fill first and then composites the translucent press mask over
-                // it; `getAnimatorColor()` does exactly this with `ColorUtils.compositeColors`.
+                // The fill is painted first and the translucent press mask is composited over it.
                 // Both layers are flat colours, so pre-compositing them is pixel-identical and lets
                 // the silhouette be drawn once - which the shader path requires, because a single
                 // instance's uniforms are mutable and two draws through it would overwrite each
@@ -340,12 +317,11 @@ fun CouiButton(
 }
 
 /**
- * `androidx.core.graphics.ColorUtils.compositeColors(foreground, background)` - source-over
- * compositing of two flat colours.
+ * Source-over compositing of two flat colours, matching
+ * `androidx.core.graphics.ColorUtils.compositeColors(foreground, background)`.
  *
- * `COUIButton.getAnimatorColor()` composites the mask over `mDrawableColor` with this exact
- * integer arithmetic, so pre-compositing the press mask into the fill here produces the same
- * colour the official ends up with, in one draw.
+ * The press mask is composited into the fill with this exact integer arithmetic, so both layers
+ * can be drawn once as a single flat colour.
  */
 private fun compositeOver(foreground: Color, background: Color): Color {
     val fgAlpha = (foreground.alpha * 255f).roundToInt().coerceIn(0, 255)

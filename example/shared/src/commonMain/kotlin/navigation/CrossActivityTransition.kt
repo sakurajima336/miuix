@@ -2,12 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package navigation
-
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastRoundToInt
+import kotlin.math.abs
+import kotlin.math.exp
+import kotlin.math.min
+import kotlin.math.sin
+import kotlin.math.sqrt
 import top.yukonga.miuix.kmp.nav.transition.NavGesture
 import top.yukonga.miuix.kmp.nav.transition.NavMotion
 import top.yukonga.miuix.kmp.nav.transition.NavRole
@@ -18,11 +22,7 @@ import top.yukonga.miuix.kmp.nav.transition.NavSwipeEdge
 import top.yukonga.miuix.kmp.nav.transition.NavTransition
 import top.yukonga.miuix.kmp.nav.transition.navDirectionalTransition
 import top.yukonga.miuix.kmp.nav.transition.navGraphicsTransition
-import kotlin.math.abs
-import kotlin.math.exp
-import kotlin.math.min
-import kotlin.math.sin
-import kotlin.math.sqrt
+
 
 /**
  * Exact port of the reference window-animation interpolator (`fast_out_extra_slow_in`), a

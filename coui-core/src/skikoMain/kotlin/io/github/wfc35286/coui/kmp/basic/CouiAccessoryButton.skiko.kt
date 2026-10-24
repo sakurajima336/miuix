@@ -1,8 +1,7 @@
 // Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.basic
 import androidx.compose.foundation.background
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -15,6 +14,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.LocalDensity
+import io.github.wfc35286.coui.kmp.graphics.CouiBackdrop
+
 
 /** `coui_caustic_layout_b_level5` (`0x7f070812`) - how far the glow reaches below the circle. */
 private const val COUI_CAUSTIC_LEVEL5_BOTTOM_DP = 11.199982f

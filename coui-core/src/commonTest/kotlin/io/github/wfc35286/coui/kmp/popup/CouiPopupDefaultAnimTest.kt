@@ -1,8 +1,10 @@
+// Copyright 2026, compose-miuix-ui contributors
+// SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.popup
 import kotlin.test.Test
 import kotlin.test.assertEquals
+
 
 class CouiPopupDefaultAnimTest {
 
@@ -79,9 +81,15 @@ class CouiPopupDefaultAnimTest {
         val sub = CouiPopupSubMenuTransitionUnit()
         c.startMainMenuSubMenuEnter(menu)
         c.startSubMenuEnter(sub)
-        repeat(600) { menu.advance(1f / 60f); sub.advance(1f / 60f) }
+        repeat(600) {
+            menu.advance(1f / 60f)
+            sub.advance(1f / 60f)
+        }
         c.startSubMenuExit(menu, sub)
-        repeat(600) { menu.advance(1f / 60f); sub.advance(1f / 60f) }
+        repeat(600) {
+            menu.advance(1f / 60f)
+            sub.advance(1f / 60f)
+        }
         assertEquals(1f, menu.currentScaleX, 0.001f)
         assertEquals(1f, menu.currentContentAlpha, 0.001f)
         assertEquals(0f, sub.currentScaleX, 0.001f)

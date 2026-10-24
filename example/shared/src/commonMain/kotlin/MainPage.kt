@@ -1,15 +1,20 @@
 // Copyright 2025, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
-
 @file:OptIn(ExperimentalScrollBarApi::class)
 
+import LocalNavigator
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,16 +28,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import component.arrowSection
-import LocalNavigator
-import navigation.Route
 import component.badgeSection
 import component.basicComponentSection
 import component.blurSection
@@ -55,12 +58,8 @@ import component.switchSection
 import component.tabRowSection
 import component.textFieldSection
 import component.tooltipSection
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import io.github.wfc35286.coui.kmp.component.CouiPopupListWindow
+import io.github.wfc35286.coui.kmp.popup.CouiPopupListWindow
+import navigation.Route
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.DropdownEntry
 import top.yukonga.miuix.kmp.basic.DropdownItem
@@ -71,9 +70,9 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SearchBar
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.SnackbarHostState
-import top.yukonga.miuix.kmp.basic.TopAppBarDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TooltipBox
+import top.yukonga.miuix.kmp.basic.TopAppBarDefaults
 import top.yukonga.miuix.kmp.basic.VerticalScrollBar
 import top.yukonga.miuix.kmp.basic.rememberScrollBarAdapter
 import top.yukonga.miuix.kmp.blur.layerBackdrop
@@ -90,6 +89,7 @@ import utils.BlurredBar
 import utils.pageContentPadding
 import utils.pageScrollModifiers
 import utils.rememberBlurBackdrop
+
 
 @Composable
 fun MainPage(
@@ -324,32 +324,32 @@ private fun MainPageContent(
                                     // becomes a main menu whose "View mode"/"Filter" rows carry the
                                     // sub menus as `subItems` (the COUI cascading equivalent).
                                     val sortItems = cascadingEntries[0].items.map { item ->
-                                        io.github.wfc35286.coui.kmp.component.CouiPopupListItem(
+                                        io.github.wfc35286.coui.kmp.popup.CouiPopupListItem(
                                             title = item.text,
                                             checkable = true,
                                             checked = item.selected,
                                         )
                                     }
                                     val cascade = cascadingEntries[1].items
-                                    val collapseItem = io.github.wfc35286.coui.kmp.component.CouiPopupListItem(
+                                    val collapseItem = io.github.wfc35286.coui.kmp.popup.CouiPopupListItem(
                                         title = cascade[0].text,
                                         checkable = true,
                                         checked = cascade[0].selected,
                                     )
-                                    val viewItem = io.github.wfc35286.coui.kmp.component.CouiPopupListItem(
+                                    val viewItem = io.github.wfc35286.coui.kmp.popup.CouiPopupListItem(
                                         title = cascade[1].text,
                                         subItems = cascade[1].children.orEmpty().map { child ->
-                                            io.github.wfc35286.coui.kmp.component.CouiPopupListItem(
+                                            io.github.wfc35286.coui.kmp.popup.CouiPopupListItem(
                                                 title = child.text,
                                                 checkable = true,
                                                 checked = child.selected,
                                             )
                                         },
                                     )
-                                    val filterItem = io.github.wfc35286.coui.kmp.component.CouiPopupListItem(
+                                    val filterItem = io.github.wfc35286.coui.kmp.popup.CouiPopupListItem(
                                         title = cascade[2].text,
                                         subItems = cascade[2].children.orEmpty().map { child ->
-                                            io.github.wfc35286.coui.kmp.component.CouiPopupListItem(
+                                            io.github.wfc35286.coui.kmp.popup.CouiPopupListItem(
                                                 title = child.text,
                                                 checkable = true,
                                                 checked = child.selected,
@@ -414,7 +414,7 @@ private fun MainPageContent(
                                     val menuItems = optionItems.flatMapIndexed { groupId, entry ->
                                         group = groupId
                                         entry.items.map { item ->
-                                            io.github.wfc35286.coui.kmp.component.CouiPopupListItem(
+                                            io.github.wfc35286.coui.kmp.popup.CouiPopupListItem(
                                                 title = item.text,
                                                 checkable = true,
                                                 checked = item.selected,
@@ -462,7 +462,7 @@ private fun MainPageContent(
                                 if (selectAnchor != null) {
                                     val menuItems = multiSelectItems.flatMap { entry ->
                                         entry.items.map { item ->
-                                            io.github.wfc35286.coui.kmp.component.CouiPopupListItem(
+                                            io.github.wfc35286.coui.kmp.popup.CouiPopupListItem(
                                                 title = item.text,
                                                 checkable = true,
                                                 checked = item.selected,

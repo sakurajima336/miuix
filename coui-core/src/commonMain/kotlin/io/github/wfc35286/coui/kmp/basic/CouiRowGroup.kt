@@ -1,8 +1,7 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.basic
 import androidx.compose.animation.core.Animatable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableStateMapOf
@@ -10,17 +9,17 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import io.github.wfc35286.coui.kmp.motion.CouiSpringData
 import io.github.wfc35286.coui.kmp.motion.toSpringSpec
 
+
 /**
  * The press state shared by the rows of one [CouiCard].
  *
- * `COUIRecyclerDividerManager` watches the list's touch events and, while a row is held down,
- * springs the alpha of two dividers towards zero: the one after the pressed row and the one after
- * the row before it. Releasing - or moving far enough to start a scroll - springs them back.
+ * While a row of the card is held down, the alpha of the two dividers around it - the one under
+ * the pressed row and the one under the row before it - springs towards zero. Releasing, or
+ * moving far enough to start a scroll, springs them back.
  *
- * A Compose card has no list to watch, so the rows report their own press state here instead and
- * the dividers read it while drawing. Row indices come from composition order, which matches the
- * layout order of the rows inside the card; cards with a dynamic, reordered row list would need
- * an explicit index.
+ * The rows report their own press state here and the dividers read it while drawing. Row indices
+ * come from composition order, which matches the layout order of the rows inside the card; cards
+ * with a dynamic, reordered row list would need an explicit index.
  */
 @Stable
 internal class CouiRowGroupState {
@@ -31,7 +30,7 @@ internal class CouiRowGroupState {
     /** The animated multiplier applied to the affected dividers. `1` is the resting state. */
     val dividerAlpha: Animatable<Float, *> = Animatable(1f)
 
-    /** `COUIRecyclerDividerManager.SPRING_RESPONSE` / `SPRING_BOUNCE`. */
+    /** The spring used to fade the dividers in and out: a fast response with no bounce. */
     val dividerAlphaSpec = CouiSpringData(bounce = 0f, response = 0.15f).toSpringSpec(0.001f)
 
     fun allocateIndex(): Int = nextIndex++
@@ -51,7 +50,7 @@ internal class CouiRowGroupState {
         dividerAlpha.animateTo(if (anyRowPressed()) 0f else 1f, dividerAlphaSpec)
     }
 
-    /** The lowest pressed row index, or `-1`. Mirrors the single `mPressDividerChildIndex`. */
+    /** The lowest pressed row index, or `-1`. */
     fun pressedIndex(): Int = pressedRows.keys.minOrNull() ?: -1
 
     /**

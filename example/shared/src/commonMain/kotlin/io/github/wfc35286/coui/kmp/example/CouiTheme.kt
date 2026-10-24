@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package io.github.wfc35286.coui.kmp.example
-
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
@@ -10,6 +9,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ui.isInDarkTheme
+
 
 /**
  * Layout constants of the COUI design system.

@@ -1,7 +1,6 @@
 // Copyright 2026, COUI contributors
 // SPDX-License-Identifier: Apache-2.0
 package component
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,20 +22,21 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
-import io.github.wfc35286.coui.kmp.component.CouiText
-import io.github.wfc35286.coui.kmp.effect.CouiSpotLightDefaults
-import io.github.wfc35286.coui.kmp.effect.couiSpotLight
-import io.github.wfc35286.coui.kmp.effect.rememberCouiSpotLightState
+import io.github.wfc35286.coui.kmp.basic.CouiText
+import io.github.wfc35286.coui.kmp.graphics.CouiSpotLightDefaults
+import io.github.wfc35286.coui.kmp.graphics.couiSpotLight
+import io.github.wfc35286.coui.kmp.graphics.rememberCouiSpotLightState
 import io.github.wfc35286.coui.kmp.theme.CouiTheme
 import io.github.wfc35286.coui.kmp.token.CouiTextEmphasis
 import io.github.wfc35286.coui.kmp.token.CouiTypography
 import kotlinx.coroutines.delay
 
+
 /**
  * The spot light, shown on two surfaces:
  *
  * * a capsule driven by `Modifier.couiSpotLight` (installs its own gesture), and
- * * a card driven by a [io.github.wfc35286.coui.kmp.effect.CouiSpotLightState] that the probe
+ * * a card driven by a [io.github.wfc35286.coui.kmp.graphics.CouiSpotLightState] that the probe
  *   presses **programmatically**, so a screenshot can be taken without a real finger.
  */
 @Composable
@@ -88,7 +88,7 @@ fun CouiSpotLightProbe(autoPress: Boolean = true) {
                         .background(Color(0xFF1F1F1F), RoundedCornerShape(20.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                io.github.wfc35286.coui.kmp.effect.CouiSpotLightSurface(
+                io.github.wfc35286.coui.kmp.graphics.CouiSpotLightSurface(
                     state = cardLight,
                     spec = CouiSpotLightDefaults.OpaqueMedium2(dark = true),
                     shape = RoundedCornerShape(20.dp),

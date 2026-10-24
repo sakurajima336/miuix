@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package navigation
-
 import kotlinx.serialization.Serializable
 import top.yukonga.miuix.kmp.nav.core.NavKey
+
 
 /**
  * Type-safe navigation keys for the app, backed by miuix-nav.

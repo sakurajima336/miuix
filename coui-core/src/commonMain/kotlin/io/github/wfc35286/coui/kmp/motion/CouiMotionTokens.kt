@@ -1,298 +1,294 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package io.github.wfc35286.coui.kmp.motion
 
 /**
- * The minimum change COUI considers visible, per animated property.
+ * The minimum change considered visible, per animated property.
  *
  * These decide when a spring is allowed to stop. Compose calls the same idea a
  * `visibilityThreshold`, so these values plug straight into
  * [CouiSpringData.toSpringSpec].
- *
- * From `COUIDynamicAnimation` and `COUIProperty`.
  */
 object CouiMinVisibleChange {
-    /** `MIN_VISIBLE_CHANGE_ALPHA` - exactly 1/256. */
+    /** The minimum visible change for alpha - exactly 1/256. */
     const val Alpha: Float = 0.00390625f
 
-    /** `MIN_VISIBLE_CHANGE_PIXELS`. */
+    /** The minimum visible change, in pixels. */
     const val Pixels: Float = 1.0f
 
-    /** `MIN_VISIBLE_CHANGE_ROTATION_DEGREES`. */
+    /** The minimum visible change for rotation, in degrees. */
     const val RotationDegrees: Float = 0.1f
 
-    /** `MIN_VISIBLE_CHANGE_SCALE`. */
+    /** The minimum visible change for scale. */
     const val Scale: Float = 0.002f
 
-    /** `COUIDynamicAnimation.THRESHOLD_MULTIPLIER`. */
+    /** A multiplier applied to the minimum visible change before use. */
     const val ThresholdMultiplier: Float = 0.75f
 
-    /** `COUIProperty.BLUR_MIN_VISIBLE_CHANGE`. */
+    /** The minimum visible change for blur. */
     const val Blur: Float = 1.0f
 
-    /** `COUIProperty.COLOR_MIN_VISIBLE_CHANGE`. */
+    /** The minimum visible change for color. */
     const val Color: Float = 1.0f
 
-    /** `COUIProperty.DEFAULT_MIN_VISIBLE_CHANGE`. */
+    /** The default minimum visible change. */
     const val Default: Float = 0.001f
 
-    /** `COUIProperty.HEIGHT_MIN_VISIBLE_CHANGE` / `WIDTH_MIN_VISIBLE_CHANGE`. */
+    /** The minimum visible change for width and height, in pixels. */
     const val HeightWidth: Float = 0.5f
 
-    /** `COUIProperty.POSITION_MIN_VISIBLE_CHANGE` / `TRANSLATION_MIN_VISIBLE_CHANGE`. */
+    /** The minimum visible change for position and translation, in pixels. */
     const val Position: Float = 0.5f
 
-    /** `COUIProperty.RADIUS_MIN_VISIBLE_CHANGE`. */
+    /** The minimum visible change for corner radius. */
     const val Radius: Float = 0.001f
 
-    /** `COUIProperty.ROTATION_MIN_VISIBLE_CHANGE` / `SCALE_MIN_VISIBLE_CHANGE`. */
+    /** The minimum visible change shared by rotation and scale. */
     const val RotationScale: Float = 3.2552084E-4f
 
-    /** `COUIProperty.SCROLL_MIN_VISIBLE_CHANGE`. */
+    /** The minimum visible change for scroll, in pixels. */
     const val Scroll: Float = 1.0f
 }
 
-/** Frame and duration constants, from `COUIAnimationHandler` and friends. */
+/** Frame and duration constants shared by the motion system. */
 object CouiMotionTiming {
-    /** `COUIAnimationHandler.FRAME_DELAY_MS` - COUI ticks its spring solver at 100 Hz. */
+    /** The delay between solver ticks, in milliseconds - the spring solver runs at 100 Hz. */
     const val FrameDelayMs: Int = 10
 
-    /** `COUISpringAnimation.LOGIC_END_EXTRA_TIME_MS`. */
+    /** Extra time, in milliseconds, kept running after the spring solver reports it has ended. */
     const val LogicEndExtraTimeMs: Int = 50
 
-    /** `MILLISECONDS_PER_SECOND`. */
+    /** Milliseconds per second. */
     const val MillisPerSecond: Int = 1000
 
-    /** `COUIResponsiveSpringMotion.DEFAULT_BLEND_DURATION`. */
+    /** The blend duration, in milliseconds, used by the responsive spring motion. */
     const val ResponsiveSpringBlendDurationMs: Int = 250
 
-    /** `COUIResponsiveSpringMotion.MIN_VISIBLE_CHANGE_DIVISOR`. */
+    /** The divisor used to derive a spring's minimum visible change from its response. */
     const val ResponsiveSpringMinVisibleChangeDivisor: Float = 10000f
 }
 
 /**
- * The six press springs, a port of `com.coui.appcompat.animation.touchanimation.PressParams`.
+ * The six press springs, one per press style and direction.
  *
- * Each press style has a distinct spring for the press and for the release, which is why a COUI
+ * Each press style has a distinct spring for the press and for the release, which is why a
  * button "gives" differently than it recovers.
  */
 object CouiPressSprings {
-    /** `jellyPressSpring` - `(0.0, 0.25)`. */
+    /** The press spring of the Jelly style - bounce 0.0, response 0.25. */
     val JellyPress: CouiSpringData = CouiSpringData(0.0f, 0.25f)
 
-    /** `jellyHandupSpring` - `(0.6, 0.5)`. */
+    /** The release (hand-up) spring of the Jelly style - bounce 0.6, response 0.5. */
     val JellyHandUp: CouiSpringData = CouiSpringData(0.6f, 0.5f)
 
-    /** `candyPressSpring` - `(0.0, 0.3)`. */
+    /** The press spring of the Candy style - bounce 0.0, response 0.3. */
     val CandyPress: CouiSpringData = CouiSpringData(0.0f, 0.3f)
 
-    /** `candyHandUpSpring` - `(0.5, 0.5)`. */
+    /** The release spring of the Candy style - bounce 0.5, response 0.5. */
     val CandyHandUp: CouiSpringData = CouiSpringData(0.5f, 0.5f)
 
-    /** `enlargePressSpring` - `(0.0, 0.2)`. */
+    /** The press spring of the Enlarge style - bounce 0.0, response 0.2. */
     val EnlargePress: CouiSpringData = CouiSpringData(0.0f, 0.2f)
 
-    /** `enlargeHandUpSpring` - `(0.7, 0.45)`. */
+    /** The release spring of the Enlarge style - bounce 0.7, response 0.45. */
     val EnlargeHandUp: CouiSpringData = CouiSpringData(0.7f, 0.45f)
 }
 
 /**
- * The scalar half of `PressParams` - the ranges the press-scale formula maps into.
+ * The scalar parameters of the press-scale formula - the ranges it maps into.
  */
 object CouiPressScaleRange {
-    /** `enlargeScaleRangeMin`. */
+    /** The lower bound of the scale range in the Enlarge style. */
     const val EnlargeMin: Float = 1.17f
 
-    /** `enlargeScaleRangeMax`. */
+    /** The upper bound of the scale range in the Enlarge style. */
     const val EnlargeMax: Float = 1.2f
 
-    /** `aspectActivationThreshold` - the aspect ratio at which the second channel wakes up. */
+    /** The aspect ratio at which the aspect-ratio channel activates. */
     const val AspectActivationThreshold: Float = 2.0f
 
-    /** `aspectExtremeRatio`. */
+    /** The aspect ratio treated as extreme by the aspect-ratio channel. */
     const val AspectExtremeRatio: Float = 15.0f
 
-    /** `aspectBaseScale`. */
+    /** The scale applied by the aspect-ratio channel at its base. */
     const val AspectBaseScale: Float = 0.85f
 
-    /** `aspectExtremeScale`. */
+    /** The scale applied by the aspect-ratio channel at the extreme ratio. */
     const val AspectExtremeScale: Float = 1.0f
 
-    /** `minAreaWidthDp` - the area channel's lower bound, in dp. */
+    /** The lower bound of the area channel's width, in dp. */
     const val MinAreaWidthDp: Float = 20f
 
-    /** `maxAreaWidthDp` - the area channel's upper bound, in dp. */
+    /** The upper bound of the area channel's width, in dp. */
     const val MaxAreaWidthDp: Float = 150f
 
-    /** `scaleRangeMin`. */
+    /** The lower bound of the default scale range. */
     const val ScaleRangeMin: Float = 0.85f
 
-    /** `scaleRangeMax`. */
+    /** The upper bound of the default scale range. */
     const val ScaleRangeMax: Float = 0.97f
 
-    /** `TARGET_SCALE_MIN` - the hard floor `PressPhysicsEngine` clamps to. */
+    /** The hard floor the press physics clamps the target scale to. */
     const val TargetScaleMin: Float = 0.4f
 
-    /** `TARGET_SCALE_MAX_SHRINK`. */
+    /** The hard ceiling the press physics clamps the shrink target scale to. */
     const val TargetScaleMaxShrink: Float = 1.0f
 
-    /** `IMPACT_VELOCITY_DISTANCE_SCALE`. */
+    /** The distance scale used when converting finger travel into impact velocity. */
     const val ImpactVelocityDistanceScale: Float = 80.0f
 }
 
 /**
- * `CommonParams` - the touch parameters every COUI control shares.
+ * The touch parameters every coui control shares.
  */
 object CouiTouchCommon {
-    /** `iolDeadZone`, in dp: movement below this never starts a drag. */
+    /** The dead zone, in dp: movement below this never starts a drag. */
     const val DeadZoneDp: Float = 5.0f
 
-    /** `iolPivotX` / `iolPivotY`. `-1` means "use the centre". */
+    /** The pivot value meaning "use the centre" for either axis. */
     const val PivotAuto: Float = -1.0f
 
-    /** `iolMaxScale`. */
+    /** The maximum scale a press may reach. */
     const val MaxScale: Float = 1.2f
 
-    /** `iolK1`, divided by [K1Divisor] before use. */
+    /** The first touch-stiffness coefficient; divided by [K1Divisor] before use. */
     const val K1: Float = 350000f
 
-    /** `iolK2`, divided by [K2Divisor] before use. */
+    /** The second touch-stiffness coefficient; divided by [K2Divisor] before use. */
     const val K2: Float = 15f
 
-    /** `TouchAnimatorParamProvider.K1_FACTOR_DIVISOR`. */
+    /** The divisor applied to [K1] before use. */
     const val K1Divisor: Float = 1e6f
 
-    /** `TouchAnimatorParamProvider.K2_FACTOR_DIVISOR`. */
+    /** The divisor applied to [K2] before use. */
     const val K2Divisor: Float = 1e3f
 
-    /** `iolPressMinimumVisibleChange`. */
+    /** The minimum visible change while pressed. */
     const val PressMinVisibleChange: Float = 0.001f
 
-    /** `iolPressHandUpMinimumVisibleChange`. */
+    /** The minimum visible change on release (hand-up). */
     const val PressHandUpMinVisibleChange: Float = 1.0E-4f
 
-    /** `iolDeformMinimumVisibleChange`. */
+    /** The minimum visible change for deformation. */
     const val DeformMinVisibleChange: Float = 5.0E-4f
 
-    /** `iolRubberMinimumVisibleChange`. */
+    /** The minimum visible change for the rubber band. */
     const val RubberMinVisibleChange: Float = 0.5f
 }
 
 /**
- * `TouchMotionTierParams` - the rubber-band and hand-up parameters for the layered (tiered)
- * touch motion.
+ * The rubber-band and hand-up parameters for the layered (tiered) touch motion.
  */
 object CouiTouchTiers {
-    /** `iolMaxStretchDistance`. */
+    /** The maximum distance the rubber band may stretch the view. */
     const val MaxStretchDistance: Float = 28.0f
 
-    /** `iolRubberCurveRatio`. */
+    /** The curvature ratio of the rubber band. */
     const val RubberCurveRatio: Float = 0.05f
 
-    /** `iolMaxDeformRubberDistance`. */
+    /** The maximum distance of the deform rubber band. */
     const val MaxDeformRubberDistance: Float = 150.0f
 
-    /** `iolDeformRubberCurveRatio`. */
+    /** The curvature ratio of the deform rubber band. */
     const val DeformRubberCurveRatio: Float = 0.55f
 
-    /** `iolDragSpring` - `(0.15, 0.15)`. */
+    /** The spring used while dragging - bounce 0.15, response 0.15. */
     val DragSpring: CouiSpringData = CouiSpringData(0.15f, 0.15f)
 
-    /** `iolHandUpSpring` - `(0.65, 0.42)`. */
+    /** The release spring for small areas - bounce 0.65, response 0.42. */
     val HandUpSpring: CouiSpringData = CouiSpringData(0.65f, 0.42f)
 
-    /** `iolHandUpSpringLargeArea` - `(0.65, 0.45)`. */
+    /** The release spring for large areas - bounce 0.65, response 0.45. */
     val HandUpSpringLargeArea: CouiSpringData = CouiSpringData(0.65f, 0.45f)
 
-    /** `iolHandUpMaxInitialVelocity`. */
+    /** The maximum initial velocity of the release spring. */
     const val HandUpMaxInitialVelocity: Float = 1000.0f
 
-    /** `iolHandUpSmallAreaRefWidthDp`. */
+    /** The reference width, in dp, below which an area counts as small. */
     const val HandUpSmallAreaRefWidthDp: Float = 56f
 
-    /** `iolHandUpLargeAreaRefWidthDp`. */
+    /** The reference width, in dp, above which an area counts as large. */
     const val HandUpLargeAreaRefWidthDp: Float = 100f
 }
 
 /**
- * `PressEngineConfig` - the defaults the press physics engine starts from.
+ * The defaults the press physics engine starts from.
  */
 object CouiPressEngineDefaults {
-    /** `DEFAULT_RESPONSE_PRESS`. */
+    /** The default spring response while pressed. */
     const val ResponsePress: Float = 0.13f
 
-    /** `DEFAULT_BOUNCE_PRESS`. */
+    /** The default spring bounce while pressed. */
     const val BouncePress: Float = 0.18f
 
-    /** `DEFAULT_RESPONSE_RELEASE`. */
+    /** The default spring response on release. */
     const val ResponseRelease: Float = 0.35f
 
-    /** `DEFAULT_BOUNCE_RELEASE`. */
+    /** The default spring bounce on release. */
     const val BounceRelease: Float = 0.62f
 
-    /** `DEFAULT_MIN_SCALE`. */
+    /** The default minimum press scale. */
     const val MinScale: Float = 0.88f
 
-    /** `DEFAULT_MAX_SCALE`. */
+    /** The default maximum press scale. */
     const val MaxScale: Float = 0.97f
 
-    /** `DEFAULT_INTENSITY`. */
+    /** The default press intensity. */
     const val Intensity: Float = 1.0f
 
-    /** `DEFAULT_IMPACT_FACTOR`. */
+    /** The default impact factor. */
     const val ImpactFactor: Float = 0.0f
 }
 
 /**
- * Per-control spring tables. These come from the `*Params` classes that COUI's designers tune
- * through OPPO's internal `olivelink` platform.
+ * Per-control spring tables.
  */
 object CouiComponentSprings {
     /**
-     * `COUISwitchParams.toggleSpring` - `(0.3, 0.4)`.
-     *
-     * The switch uses this for the thumb translation, with a minimum visible change of 0.1.
+     * The spring the switch uses for its thumb translation - bounce 0.3, response 0.4, with a
+     * minimum visible change of 0.1.
      */
     val SwitchToggle: CouiSpringData = CouiSpringData(0.3f, 0.4f)
 
-    /** `COUISwitchParams.responseDrag` / `bounceDrag`. */
+    /** The response of the switch's drag spring. */
     const val SwitchResponseDrag: Float = 0.3f
 
-    /** `COUISwitchParams.bounceDrag`. */
+    /** The bounce of the switch's drag spring. */
     const val SwitchBounceDrag: Float = 0.0f
 
-    /** `COUISwitchParams.responseAttach`. */
+    /** The response of the spring that snaps the switch's thumb to the nearest anchor. */
     const val SwitchResponseAttach: Float = 0.4f
 
-    /** `COUISwitchParams.bounceAttach`. */
+    /** The bounce of the spring that snaps the switch's thumb to the nearest anchor. */
     const val SwitchBounceAttach: Float = 0.2f
 
-    /** `COUISwitch.animateWhenStateChanged` uses this as the thumb's visibility threshold. */
+    /** The thumb's visibility threshold when the switch animates on a state change. */
     const val SwitchToggleMinVisibleChange: Float = 0.1f
 
     /**
-     * `COUISwitchParams.bounceDrag` / `responseDrag` - the spring the thumb follows the finger
-     * with while dragging.
+     * The spring the switch's thumb follows the finger with while dragging - bounce 0.0,
+     * response 0.3.
      *
-     * `COUISwitch` does not bind the thumb to the finger: `COUISpringDragHelper` runs a
-     * `COUISpringAnimation` per axis with this spring, so the thumb **lags** behind the finger.
-     * That lag is the "resistance" you feel; there is no rubber band (`mMaxOverDistance` is 0).
+     * The thumb is not bound to the finger: a spring animation per axis runs with this spring,
+     * so the thumb **lags** behind the finger. That lag is the "resistance" you feel; there is
+     * no rubber band.
      */
     val SwitchDrag: CouiSpringData = CouiSpringData(bounce = 0.0f, response = 0.3f)
 
     /**
-     * `COUISwitchParams.bounceAttach` / `responseAttach` - the spring used to snap to the nearest
-     * anchor once the finger lifts. Bouncier than [SwitchDrag], which is why the release
-     * overshoots.
+     * The spring used to snap the switch's thumb to the nearest anchor once the finger lifts -
+     * bounce 0.2, response 0.4.
+     *
+     * Bouncier than [SwitchDrag], which is why the release overshoots.
      */
     val SwitchAttach: CouiSpringData = CouiSpringData(bounce = 0.2f, response = 0.4f)
 
     /**
-     * `COUISwitchParams.transformDistance` - the dead zone, in raw touch pixels.
+     * The switch's drag dead zone, in raw touch pixels.
      *
-     * `COUISpringDragHelper.dragTo` refuses to move until the finger has travelled this far from
-     * the down point, so a tap that wobbles by a pixel or two does not start a drag.
+     * The thumb refuses to move until the finger has travelled this far from the down point, so
+     * a tap that wobbles by a pixel or two does not start a drag.
      */
     const val SwitchTransformDistance: Float = 4.0f
 }

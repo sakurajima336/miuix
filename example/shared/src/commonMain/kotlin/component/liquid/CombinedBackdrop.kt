@@ -2,9 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package component.liquid
-
-// Adapted from Kyant0/AndroidLiquidGlass — https://github.com/Kyant0/AndroidLiquidGlass (Apache 2.0).
-
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
@@ -13,6 +10,9 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.unit.Density
 import top.yukonga.miuix.kmp.blur.Backdrop
+
+// Adapted from Kyant0/AndroidLiquidGlass — https://github.com/Kyant0/AndroidLiquidGlass (Apache 2.0).
+
 
 /**
  * A [Backdrop] that draws [first] then [second] in order, allowing a tinted/overlay

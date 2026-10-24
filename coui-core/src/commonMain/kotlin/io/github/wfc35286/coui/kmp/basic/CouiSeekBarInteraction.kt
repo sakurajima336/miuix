@@ -1,12 +1,12 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.basic
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-/** `COUISeekBarCore.MOVE_BY_DEFAULT / MOVE_BY_FINGER / MOVE_BY_DISTANCE`. */
+
+/** How the seek bar responds to taps and drags. */
 enum class CouiSeekBarMoveType {
     /** Tap on release; animate the initial drag transition to the finger. */
     Default,
@@ -18,7 +18,7 @@ enum class CouiSeekBarMoveType {
     ByDistance,
 }
 
-/** Touch policy from `COUISeekBarAdvanced.onTouchEvent` and the core's two trackTouch methods. */
+/** The gesture state machine for one pointer sequence on a seek bar. */
 internal class CouiSeekBarGesture(
     initialValue: Float,
     private val start: Float,
@@ -41,7 +41,8 @@ internal class CouiSeekBarGesture(
             if (abs(x - downX) <= touchSlop) return null
             dragging = true
             lastX = x
-            // Core.onTouchEvent records mLastX and skips the first update for MOVE_BY_DISTANCE.
+            // For MOVE_BY_DISTANCE the event that crosses the touch slop does not yet change
+            // the value; the delta tracking starts from the next event.
             if (moveType == CouiSeekBarMoveType.ByDistance) return null
         }
         val next = when (moveType) {
@@ -61,7 +62,7 @@ internal class CouiSeekBarGesture(
 
     fun up(x: Float, y: Float, width: Float, height: Float, paddingVertical: Float): Float? {
         if (dragging) return move(x) ?: target
-        // Advanced.onTouchEvent only starts a click transition for ACTION_UP inside the view.
+        // A tap only triggers a jump when the up event lands inside the view bounds.
         if (moveType == CouiSeekBarMoveType.ByDistance || x !in 0f..width ||
             y !in paddingVertical..(height - paddingVertical)
         ) {

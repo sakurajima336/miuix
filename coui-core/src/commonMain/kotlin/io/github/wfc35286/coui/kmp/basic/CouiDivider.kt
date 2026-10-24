@@ -1,8 +1,7 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.basic
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,9 +19,11 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import io.github.wfc35286.coui.kmp.theme.CouiTheme
 
+
 object CouiDividerDefaults {
-    /** COUIDividerItemDecoration: max(1, round(getDimension(coui_list_divider_height))). */
+    /** The divider's thickness, pixel-aligned to at least 1px at draw time. */
     val Thickness: Dp = 0.33000004.dp
+    /** The divider's start inset. */
     val Inset: Dp = 32.dp
 }
 

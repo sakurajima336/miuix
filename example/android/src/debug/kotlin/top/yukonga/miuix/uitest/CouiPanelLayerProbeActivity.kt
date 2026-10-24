@@ -1,7 +1,6 @@
 // Copyright 2026, COUI contributors
 // SPDX-License-Identifier: Apache-2.0
 package top.yukonga.miuix.uitest
-
 import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
@@ -12,9 +11,10 @@ import android.view.WindowInsets
 import android.view.WindowInsetsController
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import io.github.wfc35286.coui.kmp.component.CouiPanelLayerProbe
+import io.github.wfc35286.coui.kmp.graphics.CouiPanelLayerProbe
 import java.io.File
 import java.io.FileOutputStream
+
 
 /**
  * Debug host for [CouiPanelLayerProbe]: one material layer per row, on black.

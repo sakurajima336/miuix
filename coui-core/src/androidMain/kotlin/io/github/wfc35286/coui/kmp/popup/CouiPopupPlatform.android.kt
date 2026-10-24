@@ -1,10 +1,12 @@
+// Copyright 2026, compose-miuix-ui contributors
+// SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.popup
 import android.graphics.Outline
 import android.graphics.Path
 import android.graphics.Rect
 import android.graphics.RectF
+
 
 internal class CouiPopupPlatform(
     val sdk: Int,
@@ -95,7 +97,13 @@ internal class CouiPopupPlatform(
 
     fun path(path: Path, bounds: RectF, radius: Float, weight: Float, useBlur: Boolean = false, baseRadius: Float = radius) {
         val legacy = (smoothStyle == 0 && weight > 0f) || (useBlur && sdk == 37)
-        val api = if (legacy) legacyPathApi() else if (smoothStyle == 1) modernPathApi() else null
+        val api = if (legacy) {
+            legacyPathApi()
+        } else if (smoothStyle == 1) {
+            modernPathApi()
+        } else {
+            null
+        }
         val success = api != null && runCatching {
             if (legacy) {
                 val adapter = api.ctor.newInstance(path)
@@ -118,7 +126,13 @@ internal class CouiPopupPlatform(
             ?: Rect(0, 0, width, height)
         outline.setRoundRect(bounds, radius)
         val legacy = (smoothStyle == 0 && weight > 0f) || (useBlur && sdk == 37)
-        val api = if (legacy) legacyPathApi() else if (smoothStyle == 1) modernPathApi() else null
+        val api = if (legacy) {
+            legacyPathApi()
+        } else if (smoothStyle == 1) {
+            modernPathApi()
+        } else {
+            null
+        }
         if (api == null) return
         runCatching {
             if (legacy) {

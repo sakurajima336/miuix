@@ -1,8 +1,7 @@
 // Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.basic
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -40,10 +39,12 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import io.github.wfc35286.coui.kmp.effect.CouiSpotLightDefaults
-import io.github.wfc35286.coui.kmp.effect.CouiSpotLightSpec
-import io.github.wfc35286.coui.kmp.effect.drawCouiSpotLight
-import io.github.wfc35286.coui.kmp.effect.rememberCouiSpotLightState
+import io.github.wfc35286.coui.kmp.graphics.CouiBackdrop
+import io.github.wfc35286.coui.kmp.graphics.CouiSpotLightDefaults
+import io.github.wfc35286.coui.kmp.graphics.CouiSpotLightSpec
+import io.github.wfc35286.coui.kmp.graphics.LocalCouiBackdrop
+import io.github.wfc35286.coui.kmp.graphics.drawCouiSpotLight
+import io.github.wfc35286.coui.kmp.graphics.rememberCouiSpotLightState
 import io.github.wfc35286.coui.kmp.motion.CouiDeformDeadZonePx
 import io.github.wfc35286.coui.kmp.motion.CouiMinVisibleChange
 import io.github.wfc35286.coui.kmp.motion.CouiPressScaleRange
@@ -58,89 +59,59 @@ import io.github.wfc35286.coui.kmp.motion.couiHandUpSpring
 import io.github.wfc35286.coui.kmp.motion.couiPressScale
 import io.github.wfc35286.coui.kmp.motion.couiRubberBand
 import io.github.wfc35286.coui.kmp.motion.toSpringSpec
+import io.github.wfc35286.coui.kmp.popup.PopupSpringAxis
 import io.github.wfc35286.coui.kmp.theme.CouiTheme
+import kotlin.math.abs
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlin.math.abs
+
 
 /**
- * The measured values of [CouiAccessoryButton], all from `coui_bottom_floating_*` resources.
+ * The measured values of [CouiAccessoryButton].
  *
- * The official `COUIBottomFloatingAccessoryView` has **no size setter at all**: `onMeasure` calls
- * `setMeasuredDimension(mAccessorySize, mAccessorySize)` (smali `:2553-2557`), so a
- * `layout_width`/`layout_height` in XML is simply ignored.
+ * The button always lays out as a fixed-size square: incoming size constraints are ignored.
  */
 object CouiAccessoryButtonDefaults {
     /**
-     * `mAccessorySize` = `coui_bottom_floating_navigation_bar_height` (dimen `0x7f070574` = 56dp,
-     * read at `COUIBottomFloatingAccessoryView.smali:196-202`).
-     *
-     * The pill is measured with a **different** dimen of the same value (`0x7f0707c5` = 56dp on
-     * `BaseBottomFloatingMenuView`), which is why the round button and the capsule line up
-     * exactly: `capsuleH == mAccessorySize`, so their independently centred tops coincide
-     * (`COUIBottomFloatingAccessoryNavigationBar.smali:1717-1726`).
+     * The button's size. The capsule of the floating bar is measured with the same value, so the
+     * round button and the capsule line up exactly: their independently centred tops coincide.
      */
     val Size: Dp = 56.dp
 
     /**
-     * `mSideViewSpacing` = `coui_bottom_floating_navigation_bar_Minimum_spacing_with_slide_view`
-     * (dimen `0x7f0707c4` = 12dp, read at `COUIBottomFloatingAccessoryNavigationBar.smali:183`).
+     * The gap between the round button and the side panel next to it.
      *
-     * It is the **only** spacing constant on that row: `layoutPositionsMediumScreen` adds
-     * `mAccessorySize + mSideViewSpacing` once per configured side and nothing else
-     * (`:797-805`, `:834-889`). The pill's own `mInnerPadding` (12dp) never enters the gap - the
-     * panel background fills the full bounds (`caustic-java/BaseBottomFloatingMenuView.smali:3173-3190`),
-     * so the visible gap between the two fills is the same 12dp. Do **not** add it twice.
-     *
-     * It happens to equal the pill's `coui_bottom_floating_navigation_bar_item_padding`
-     * (`mInnerPadding`, also 12dp) but they are different resources and must not be conflated.
+     * It is the **only** spacing constant on that row: each configured side adds [Size] +
+     * [Spacing] once and nothing else. The pill's own inner padding never enters the gap - the
+     * panel background fills the full bounds, so the visible gap between the two fills is the
+     * same value. Do **not** add it twice.
      */
     val Spacing: Dp = 12.dp
 
     /**
      * The box the icon is drawn into.
      *
-     * [推导] The official has no icon size: `drawIcon` paints the drawable at its **intrinsic**
-     * size (`COUIBottomFloatingAccessoryView.smali:705-830`) and the gallery hands it a 24dp
-     * vector. A Compose `Painter` carries an intrinsic size only for vectors, so the library fixes
-     * the box at the gallery's 24dp instead of leaving the button's content unmeasured.
+     * A Compose `Painter` carries an intrinsic size only for vector painters, so the library fixes
+     * the box instead of leaving the button's content unmeasured.
      */
     val IconSize: Dp = 24.dp
 
     /**
-     * `applyFallbackBackgroundColor()`: the non-material fill is the custom colour when
-     * `setAccessoryBackgroundColor` was called, otherwise the `couiColorBar` attribute
-     * (`COUIBottomFloatingAccessoryView.smali:294-322`).
-     *
-     * Note the official's own caveat: that method returns immediately when
-     * `isMaterialQualityEnable()` is true, i.e. **on a material device the custom colour never
-     * shows** - the framework paints the surface instead. This component always paints the fill
-     * itself (it does not reproduce the accessory's blur material), so [backgroundColor] always
-     * takes effect here.
+     * The circle's base fill. It is the base the blur material composites over, never a layer on
+     * top of it, so a caller-supplied colour always takes effect.
      */
     @Composable
     fun backgroundColor(): Color = CouiTheme.colors.bar
 
     /**
-     * The press light: `COUISpotLightEffect.TYPE_BOTTOM_NAVIGATION`
-     * (`COUIBottomFloatingAccessoryView.smali:1693-1696`).
-     *
-     * `COUISpotLightEffect$SpotLightType` maps `TYPE_BOTTOM_NAVIGATION` to switch index `0x1b`
-     * (`COUISpotLightEffect_WhenMappings.smali:398-406`), and `0x1b` is the very case
-     * `TYPE_OPAQUE_MEDIUM_2` resolves to (`COUISpotLightEffect.smali:2553`) - the round button and
-     * the pill therefore share one parameter object, which is why
-     * [CouiSpotLightDefaults.OpaqueMedium2] is used here as well.
+     * The press-light preset: the same parameters the floating bar's capsule uses, i.e.
+     * [CouiSpotLightDefaults.OpaqueMedium2].
      */
     fun spotLight(dark: Boolean): CouiSpotLightSpec = CouiSpotLightDefaults.OpaqueMedium2(dark)
 
     /**
-     * The press-scale target, `TouchAnimatorParamProvider.calculateScaleWithK` evaluated for the
-     * button itself: `56 x 56 dp` is a square, so the aspect channel stays asleep and
-     * `PressCalc.calculateUniformScaleBreakdown` returns the area channel alone.
-     *
-     * `area = 3136`, `t = (3136 - 400) / (22500 - 400) = 0.1238`, the `(0, 0, 0, 1)` press bezier
-     * maps it to `0.497`, and `0.85 + 0.497 * (0.97 - 0.85) = 0.910` - the 0.910 the gallery's
-     * round button measures (`41-GALLERY-TOP-BUTTONS.md` §"按压目标 scale").
+     * The press-scale target, derived from the button's own size: a 56dp square takes the area
+     * channel alone and lands at **0.910**.
      */
     fun pressScale(): Float =
         couiPressScale(
@@ -154,59 +125,40 @@ object CouiAccessoryButtonDefaults {
 /**
  * The round accessory button that sits at either end of a floating bar.
  *
- * This is `com.coui.appcompat.bottomfloatingaccessorynavigationbar.COUIBottomFloatingAccessoryView`,
- * which - unlike everything else in that package - is a **plain `android.view.View`** that can be
- * used on its own: three standard constructors, `setClickable(true)`/`setFocusable(true)` set in
- * the constructor, a self-imposed 56dp square from `onMeasure`, and a null-safe effect host
- * (`46-ACCESSORY-BUTTON-API.md` §2). The container merely owns two of them.
+ * It is a plain, self-contained control: a fixed 56dp square, clickable and focusable by default,
+ * usable on its own - the floating bar merely owns two of them.
  *
  * ## What it draws, bottom to top
  *
- * 1. **The caustic glow** - `updateOuterShadow()` -> `setCausticShadowEffect()` ->
- *    `setOutlineCausticShadow{Color,Layout,Params}` with **level 5**:
- *    `b = 11.199982dp`, `sdf = 20.0dp`, `l/t/r = 0`, colour `coui_caustic_color_2` =
- *    `#42ffffff` (`COUIBottomFloatingAccessoryView.smali:1768-1843`; the level-5 call sites are
- *    `:1773` (elevation 7), `:1779` (colour), `:1791` (l/t/r), `:1804` (b), `:1833` (sdf)).
- *    This is deliberately **not** the pill's level 4: the button's glow is more than twice as
- *    deep (11.2dp vs 4.9dp) and its band twice as wide (20dp vs 10.4dp).
- * 2. **The fill** - `couiColorBar`, or whatever [backgroundColor] the caller set.
- * 3. **The spot light** - `COUISpotLightEffectDrawable` clipped to the circle and painted by
- *    `onDraw` *under* the icon (`:1207-1233`). Not a ripple, not a state effect: the gallery's
- *    three controls each use a different press visual and this is the spot light one.
- * 4. **The icon** - no tint anywhere (`setTint` has zero hits in the class), so a tinted icon is a
- *    caller-side decision.
+ * 1. **The caustic glow** - an outline caustic shadow painted behind and **outside** the circle:
+ *    11.2dp deep with a 20dp-wide band, tinted `#42ffffff`. It is deliberately deeper and wider
+ *    than the pill's glow.
+ * 2. **The fill** - [backgroundColor].
+ * 3. **The spot light** - the press light, clipped to the circle and painted **under** the icon.
+ *    Not a ripple, not a state effect: the spot light is this control's whole press visual.
+ * 4. **The icon** - never tinted by the button; a tinted icon is a caller-side decision.
  *
  * ## Press feel
  *
- * `COUITouchMotionAnimator` with all three units on (`setDeformationEnable(true)`,
- * `setRubberEnable(true)`, `setPressScaleEnable(true)`, `:1289-1332`):
+ * Three motion channels run together and are **summed**, never multiplied (see [couiComposeScale]):
  *
- * * press scale follows `PressParams.jellyPressSpring` = `(bounce 0.0, response 0.25)`;
- * * the release spring is **not** a constant - `TouchMotionHandUpSpringResolver.resolve(w, h)`
- *   interpolates between `iolHandUpSpring` (0.65 / 0.42) and `iolHandUpSpringLargeArea`
- *   (0.65 / 0.45) by surface size, and a 56dp button sits at the small end, so it gets
- *   `(0.65, 0.42)`;
- * * the deform and rubber-band channels run on `iolDragSpring` = `(0.15, 0.15)` while the finger
- *   is down and on the same size-resolved hand-up spring on release.
+ * * the press scale follows a light press spring on the way down;
+ * * the release spring is **not** a constant - it is resolved from the control's size, and a 56dp
+ *   button sits at the small-area end of the tier;
+ * * the deform and rubber-band channels follow the finger with a loose drag spring while it is
+ *   down, and use the same size-resolved spring on release.
  *
- * The three channels are summed, **not** multiplied: `TouchMotionCollector.put` accumulates
- * `mScaleX += value - 1` for both `PRESS_SCALE` and `DEFORM_SCALE`, which is exactly
- * [couiComposeScale].
- *
- * There is **no haptic feedback** on this control (`COUIBottomFloatingAccessoryView` never calls
- * `performHapticFeedback`; only the unrelated `COUIFloatingButton` does).
+ * There is **no haptic feedback** on this control.
  *
  * @param onClick Called when the button is tapped.
- * @param modifier The modifier to apply. The button is **56dp square regardless of it**: the
- *   official `onMeasure` ignores the incoming spec, which [androidx.compose.foundation.layout.requiredSize]
+ * @param modifier The modifier to apply. The button is **56dp square regardless of it**: incoming
+ *   size constraints are ignored, which [androidx.compose.foundation.layout.requiredSize]
  *   reproduces - a caller's `Modifier.size(...)` cannot stretch the circle.
  * @param enabled Whether the button reacts to touch.
- * @param backgroundColor The circle's fill. Defaults to `couiColorBar`.
- * @param contentDescription The accessibility label, i.e. `View.setContentDescription` (the
- *   official has no setter of its own for it either).
- * @param backdrop The page behind the circle, for the `TYPE_FRAMEWORK_BOTTOM_BAR` blur the
- *   official mounts through `setBackgroundRenderEffect`. Defaults to the subtree's
- *   [LocalCouiBackdrop]; `null` falls back to the flat fill.
+ * @param backgroundColor The circle's fill. Defaults to the theme's bar colour.
+ * @param contentDescription The accessibility label.
+ * @param backdrop The page behind the circle, sampled by the blur material. Defaults to the
+ *   subtree's [LocalCouiBackdrop]; `null` falls back to the flat fill.
  * @param content The circle's content, centred.
  */
 @Composable
@@ -233,9 +185,8 @@ fun CouiAccessoryButton(
 /**
  * [CouiAccessoryButton] for the common case of a single icon.
  *
- * The icon change is the official `setIconDrawable(drawable, animate)`
- * (`COUIBottomFloatingAccessoryView.smali:2659`, animating branch at `:2357-2460`): the outgoing
- * icon fades out and shrinks to nothing while the incoming one grows in from nothing and fades in.
+ * Icons swap with a two-way animation: the outgoing icon fades out and shrinks to nothing while
+ * the incoming one grows in from nothing and fades in.
  *
  * @param onClick Called when the button is tapped.
  * @param icon The icon, or `null` for an empty circle. Pass a **remembered** painter - a fresh
@@ -244,11 +195,9 @@ fun CouiAccessoryButton(
  * @param modifier The modifier to apply. See [CouiAccessoryButton].
  * @param enabled Whether the button reacts to touch.
  * @param backgroundColor The circle's fill.
- * @param animateIconChange Whether to play the swap animation. `false` is
- *   `setIconDrawable(drawable)` / the deprecated overload, which applies the icon instantly.
- * @param backdrop The page behind the circle, for the `TYPE_FRAMEWORK_BOTTOM_BAR` blur the
- *   official mounts through `setBackgroundRenderEffect`. Defaults to the subtree's
- *   [LocalCouiBackdrop]; `null` falls back to the flat fill.
+ * @param animateIconChange Whether to play the swap animation; `false` applies the icon instantly.
+ * @param backdrop The page behind the circle, sampled by the blur material. Defaults to the
+ *   subtree's [LocalCouiBackdrop]; `null` falls back to the flat fill.
  */
 @Composable
 fun CouiAccessoryButton(
@@ -261,8 +210,8 @@ fun CouiAccessoryButton(
     animateIconChange: Boolean = true,
     backdrop: CouiBackdrop? = LocalCouiBackdrop.current,
 ) {
-    // `mIconDrawable` / `mOutgoingIconDrawable`: the incoming painter is swapped in immediately and
-    // the previous one is kept alive only until its exit animation ends.
+    // The incoming painter is swapped in immediately and the previous one is kept alive only
+    // until its exit animation ends.
     var shown by remember { mutableStateOf(icon) }
     var outgoing by remember { mutableStateOf<Painter?>(null) }
     val incomingScale = remember { Animatable(1f) }
@@ -273,7 +222,7 @@ fun CouiAccessoryButton(
         val previous = shown
         if (previous === icon) return@LaunchedEffect
         if (icon == null) {
-            // `applyIconDrawableInstant(null)`: the official drops both layers.
+            // An empty icon drops both layers.
             shown = null
             outgoing = null
             return@LaunchedEffect
@@ -290,8 +239,7 @@ fun CouiAccessoryButton(
             outgoingScale.snapTo(1f)
             outgoingAlpha.snapTo(1f)
         }
-        // `startIconReplaceAnimation`: `mIconAlpha = 0`, `mIconScale = 0` in the full-effect branch,
-        // then both springs are aimed at 1.0 (`:2418-2436`).
+        // The incoming icon starts fully transparent and collapsed, then both springs aim at 1.0.
         incomingScale.snapTo(0f)
         incomingAlpha.snapTo(0f)
         shown = icon
@@ -343,13 +291,8 @@ fun CouiAccessoryButton(
 }
 
 /**
- * `applyIconReplaceSpringParams(true)` (`COUIBottomFloatingAccessoryView.smali:543-589`): the icon
- * swap's scale springs are `(bounce 0.4, response 0.5)`, the incoming alpha is `(0.0, 0.2)` and
- * the outgoing alpha is `(0.0, 0.15)`.
- *
- * The class also carries a "light" variant (`incoming (0.0, 0.15)`, `outgoing (0.0, 0.1)`) that is
- * selected by `EffectCapabilityHost.isFullMotionEffect()`; that host is supplied by the container
- * and has no equivalent here, so the full-effect set is always used.
+ * The icon swap's springs: the scale is `(bounce 0.4, response 0.5)`, the incoming alpha is
+ * `(0.0, 0.2)` and the outgoing alpha is `(0.0, 0.15)`. The full-effect set is always used.
  */
 private val CouiIconScaleSpring =
     CouiSpringData(bounce = 0.4f, response = 0.5f).toSpringSpec(CouiMinVisibleChange.Scale)
@@ -378,10 +321,9 @@ private fun CouiAccessoryButtonSurface(
 ) {
     val dark = CouiTheme.colors.background.luminance() < 0.5f
     val interactionSource = remember { MutableInteractionSource() }
-    // `COUIPressAnimatorUnit` is driven by `COUIITouchMotionUnit.handleTouchEvent`, **not** by the
-    // click recogniser: the official press scale has no MOVE handler at all
-    // (`COUIPressAnimatorUnit.moveAnimate` returns immediately), and the only place that releases
-    // it is `handleTouchUp`, reached from ACTION_UP / ACTION_CANCEL. Deriving the press from
+    // The press scale is driven by raw pointer input, **not** by the click recogniser: it has no
+    // move handler at all, and the only place that releases it is the end of the gesture
+    // (ACTION_UP / ACTION_CANCEL). Deriving the press from
     // `clickable`'s interaction source instead makes the scale collapse the moment the finger
     // travels past the touch slop - the button shrinks, then pops back to 1.0 as the drag starts,
     // and only then does the deform kick in. Holding our own flag keeps the two channels
@@ -391,11 +333,11 @@ private fun CouiAccessoryButtonSurface(
     val spotLightSpec = remember(dark) { CouiAccessoryButtonDefaults.spotLight(dark) }
     val density = LocalDensity.current
 
-    // `COUIPressAnimatorUnit`: the press scale is a size-derived target, not a constant.
+    // The press scale is a size-derived target, not a constant.
     val pressScale = remember { Animatable(1f) }
     val scaleTarget = if (enabled && pressHeld) CouiAccessoryButtonDefaults.pressScale() else 1f
-    // `PressParams.jellyPressSpring` on the way down; on the way up
-    // `TouchMotionHandUpSpringResolver.resolve(56, 56)`, i.e. the small-area end of the tier.
+    // A light press spring on the way down; on the way up the size-resolved hand-up spring of a
+    // 56dp square, i.e. the small-area end of the tier.
     val pressSpring = CouiPressSprings.JellyPress
     val releaseSpring = remember {
         couiHandUpSpring(
@@ -411,8 +353,8 @@ private fun CouiAccessoryButtonSurface(
         )
     }
 
-    // `COUIDeformAnimatorUnit` + `COUIRubberAnimatorUnit`, advanced once per frame exactly like
-    // `COUISpringAnimation` ticks - see the same block in `CouiBottomFloatingNavigationBar`.
+    // The deform and rubber-band axes, advanced once per frame so the springs integrate normally
+    // - see the same block in `CouiBottomFloatingNavigationBar`.
     val deformXAxis = remember { PopupSpringAxis(1f, CouiTouchCommon.DeformMinVisibleChange) }
     val deformYAxis = remember { PopupSpringAxis(1f, CouiTouchCommon.DeformMinVisibleChange) }
     val rubberXAxis = remember { PopupSpringAxis(0f, CouiTouchCommon.RubberMinVisibleChange) }
@@ -443,8 +385,8 @@ private fun CouiAccessoryButtonSurface(
     Box(
         modifier =
             modifier
-                // `setMeasuredDimension(mAccessorySize, mAccessorySize)`: the incoming constraints
-                // are ignored, so the caller's `Modifier.size(...)` cannot change the circle.
+                // Incoming size constraints are ignored, so the caller's `Modifier.size(...)`
+                // cannot change the circle.
                 .requiredSize(CouiAccessoryButtonDefaults.Size)
                 .then(
                     if (contentDescription == null) {
@@ -454,18 +396,17 @@ private fun CouiAccessoryButtonSurface(
                     },
                 )
                 // The gesture is **not** consumed here: `clickable` owns the tap, this handler only
-                // feeds the spot light and the deform/rubber axes (the official does the same in
-                // `dispatchTouchEvent`, which runs `mTouchMotionAnimator` and then `super`).
+                // feeds the spot light and the deform/rubber axes.
                 .pointerInput(enabled) {
                     if (!enabled) return@pointerInput
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
                         val w = size.width.toFloat().coerceAtLeast(1f)
                         val h = size.height.toFloat().coerceAtLeast(1f)
-                        // `setLightPositionByPointerIndex` normalises against the drawable bounds.
+                        // The spotlight position is normalised against the button bounds.
                         spotLight.press(Offset(down.position.x / w, down.position.y / h))
-                        // `handleTouchDown`: the press scale goes down here and stays down until
-                        // the gesture actually ends - see the `pressHeld` comment above.
+                        // The press scale goes down here and stays down until the gesture
+                        // actually ends - see the `pressHeld` comment above.
                         pressHeld = true
                         for (axis in listOf(deformXAxis, deformYAxis, rubberXAxis, rubberYAxis)) {
                             axis.spring = CouiTouchTiers.DragSpring
@@ -483,7 +424,7 @@ private fun CouiAccessoryButtonSurface(
                             velocityTracker.addPosition(change.uptimeMillis, change.position)
                             val dx = change.position.x - down.position.x
                             val dy = change.position.y - down.position.y
-                            // `checkDeadZone` is an OR over the raw axes, in raw pixels.
+                            // The dead zone is an OR over the raw axes, in raw pixels.
                             if (
                                 abs(dx) >= CouiDeformDeadZonePx ||
                                     abs(dy) >= CouiDeformDeadZonePx
@@ -510,10 +451,10 @@ private fun CouiAccessoryButtonSurface(
                         }
                         val velocity = velocityTracker.calculateVelocity()
                         spotLight.release()
-                        // `handleTouchUp`: the single place the press scale is allowed to spring
-                        // back. Dragging never writes it.
+                        // The single place the press scale is allowed to spring back. Dragging
+                        // never writes it.
                         pressHeld = false
-                        // `applyHandUpSpring`: `initial = clamp(pan / totalDist * |value - rest|, +-1000)`
+                        // Release velocity: `clamp(pan / totalDist * |value - rest|, +-1000)`
                         // with the *per-unit* total distance (150dp for deform, 28dp for the rubber band).
                         fun releaseAxis(axis: PopupSpringAxis, rest: Float, pan: Float, rangePx: Float) {
                             val denominator = rangePx.coerceAtLeast(1f)
@@ -537,7 +478,7 @@ private fun CouiAccessoryButtonSurface(
                 )
                 .graphicsLayer {
                     motionTick
-                    // `TouchMotionCollector.put`: additive, never `press * deform`.
+                    // Additive composition, never `press * deform`.
                     val press = pressScale.value
                     scaleX = couiComposeScale(press, deformXAxis.value)
                     scaleY = couiComposeScale(press, deformYAxis.value)
@@ -550,31 +491,24 @@ private fun CouiAccessoryButtonSurface(
         //
         // `couiAccessoryMaterial` hangs a blur `RenderEffect` on a `graphicsLayer`, and a Compose
         // layer blurs *everything drawn into it* - which, when the icon was a child of that same
-        // node, included the icon. The official's `setBackgroundRenderEffect` only replaces the
-        // view's **background**: `COUIBottomFloatingAccessoryView.onDraw` paints the spot light and
-        // then `drawIcon` on top of it (`:2510-2518`), and neither is ever blurred. Splitting the
-        // chrome into its own `matchParentSize` Box puts the icon back above the material, exactly
-        // where `onDraw` puts it.
+        // node, included the icon. The blur must cover the surface only: the spot light and the
+        // icon are always drawn unblurred above it. Splitting the chrome into its own
+        // `matchParentSize` Box keeps the icon above the material.
         Box(
             modifier =
                 Modifier
                     .matchParentSize()
-                    // `setCausticShadowEffect()`: painted behind the fill and **outside** the
-                    // circle - the render node draws the outline shadow under the view's own
-                    // content.
+                    // The caustic glow is painted behind the fill and **outside** the circle -
+                    // the outline shadow sits under the button's own content.
                     .couiAccessoryCaustic(dark)
                     .clip(CircleShape)
-                    // `setViewBlurEffect(this, TYPE_FRAMEWORK_BOTTOM_BAR)`: the same blur preset
-                    // the pill uses, applied to the circle and sampling the page behind it. When
-                    // no backdrop is available it degrades to the flat fill, which is what a
-                    // non-material device shows anyway.
-                    // The fill is handed to the material instead of being painted here. The
-                    // official's `applyFallbackBackgroundColor()` returns immediately while
-                    // `isMaterialQualityEnable()` is true (`COUIBottomFloatingAccessoryView
-                    // .smali:294-322`), i.e. on a material device the flat colour never covers the
-                    // blurred surface - it is only the *base* the framework paints over. Painting
-                    // it after the material put it on top of the blur and flattened the circle to
-                    // a solid disc.
+                    // A frosted material: the same blur preset the pill uses, applied to the
+                    // circle and sampling the page behind it. When no backdrop is available it
+                    // degrades to the flat fill.
+                    // The fill is handed to the material instead of being painted here: it is the
+                    // **base** the blur composites over, never a layer on top of it. Painting it
+                    // after the material put it on top of the blur and flattened the circle to a
+                    // solid disc.
                     .couiAccessoryMaterial(
                         dark = dark,
                         backdrop = backdrop,
@@ -586,64 +520,49 @@ private fun CouiAccessoryButtonSurface(
                         scaleY = { couiComposeScale(pressScale.value, deformYAxis.value) },
                     )
                     .drawWithContent {
-                        // `onDraw`: the touch effect is drawn before the icon.
+                        // The press light is drawn before the content.
                         drawCouiSpotLight(spotLight, spotLightSpec, CircleShape)
                         this@drawWithContent.drawContent()
                     },
         )
-        // `drawPanelStroke()`: a **third** sibling, above the material and below the icon.
+        // The rim: a **third** sibling, above the material and below the icon.
         //
         // It cannot be appended to the chrome chain above. `couiAccessoryMaterial` ends with a
         // `graphicsLayer { renderEffect }`, and every modifier after that node draws *inside* the
         // layer - so a stroke hung there goes through the same blur kernel as the page behind the
-        // button and all but disappears. The official keeps them apart for the same reason: the
-        // rim is a view-background effect (`setViewStrokeEffect`), the icon is `onDraw` content.
+        // button and all but disappears.
         Box(modifier = Modifier.matchParentSize().clip(CircleShape).couiAccessoryEdge(dark))
         content()
     }
 }
 
 /**
- * The circle's caustic glow - level 5 of `setOutlineCausticShadowLayout`/`Params`.
+ * The circle's caustic glow.
  *
- * The real effect lives in `libhwui.so` (`SkCanvas::onDrawCausticShadow`), so it is drawn by the
- * platform actual; on skiko it degrades to the shape approximation the pill already uses.
+ * The real effect lives in the platform renderer, so it is drawn by the platform actual; on skiko
+ * it degrades to the shape approximation the pill already uses.
  */
 @Composable
 internal expect fun Modifier.couiAccessoryCaustic(dark: Boolean): Modifier
 
 /**
- * The circle's frosted material - the **same** `TYPE_FRAMEWORK_BOTTOM_BAR` blur the pill uses.
+ * The circle's frosted material - the **same** blur preset the pill uses: blur radius 25,
+ * `#B3666666` OVERLAY over `#99F5F5F5` LUMINOSITY, or `#80666666` / `#B3262626` in dark.
  *
- * `COUIBottomFloatingAccessoryView` calls `COUIMaterialEffect.setViewBlurEffect(this,
- * TYPE_FRAMEWORK_BOTTOM_BAR)` on itself (`:2073-2075`, fanned out from `initMaterialAppearance`
- * `:1161-1173` and refreshed by `onMaterialStateChange(type == 2)` `:2511-2535`) - it never goes
- * through its parent, and a `setViewBlurEffect` call on the container is a zero hit. The preset is
- * the pill's own (`MaterialBlurEffect.smali:178-188`): blur radius 25, `#B3666666` OVERLAY over
- * `#99F5F5F5` LUMINOSITY, or `#80666666` / `#B3262626` in dark.
+ * What the material samples is the **page behind** the button, not the button's own content. A
+ * Compose `graphicsLayer { renderEffect }` only sees its own layer, so the actual has to paint a
+ * captured [CouiBackdrop] into the layer first - that is why [backdrop] is a parameter.
  *
- * The one thing that differs from a plain `RenderEffect` is **what it samples**: the official
- * mounts it through `OplusViewBackgroundRenderEffect.setBackgroundRenderEffect(effect, view)`
- * (`COUIMaterialEffect.smali:381`), i.e. it reads the *page behind* the view, not the view's own
- * content. A Compose `graphicsLayer { renderEffect }` only sees its own layer, so the actual has
- * to paint a captured [CouiBackdrop] into the layer first - that is why [backdrop] is a parameter.
+ * When no backdrop is supplied - or the platform cannot apply a background blur - the actual
+ * paints [backgroundColor] as the flat fill instead. A visible flat panel is the better
+ * degradation.
  *
- * When no backdrop is supplied - or the version gates the official applies twice more
- * (`isMaterialVersion()`, `canApplyBackgroundRenderEffect()`) are not met - the actual paints
- * [backgroundColor] as the flat `couiColorBar` fill instead. The official does **not** fall back
- * (it just returns and draws nothing), which is a real defect there; a visible flat panel is the
- * better degradation.
- *
- * @param backgroundColor The circle's fill, i.e. `setAccessoryBackgroundColor` / `couiColorBar`.
- *   It is the **base** the blur is composited over, never a layer on top of it: the official only
- *   applies it while `isMaterialQualityEnable()` is false (`applyFallbackBackgroundColor()`,
- *   `COUIBottomFloatingAccessoryView.smali:294-322`), so on a material device the blurred surface
- *   is what shows. Painting it above the material flattens the circle to a solid disc.
+ * @param backgroundColor The circle's fill. It is the **base** the blur is composited over, never
+ *   a layer on top of it: painting it above the material flattens the circle to a solid disc.
  * @param scaleX The circle's current horizontal scale, read **at draw time**. The backdrop layer
    draws inside that scaled space, so the page has to be sampled with the inverse - otherwise the
    picture inside the button is glued to it and slides/breathes while it is pressed and dragged,
-   which is the artefact `drawCouiBackdropLayer` exists to remove. The pill passes the same pair
-   (`couiComposeScale(pressScale, deformScale)`).
+   which is the artefact `drawCouiBackdropLayer` exists to remove.
  * @param scaleY The vertical counterpart of [scaleX].
  */
 @Composable
@@ -656,19 +575,14 @@ internal expect fun Modifier.couiAccessoryMaterial(
 ): Modifier
 
 /**
- * `drawPanelStroke()` - the circle's rim highlight and inner glow.
+ * The circle's rim highlight and inner glow.
  *
- * `COUIBottomFloatingAccessoryView.updateStrokeEffect()` calls
- * `COUIMaterialEffect.setViewStrokeEffect(this, TYPE_FRAMEWORK_CAPSULE_3)`, which the framework
- * turns into `OplusMaterialUtil.setEdgeParams(...)` + `setShadowParams(...)`. Those paint on the
- * **view background**, i.e. above the blurred material and below the content - which is why the
- * accessory's own `onDraw` never draws a stroke (`:2454-2468` only draws the touch effect and the
- * icon).
+ * The rim paints on the background layer, i.e. above the blurred material and below the content -
+ * it is never part of the button's own drawing.
  *
  * So this must be applied to a **sibling** of [couiAccessoryMaterial], never appended to it: a
  * Compose modifier added after that chain draws inside its blur `graphicsLayer` and would be
- * blurred away. On platforms without the AGSL shader this is a no-op, exactly like the official
- * drawing nothing when `COUIShadowEdgeDrawable` cannot build.
+ * blurred away. On platforms without the AGSL shader this is a no-op.
  */
 @Composable
 internal expect fun Modifier.couiAccessoryEdge(dark: Boolean): Modifier

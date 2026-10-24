@@ -1,28 +1,25 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package io.github.wfc35286.coui.kmp.motion
-
 import androidx.compose.runtime.Composable
 
+
 /**
- * COUI's haptic vocabulary.
+ * The haptic vocabulary of this library's controls.
  *
- * The real switch fires exactly one pulse per user gesture: `handleActionUp` arms
- * `mEnableHaptICFeedback`, `setChecked` calls `performFeedBack()` at the end, and that method
- * **consumes** the flag - so a tap vibrates once, a drag release vibrates once, and a
- * programmatic `setChecked` never vibrates.
+ * A control fires exactly one pulse per user gesture: the flag that arms feedback is set when the
+ * gesture ends and **consumed** when the pulse fires - so a tap vibrates once, a drag release
+ * vibrates once, and a programmatic state change never vibrates.
  *
- * The constant itself is OPlus-specific (`OplusHapticFeedbackConstants.GRANULAR_SHORT_VIBRATE`,
- * 0x12e), which has no counterpart in Compose's `HapticFeedbackType`, so the actual pulse is
- * platform-specific: see the androidMain actual, which calls
- * `View.performHapticFeedback(0x12e)` directly. Every other platform is a no-op until someone
- * wires an equivalent.
+ * The pulse itself is ColorOS-specific (`GRANULAR_SHORT_VIBRATE`, 0x12e), which has no counterpart
+ * in Compose's `HapticFeedbackType`, so the actual pulse is platform-specific: see the androidMain
+ * actual, which calls `View.performHapticFeedback(0x12e)` directly. Every other platform is a
+ * no-op until someone wires an equivalent.
  */
 interface CouiHaptics {
     /**
-     * `COUISwitch.performFeedBack()` - `GRANULAR_SHORT_VIBRATE` on ColorOS, the short granular
-     * pulse a real switch makes.
+     * The short granular pulse (`GRANULAR_SHORT_VIBRATE` on ColorOS) that a real switch makes.
      */
     fun granularShort()
 

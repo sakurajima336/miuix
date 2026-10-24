@@ -1,7 +1,7 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
-package io.github.wfc35286.coui.kmp.component
 
+package io.github.wfc35286.coui.kmp.graphics
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,9 +18,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.font.FontFamily
+
 
 /**
  * Debug-only: draws the panel material **one layer at a time** on a black backdrop so each
@@ -54,11 +55,11 @@ fun CouiPanelLayerProbe(
 
     Column(
         modifier =
-            Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-                .verticalScroll(rememberScrollState())
-                .padding(12.dp),
+        Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .verticalScroll(rememberScrollState())
+            .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         LayerRow(
@@ -108,8 +109,12 @@ fun CouiPanelLayerProbe(
         val e = CouiShadowEdgePacking.packEdge(1000f, 168f, 2.0f * density, spec.edgeAlpha, spec.edgeAngle, density)
         val s =
             CouiShadowEdgePacking.packShadow(
-                1000f, 168f, density,
-                spec.shadowFadeScale, spec.shadowFadeIn, spec.shadowFadeOut,
+                1000f,
+                168f,
+                density,
+                spec.shadowFadeScale,
+                spec.shadowFadeIn,
+                spec.shadowFadeOut,
             )
         ProbeText("u_edgeArray (w=1000 h=168 d=$density)")
         ProbeText(e.joinToString(", ") { "%.4f".format(it) })
@@ -133,18 +138,18 @@ private fun LayerRow(
     ProbeText(label)
     Box(
         modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(72.dp)
-                .drawWithContent {
-                    // Neutral-grey capsule body on a black page: the fill marks the exact bounds
-                    // (so the measurement script can find them without hard-coded coordinates)
-                    // while staying dark enough that the rim's own alpha dominates.
-                    drawRect(Color(0xFF303030))
-                    if (shader != null) {
-                        drawCouiShadowEdge(shader, spec, density, edgeEnabled = edge, shadowEnabled = shadow)
-                    }
-                },
+        Modifier
+            .fillMaxWidth()
+            .height(72.dp)
+            .drawWithContent {
+                // Neutral-grey capsule body on a black page: the fill marks the exact bounds
+                // (so the measurement script can find them without hard-coded coordinates)
+                // while staying dark enough that the rim's own alpha dominates.
+                drawRect(Color(0xFF303030))
+                if (shader != null) {
+                    drawCouiShadowEdge(shader, spec, density, edgeEnabled = edge, shadowEnabled = shadow)
+                }
+            },
     )
 }
 
@@ -153,10 +158,10 @@ private fun ProbeText(text: String) {
     androidx.compose.foundation.text.BasicText(
         text = text,
         style =
-            androidx.compose.ui.text.TextStyle(
-                color = Color(0xFF7CFFB2),
-                fontSize = 10.sp,
-                fontFamily = FontFamily.Monospace,
-            ),
+        androidx.compose.ui.text.TextStyle(
+            color = Color(0xFF7CFFB2),
+            fontSize = 10.sp,
+            fontFamily = FontFamily.Monospace,
+        ),
     )
 }

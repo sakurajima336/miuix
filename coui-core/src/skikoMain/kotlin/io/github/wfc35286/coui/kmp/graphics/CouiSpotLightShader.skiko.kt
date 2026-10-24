@@ -1,12 +1,12 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.graphics
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.asComposeShader
 import org.jetbrains.skia.RuntimeEffect
 import org.jetbrains.skia.RuntimeShaderBuilder
+
 
 /** Skiko actual: the same AGSL source compiled through Skia's `RuntimeEffect`. */
 internal actual fun spotLightBrush(shader: CouiSpotLightShader): ShaderBrush = ShaderBrush((shader as SkikoCouiSpotLightShader).makeShader().asComposeShader())
@@ -32,8 +32,7 @@ internal class SkikoCouiSpotLightShader : CouiSpotLightShader {
     private var resolutionH = 0f
 
     /** `flushIfDirty`'s `u_lightPosAndHeight` block: normalized position times the resolution. */
-    private fun pushLightPos() =
-        builder.uniform("u_lightPosAndHeight", normX * resolutionW, normY * resolutionH, radius, intensity)
+    private fun pushLightPos() = builder.uniform("u_lightPosAndHeight", normX * resolutionW, normY * resolutionH, radius, intensity)
 
     private fun pushLighting() = builder.uniform("u_lightingParams", diffuse, lightHeight, noise, ditherN)
 

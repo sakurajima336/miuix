@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package io.github.wfc35286.coui.kmp.example
-
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
+
 
 /**
  * Color tokens of the ColorOS "COUI" design system, reconstructed from the resources of

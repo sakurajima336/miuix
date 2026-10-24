@@ -1,30 +1,26 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package io.github.wfc35286.coui.kmp.motion
-
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.spring
 import androidx.compose.runtime.Immutable
 import kotlin.math.PI
 import kotlin.math.sqrt
 
+
 /**
- * COUI's spring descriptor, a port of `com.coui.iola.SpringData`.
- *
- * COUI does not describe a spring with stiffness/damping directly - it uses the same
- * `(bounce, response)` language as Material 3, and converts at the edges. The conversion is
- * exactly the one Material uses, which is why a COUI spring and a Compose spring are the same
- * object once you translate:
+ * A spring descriptor in the COUI motion language. Springs are not described with
+ * stiffness/damping directly - the same `(bounce, response)` language as Material 3 is used, and
+ * the conversion happens at the edges:
  *
  * ```
  * stiffness    = (2 * PI / response) ^ 2
  * dampingRatio = 1 - bounce
  * ```
  *
- * @param bounce How bouncy the spring is. **Negative values are legal** - COUI ships
- *   `SpringData(-0.5f, 0.30f, 0.0f)` as its "stiff" preset. Clamped to
- *   [CouiSpringLimits.BounceMin]..[CouiSpringLimits.BounceMax].
+ * @param bounce How bouncy the spring is. **Negative values are legal** (the stiff preset uses
+ *   `-0.5`). Clamped to [CouiSpringLimits.BounceMin]..[CouiSpringLimits.BounceMax].
  * @param response The period of one oscillation, in seconds. Clamped to
  *   [CouiSpringLimits.ResponseMin]..[CouiSpringLimits.ResponseMax].
  * @param velocity The initial velocity, in units per second. Defaults to 0.
@@ -35,77 +31,76 @@ data class CouiSpringData(
     val response: Float,
     val velocity: Float = 0f,
 ) {
-    /** `(2 * PI / response) ^ 2`, clamped to the range `COUISpringForce` allows. */
+    /** `(2 * PI / response) ^ 2`, clamped to the range [CouiSpringLimits] allows. */
     val stiffness: Float
         get() = responseToStiffness(response)
 
-    /** `1 - bounce`, clamped to the range `COUISpringForce` allows. */
+    /** `1 - bounce`, clamped to the range [CouiSpringLimits] allows. */
     val dampingRatio: Float
         get() = (1f - bounce).coerceIn(CouiSpringLimits.DampingRatioMin, CouiSpringLimits.DampingRatioMax)
 
     companion object {
-        /** `SpringData.DEFAULT` - `(0.0, 0.45)`. */
+        /** The default spring: bounce `0.0`, response `0.45`. */
         val Default: CouiSpringData = CouiSpringData(0.0f, 0.45f)
 
-        /** `SpringData.BOUNCY` - `(0.5, 0.40)`. */
+        /** The bouncy spring: bounce `0.5`, response `0.40`. */
         val Bouncy: CouiSpringData = CouiSpringData(0.5f, 0.40f)
 
-        /** `SpringData.STIFF` - `(-0.5, 0.30)`. Note the negative bounce. */
+        /** The stiff spring: bounce `-0.5`, response `0.30`. Note the negative bounce. */
         val Stiff: CouiSpringData = CouiSpringData(-0.5f, 0.30f)
     }
 }
 
 /**
- * The clamps `COUISpringForce` and `SpringData` apply before handing a spring to the physics
- * engine.
+ * The clamp ranges applied to a spring's raw parameters before it is handed to the physics engine.
  */
 object CouiSpringLimits {
-    /** `SPRING_STIFFNESS_DIVISOR` - the rounded `(2 * PI) ^ 2`. */
+    /** The rounded `(2 * PI) ^ 2` used to convert response to stiffness. */
     const val StiffnessDivisor: Float = 39.47f
 
-    /** `SPRING_STIFFNESS_MIN`. */
+    /** The minimum stiffness. */
     const val StiffnessMin: Float = 100f
 
-    /** `SPRING_STIFFNESS_MAX`. */
+    /** The maximum stiffness. */
     const val StiffnessMax: Float = 10000f
 
-    /** `SPRING_RESPONSE_CLAMP_MIN`. */
+    /** The minimum response, in seconds. */
     const val ResponseMin: Float = 0.1f
 
-    /** `SPRING_RESPONSE_CLAMP_MAX`. */
+    /** The maximum response, in seconds. */
     const val ResponseMax: Float = 1.0f
 
-    /** `DAMPING_RATIO_MIN`. */
+    /** The minimum damping ratio. */
     const val DampingRatioMin: Float = 0.1f
 
-    /** `DAMPING_RATIO_MAX`. Note this goes past 1, i.e. past critically damped. */
+    /**
+     * The maximum damping ratio. Note this goes past 1, i.e. past critically damped.
+     */
     const val DampingRatioMax: Float = 2.0f
 
-    /** `DAMPING_BOUNCE_CLAMP_MIN`. */
+    /** The minimum bounce. */
     const val BounceMin: Float = -1.0f
 
-    /** `DAMPING_BOUNCE_CLAMP_MAX`. */
+    /** The maximum bounce. */
     const val BounceMax: Float = 1.0f
 
-    /** `VELOCITY_THRESHOLD_MULTIPLIER` - how a value threshold becomes a velocity threshold. */
+    /** How a value threshold becomes a velocity threshold. */
     const val VelocityThresholdMultiplier: Float = 62.5f
 }
 
-/** `COUISpringForce.responseToStiffness()`. */
+/** Converts a spring response, in seconds, to stiffness, applying the clamp ranges. */
 fun responseToStiffness(response: Float): Float {
     val clamped = response.coerceIn(CouiSpringLimits.ResponseMin, CouiSpringLimits.ResponseMax)
     val stiffness = (2f * PI.toFloat() / clamped) * (2f * PI.toFloat() / clamped)
     return stiffness.coerceIn(CouiSpringLimits.StiffnessMin, CouiSpringLimits.StiffnessMax)
 }
 
-/** `COUISpringForce.stiffnessToResponse()`. */
+/** Converts a stiffness back to a spring response, in seconds. */
 fun stiffnessToResponse(stiffness: Float): Float =
     2f * PI.toFloat() / sqrt(stiffness.coerceAtLeast(1e-6f))
 
 /**
- * `COUISpringForce.setValueThreshold()`.
- *
- * COUI derives the velocity threshold from the value threshold with a fixed multiplier of
+ * Derives a velocity threshold from a value threshold using the fixed
  * [CouiSpringLimits.VelocityThresholdMultiplier]; Compose only takes the value threshold, so
  * this is exposed for callers that need to reproduce the velocity side.
  */
@@ -116,7 +111,7 @@ fun couiVelocityThreshold(valueThreshold: Float): Float =
  * Converts a COUI spring into a Compose [SpringSpec].
  *
  * @param visibilityThreshold The minimum visible change; see [CouiMinVisibleChange] for the
- *   values COUI uses per property.
+ *   values used per property.
  */
 fun CouiSpringData.toSpringSpec(visibilityThreshold: Float = 0.001f): SpringSpec<Float> = spring(
     dampingRatio = dampingRatio,

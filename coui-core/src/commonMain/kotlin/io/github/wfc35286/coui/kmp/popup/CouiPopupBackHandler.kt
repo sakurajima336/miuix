@@ -1,9 +1,9 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.popup
 import androidx.compose.runtime.Composable
+
 
 /**
  * Hooks the platform's predictive back gesture for the COUI menu.
@@ -19,8 +19,7 @@ import androidx.compose.runtime.Composable
  *    which also reports the gesture progress on API 34+;
  *  * other platforms: the Navigation Event API, which is the same dispatcher there.
  *
- * The official COUI menu has no back handling at all (the `com.coui.appcompat.poplist` package
- * contains no `BackInvokedCallback`), so this is our own adaptation.
+ * The ColorOS menu has no back handling of its own, so this handler is our own adaptation.
  */
 @Composable
 internal expect fun CouiPopupBackHandler(

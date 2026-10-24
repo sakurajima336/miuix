@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package webfont
-
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.platform.Font
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+
 
 /**
  * Eagerly downloads every subset declared by the web-font [cssUrl] and registers each one with the

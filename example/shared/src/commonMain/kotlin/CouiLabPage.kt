@@ -1,5 +1,22 @@
 // Copyright 2026, COUI contributors
 // SPDX-License-Identifier: Apache-2.0
+
+/**
+ * The **component lab**: a neutral stage for judging any COUI component.
+ *
+ * Unlike the per-component pages this one owns nothing but the stage:
+ *
+ * - the page itself is intentionally empty - a background (solid colour or a user-picked photo), a
+ *   brightness scrim on top of it, and the component under test;
+ * - a draggable floating ball opens the stage settings (background photo, scrim strength, light/dark)
+ *   and can be parked anywhere so it never covers what you are looking at;
+ * - a chip row switches which component is on the stage, so the same backdrop/blur/contrast setup can
+ *   be reused for every component without editing code.
+ *
+ * The stage is captured into a [CouiBackdrop], which is what floating components use for their
+ * material: it keeps the blur alive through Compose scene transforms and works without the Oplus
+ * framework.
+ */
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -52,44 +69,27 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import io.github.wfc35286.coui.kmp.component.CouiBottomFloatingNavigationBar
-import io.github.wfc35286.coui.kmp.component.CouiBottomFloatingNavigationBarDefaults
-import io.github.wfc35286.coui.kmp.component.CouiBottomFloatingNavigationBarItem
-import io.github.wfc35286.coui.kmp.component.CouiCard
-import io.github.wfc35286.coui.kmp.component.CouiCardDefaults
-import io.github.wfc35286.coui.kmp.component.CouiPreferenceItem
-import io.github.wfc35286.coui.kmp.component.CouiPreferencePosition
-import io.github.wfc35286.coui.kmp.component.CouiRedDotType
-import io.github.wfc35286.coui.kmp.component.CouiSectionSeekBar
-import io.github.wfc35286.coui.kmp.component.CouiSeekBar
-import io.github.wfc35286.coui.kmp.component.CouiSwitch
-import io.github.wfc35286.coui.kmp.component.CouiText
-import io.github.wfc35286.coui.kmp.component.CouiToolbar
-import io.github.wfc35286.coui.kmp.component.couiBackdrop
-import io.github.wfc35286.coui.kmp.component.rememberCouiBackdrop
+import io.github.wfc35286.coui.kmp.basic.CouiBottomFloatingNavigationBar
+import io.github.wfc35286.coui.kmp.basic.CouiBottomFloatingNavigationBarDefaults
+import io.github.wfc35286.coui.kmp.basic.CouiBottomFloatingNavigationBarItem
+import io.github.wfc35286.coui.kmp.basic.CouiCard
+import io.github.wfc35286.coui.kmp.basic.CouiCardDefaults
+import io.github.wfc35286.coui.kmp.basic.CouiRedDotType
+import io.github.wfc35286.coui.kmp.basic.CouiSectionSeekBar
+import io.github.wfc35286.coui.kmp.basic.CouiSeekBar
+import io.github.wfc35286.coui.kmp.basic.CouiSwitch
+import io.github.wfc35286.coui.kmp.basic.CouiText
+import io.github.wfc35286.coui.kmp.basic.CouiToolbar
+import io.github.wfc35286.coui.kmp.graphics.couiBackdrop
+import io.github.wfc35286.coui.kmp.graphics.rememberCouiBackdrop
+import io.github.wfc35286.coui.kmp.preference.CouiPreferenceItem
+import io.github.wfc35286.coui.kmp.preference.CouiPreferencePosition
 import io.github.wfc35286.coui.kmp.theme.CouiTheme
 import io.github.wfc35286.coui.kmp.token.CouiColorTokens
 import io.github.wfc35286.coui.kmp.token.CouiComponentColors
 import io.github.wfc35286.coui.kmp.token.CouiTextEmphasis
 import io.github.wfc35286.coui.kmp.token.CouiTypography
 import kotlin.math.roundToInt
-
-/**
- * The **component lab**: a neutral stage for judging any COUI component.
- *
- * Unlike the per-component pages this one owns nothing but the stage:
- *
- * - the page itself is intentionally empty - a background (solid colour or a user-picked photo), a
- *   brightness scrim on top of it, and the component under test;
- * - a draggable floating ball opens the stage settings (background photo, scrim strength, light/dark)
- *   and can be parked anywhere so it never covers what you are looking at;
- * - a chip row switches which component is on the stage, so the same backdrop/blur/contrast setup can
- *   be reused for every component without editing code.
- *
- * The stage is captured into a [CouiBackdrop], which is what floating components use for their
- * material: it keeps the blur alive through Compose scene transforms and works without the Oplus
- * framework.
- */
 @Composable
 fun CouiLabPage(
     padding: PaddingValues,
@@ -339,7 +339,7 @@ private fun LabSlider(
 }
 
 @Composable
-private fun StageContent(component: Int, backdrop: io.github.wfc35286.coui.kmp.component.CouiBackdrop?) {
+private fun StageContent(component: Int, backdrop: io.github.wfc35286.coui.kmp.graphics.CouiBackdrop?) {
     when (component) {
         0 -> {
             var selected by rememberSaveable { mutableIntStateOf(0) }

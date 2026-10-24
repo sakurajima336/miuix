@@ -1,7 +1,6 @@
 // Copyright 2026, COUI contributors
 // SPDX-License-Identifier: Apache-2.0
 package top.yukonga.miuix.uitest
-
 import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
@@ -13,6 +12,7 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.ComponentActivity
+
 
 /**
  * Debug-only: instantiates the **real** `COUIBottomFloatingNavigationBar` out of the installed

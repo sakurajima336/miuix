@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package io.github.wfc35286.coui.kmp.example
-
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.spring
 import kotlin.math.PI
@@ -12,6 +11,7 @@ import kotlin.math.ln
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sign
+
 
 /**
  * COUI's motion vocabulary, extracted from ColorOS Settings 17.0.0.

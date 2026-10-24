@@ -1,6 +1,7 @@
 // Copyright 2025, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
+
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -51,18 +52,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import io.github.wfc35286.coui.kmp.component.CouiBottomFloatingNavigationBar
-import io.github.wfc35286.coui.kmp.component.CouiBottomFloatingNavigationBarItem
-import io.github.wfc35286.coui.kmp.component.couiBackdrop
-import io.github.wfc35286.coui.kmp.component.rememberCouiBackdrop
-import io.github.wfc35286.coui.kmp.theme.CouiTheme
-import io.github.wfc35286.coui.kmp.token.CouiColorTokens
-import io.github.wfc35286.coui.kmp.token.CouiComponentColors
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.LayoutDirection
@@ -71,6 +65,13 @@ import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import component.liquid.IosLiquidGlassNavigationBar
+import io.github.wfc35286.coui.kmp.basic.CouiBottomFloatingNavigationBar
+import io.github.wfc35286.coui.kmp.basic.CouiBottomFloatingNavigationBarItem
+import io.github.wfc35286.coui.kmp.graphics.couiBackdrop
+import io.github.wfc35286.coui.kmp.graphics.rememberCouiBackdrop
+import io.github.wfc35286.coui.kmp.theme.CouiTheme
+import io.github.wfc35286.coui.kmp.token.CouiColorTokens
+import io.github.wfc35286.coui.kmp.token.CouiComponentColors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.job
@@ -135,7 +136,6 @@ import ui.isInDarkTheme
 import utils.FPSMonitor
 import utils.shouldExpandNavigationRail
 import utils.shouldShowSplitPane
-
 private object UIConstants {
     const val MAIN_PAGE_INDEX = 0
     const val ICON_PAGE_INDEX = 1

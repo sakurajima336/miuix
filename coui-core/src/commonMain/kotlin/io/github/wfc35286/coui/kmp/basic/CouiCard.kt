@@ -1,8 +1,7 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.basic
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
@@ -28,17 +27,18 @@ import io.github.wfc35286.coui.kmp.shape.couiCardPath
 import io.github.wfc35286.coui.kmp.shape.createCouiCardShader
 import io.github.wfc35286.coui.kmp.theme.CouiTheme
 
-/** C17 COUICardListSelectedItemLayout defaults, traced through getInnerRadius/updatePath. */
+
+/** The default values of [CouiCard]. */
 object CouiCardDefaults {
-    /** coui_round_corner_xl_radius_normal_16_1; explicit G2 weight is 2.5. */
+    /** The card's corner radius. */
     val CornerRadius: Dp = 24.dp
 
-    /** coui_list_card_head_or_tail_padding, at the group's two outside edges. */
+    /** The padding at the group's two outside edges. */
     val HeadOrTailPadding: Dp = 2.dp
     val InsideMargin: PaddingValues = PaddingValues(0.dp)
     val HorizontalMargin: Dp = 16.dp
 
-    /** HomepageTopCategory.mPaddingTop -> coui_preference_category_margintop_large. */
+    /** The vertical spacing between two card groups. */
     val GroupSpacing: Dp = 16.dp
 
     @Composable
@@ -53,10 +53,10 @@ object CouiCardDefaults {
 data class CouiCardColors(val color: Color, val contentColor: Color, val pressedColor: Color)
 
 /**
- * A C17 Settings list card. The n=2.5 HWUI mask clips both background and descendants.
- * Outside horizontal margins belong to the caller. Head/tail padding belongs to the first
- * and last preference rows, so their state masks reach the outside edges. [insideMargin]
- * is optional application content padding and defaults to zero.
+ * A rounded settings-style list card. The corner mask clips both the background and the
+ * descendants. Outside horizontal margins belong to the caller. Head/tail padding belongs to the
+ * first and last rows, so their state masks reach the outside edges. [insideMargin] is optional
+ * application content padding and defaults to zero.
  */
 @Composable
 fun CouiCard(
@@ -76,37 +76,38 @@ fun CouiCard(
     CompositionLocalProvider(LocalCouiRowGroup provides rowGroup) {
         Column(
             modifier = modifier
-            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-            .drawWithCache {
-                val radius = cornerRadius.roundToPx().toFloat()
-                val path = couiCardPath(size, radius)
-                val mask = shader?.brush(size, radius, Color.White)
-                onDrawWithContent {
-                    if (mask != null) {
-                        drawRect(colors.color)
-                        drawContent()
-                        drawRect(mask, blendMode = BlendMode.DstIn)
-                    } else {
-                        clipPath(path) {
+                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                .drawWithCache {
+                    val radius = cornerRadius.roundToPx().toFloat()
+                    val path = couiCardPath(size, radius)
+                    val mask = shader?.brush(size, radius, Color.White)
+                    onDrawWithContent {
+                        if (mask != null) {
                             drawRect(colors.color)
-                            this@onDrawWithContent.drawContent()
+                            drawContent()
+                            drawRect(mask, blendMode = BlendMode.DstIn)
+                        } else {
+                            clipPath(path) {
+                                drawRect(colors.color)
+                                this@onDrawWithContent.drawContent()
+                            }
                         }
                     }
                 }
-            }
-            .couiStateMask(source, enabled = onClick != null)
-            .then(
-                if (onClick != null) {
-                    Modifier.clickable(interactionSource = source, indication = null) {
-                        // Same GRANULAR_SHORT_VIBRATE pulse the COUI controls fire on click.
-                        if (hapticFeedback) haptics.granularShort()
-                        onClick()
-                    }
-                } else {
-                    Modifier
-                },
-            )
-            .padding(insideMargin),
+                .couiStateMask(source, enabled = onClick != null)
+                .then(
+                    if (onClick != null) {
+                        Modifier.clickable(interactionSource = source, indication = null) {
+                            // The short granular haptic pulse on click, like the other COUI
+                            // controls.
+                            if (hapticFeedback) haptics.granularShort()
+                            onClick()
+                        }
+                    } else {
+                        Modifier
+                    },
+                )
+                .padding(insideMargin),
             content = content,
         )
     }

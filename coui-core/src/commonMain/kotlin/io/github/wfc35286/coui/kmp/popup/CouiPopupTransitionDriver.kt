@@ -1,11 +1,13 @@
+// Copyright 2026, compose-miuix-ui contributors
+// SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.popup
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+
 
 internal class CouiPopupTransitionDriver(
     val locate: CouiPopupLocateHelper,
@@ -34,7 +36,6 @@ internal class CouiPopupTransitionDriver(
 
     var anchorGlobalTop: () -> Int = { domain.subMenuAnchor.top }
     var mainMenuViewTranslationY: () -> Float = { mainTranslationY }
-
 
     var requestFrame: () -> Unit = {}
 
@@ -128,17 +129,16 @@ internal class CouiPopupTransitionDriver(
     fun measured() {
         if (phase != Phase.Measuring || domain.mainMenu.isEmpty() ||
             domain.subMenu.isEmpty() || domain.subMenuAnchor.isEmpty()
-        ) return
-        // Official order: the sub menu view is created, laid out and its blur attached
-        // (`RoundFrameLayout.onAttachedToWindow` -> `applyBlurBackground`) while it is still clipped
-        // to the anchor-row prototype outline, and only then does
-        // `SmallScreenAnimationController.configSubMenuAnimationPropertiesForSubMenuEnter` start the
-        // reveal spring. The view is measured here, but the reveal must wait for the platform
-        // material to actually produce pixels ([materialReady]): the framework blur drawable emits
-        // nothing for its first frames, and starting the reveal on the drawable's own first frame
-        // left the panel transparent for two frames - the page showed through exactly where the sub
-        // menu was about to appear, which is the "colour block below the menu" the user reported.
-        // The wait is invisible: with a zero-height reveal slice the panel paints nothing at all.
+        ) {
+            return
+        }
+        // The sub menu is laid out while still clipped to the anchor-row prototype outline, and
+        // only after that does the reveal spring start. The view is measured here, but the reveal
+        // must wait for the platform material to actually produce pixels ([materialReady]): the
+        // blur drawable emits nothing for its first frames, and starting the reveal on the
+        // drawable's own first frame left the panel transparent for two frames - the page showed
+        // through exactly where the sub menu was about to appear. The wait is invisible: with a
+        // zero-height reveal slice the panel paints nothing at all.
         if (pendingEnter) return
         pendingEnter = true
         requestFrame()
@@ -218,12 +218,7 @@ internal class CouiPopupTransitionDriver(
     }
 
     /**
-     * Official `SmallScreenAnimationController.configSubMenuAnimationPropertiesForSubMenuEnter`
-     * ends with
-     * `setOverrideOutline(0, mSubMenuClippedTopStart, subMenu.width,
-     *  mSubMenuClippedTopStart + mSubMenuClippedBottomStart, 1.0f)`.
-     *
-     * That is the anchor-row sized prototype outline, established at full alpha *before* the
+     * Establishes the anchor-row sized prototype reveal outline at full alpha *before* the enter
      * spring starts, so the first rendered frame is already the row-sized sliver rather than an
      * empty rectangle.
      */
@@ -236,9 +231,8 @@ internal class CouiPopupTransitionDriver(
     }
 
     /**
-     * Official `PopupMenuDomain.getSubMenuEnterPivotX()`:
-     * `if (mSubMenu.left > mMainMenu.left) return 0; return mSubMenu.width();`
-     * i.e. the sub menu grows out of the edge that faces the main menu, not out of its centre.
+     * The sub menu grows out of the edge that faces the main menu, not out of its centre: the
+     * pivot is 0 when the sub menu sits to the right of the main menu and 1 otherwise.
      */
     private fun subMenuEnterPivotX(): Float {
         val width = domain.subMenu.width()
@@ -247,8 +241,8 @@ internal class CouiPopupTransitionDriver(
     }
 
     /**
-     * Official `PopupMenuDomain.getSubMenuEnterPivotY()`:
-     * `mSubMenuAnchor.centerY() - mSubMenu.top`, converted to our 0..1 pivot.
+     * The pivot is the anchor row's centre expressed in the sub menu's own coordinates,
+     * normalised to 0..1.
      */
     private fun subMenuEnterPivotY(): Float {
         val height = domain.subMenu.height()
@@ -293,8 +287,8 @@ internal class CouiPopupTransitionDriver(
 
     fun advance(dt: Float): Boolean {
         if (phase == Phase.Hidden) {
-            // The main menu's own spring may still be settling after the sub menu left; the official
-            // keeps `mMenuTransitionUnit` running instead of snapping it (see `finishExit`).
+            // The main menu's own spring may still be settling after the sub menu left; it keeps
+            // running instead of snapping (see [finishExit]).
             if (!menuUnit.isRunning()) return false
             val moving = menuUnit.advance(dt)
             mainScaleX = menuUnit.currentScaleX
@@ -322,9 +316,8 @@ internal class CouiPopupTransitionDriver(
         val movingMenu = menuUnit.advance(dt)
         val movingSub = subUnit.advance(dt)
         // Land the main menu exactly on its resting transform while the sub menu is still moving.
-        // Reaching it at the natural end instead put the text rasterisation switch on the first
-        // still frame, where the sub menu owner's row visibly stepped 1px (measured in a 60fps
-        // screen recording, band top 406 -> 407 and staying there).
+        // Reaching it at the natural end would put the text rasterisation switch on the first
+        // still frame, where the sub menu owner's row would visibly step 1px.
         if (menuUnit.nearTarget(MAIN_SETTLE_EPSILON)) menuUnit.skipToEnd()
         updateFrame()
         if (!movingSub) {
@@ -378,12 +371,9 @@ internal class CouiPopupTransitionDriver(
 
     /**
      * Predictive back, sub menu open: park both transition units at a *fraction* of their open value
-     * instead of animating them, so the panel follows the gesture with exactly the geometry the real
-     * `hide()` would produce (the sub menu's reveal slice collapses back into the anchor row, its
+     * instead of animating them, so the panel follows the gesture with the same geometry a
+     * [hide] would produce (the sub menu's reveal slice collapses back into the anchor row, its
      * translate and alpha follow, and the main menu grows back out of its 90% scale).
-     *
-     * Without this the sub menu case had no preview at all: back then only closes the sub menu, so
-     * driving the whole menu's open/close animatables would have previewed the wrong thing.
      */
     fun previewSubMenuClose(open: Float) {
         if (phase != Phase.Shown && phase != Phase.Entering) return
@@ -415,12 +405,11 @@ internal class CouiPopupTransitionDriver(
         pendingEnter = false
         subMenuPreviewRest = -1f
         menuPreviewRest = -1f
-        // Official `COUIPopupMenuRootView$1.onSubMenuExited` only tears the sub menu view down
-        // (`removeSubMenuView`) and runs the pending show; nothing resets the main menu's own
-        // `mMenuTransitionUnit` spring there. Hard resetting it here snapped the main menu's
-        // scale/alpha/translation back to their resting values in a single frame while its spring
-        // was still a hair away from the target - that is the "very subtle pixel shift" the item
-        // text showed the moment the animation ended. Keep it running instead (see `advance`).
+        // Only the sub menu's own state is torn down here; the main menu's spring is deliberately
+        // left running. Hard resetting it snapped the main menu's scale/alpha/translation back to
+        // their resting values in a single frame while the spring was still a hair away from the
+        // target, showing up as a very subtle pixel shift in the item text the moment the
+        // animation ended. Keep it running instead (see [advance]).
         subUnit.reset(keepValue = false)
         if (smallScreen) smallController.onExitFinished()
         index = -1
@@ -430,7 +419,7 @@ internal class CouiPopupTransitionDriver(
         subScaleY = 1f
         subAlpha = 0f
         subTranslationY = 0f
-        // Official onSubMenuExited removes the view in the animation callback. Compose
+        // The platform removes the sub menu view inside its exit callback. Compose
         // removal is deferred: keep its old layer empty until that removal is applied.
         revealActive = true
         revealTop = 0f
@@ -448,7 +437,7 @@ internal class CouiPopupTransitionDriver(
 
         /**
          * Upper bound on how long the reveal waits for the platform material to produce its first
-         * frame. The measured warm-up is two drawn frames; the cap only exists so a material view
+         * frame. The warm-up is typically two drawn frames; the cap only exists so a material view
          * that is never drawn cannot stall the menu.
          */
         const val MAX_MATERIAL_WAIT_FRAMES = 8
@@ -459,8 +448,7 @@ internal class CouiPopupTransitionDriver(
         /**
          * How close the main menu's spring must be to its target before it lands exactly on it.
          * 0.2% of the full progress: small enough to be invisible, large enough that the landing
-         * happens several frames before the sub menu's own spring stops (measured: the sub menu is
-         * still sliding out at that point).
+         * happens several frames before the sub menu's own spring stops.
          */
         const val MAIN_SETTLE_EPSILON = 0.002f
     }

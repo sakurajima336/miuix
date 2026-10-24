@@ -1,6 +1,7 @@
+// Copyright 2026, compose-miuix-ui contributors
+// SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.popup
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
@@ -10,6 +11,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import io.github.wfc35286.coui.kmp.basic.rubberBand
+import io.github.wfc35286.coui.kmp.basic.step
 import io.github.wfc35286.coui.kmp.motion.CouiSpringData
 import kotlin.math.abs
 import kotlin.math.exp
@@ -270,20 +273,12 @@ internal class CouiPopupVisualState(
     /**
      * Whether the platform material of this panel has actually produced pixels yet.
      *
-     * The Android panel surface is an `AndroidView` whose `background` is the Oplus background blur
-     * drawable (`COUIBackgroundBlurBuilder.applyBlurBackground()` ->
-     * `RoundFrameLayout` -> `View.setBackground(blurDrawable)`, COUIBackgroundBlurBuilder.smali:604).
-     * The framework only starts emitting that material a frame or two after the drawable is
-     * installed, and during that window the panel paints NOTHING - the page behind the popup shows
-     * straight through, which reads as a flat block flashing where the sub menu panel is about to
-     * appear (measured frame by frame: RGB(16,16,16) over a page card for 2 frames at 102fps).
-     *
-     * The official never shows that gap because `RoundFrameLayout.setClipMode(1)` gives the root an
-     * opaque background (`setBackgroundColor(-1)`) before `applyBlurBackground()` replaces it with
-     * the blur drawable, and `restoreOriginalBackground()` puts it back whenever blur is off - i.e.
-     * the panel always has a material-coloured surface under whatever the blur produces.
-     * [CouiPopupPanelBase] plays that role in Compose and hides itself once this flips true, so the
-     * settled panel is byte-for-byte the platform material and nothing else.
+     * The Android panel surface only starts emitting its blur material a frame or two after the
+     * background drawable is installed, and during that window it paints nothing, so the page
+     * behind the popup shows straight through where the panel is about to appear. The panel
+     * therefore keeps an opaque material-coloured fallback surface under the blur until this
+     * flips true; [CouiPopupPanelBase] hides that fallback once the real material is live, so
+     * the settled panel shows only the platform material.
      */
     var materialLive: Boolean by mutableStateOf(false)
     var panelScale: Float by mutableFloatStateOf(1f)
@@ -319,11 +314,9 @@ internal class CouiPopupVisualState(
             return couiPopupBezierOffset(origin(), path()) + Offset(touch.translationX, touch.translationY) + correction
         }
 
-    // The official RoundFrameLayout draws its background bounds, its outline and its children
-    // from the same mOverrideRect on the same frame. Reading committedFrame here made the
-    // content one frame behind the material (measured: material reveal 23/121 vs content
-    // 24/119 on the same frame), so the panel and its rows were not one piece. Both now read
-    // the live geometry that the material samples in the same frame.
+    // The background bounds, the outline and the content must be sampled from the same live
+    // geometry on the same frame: reading committedFrame here made the content one frame behind
+    // the material, so the panel and its rows were not one piece.
     val translation: Offset get() = sourceTranslation()
     val scaleX: Float get() = sourceScaleX()
     val scaleY: Float get() = sourceScaleY()
@@ -371,9 +364,9 @@ internal class CouiPopupVisualState(
         val global = globalTranslation + (parent?.globalTranslation ?: Offset.Zero)
         val actualPivot = inheritedPivot ?: local.pivot
         val centerCorrection = Offset(
-            // Convert the official View pivot to our center-based RenderNode. With the
-            // official pivotY=0 the panel keeps its top edge while shrinking, so its
-            // center moves UP; this sign reproduces that for our center-based node.
+            // Convert a platform-style View pivot to our center-based node. With a pivotY of 0
+            // the panel keeps its top edge while shrinking, so its center moves up; this sign
+            // reproduces that for our center-based node.
             panelSize.x * (actualPivot.x - 0.5f) * (1f - sx),
             panelSize.y * (actualPivot.y - 0.5f) * (1f - sy),
         )

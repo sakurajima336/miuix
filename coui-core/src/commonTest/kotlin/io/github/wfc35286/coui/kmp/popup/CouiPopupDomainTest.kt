@@ -1,8 +1,10 @@
+// Copyright 2026, compose-miuix-ui contributors
+// SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.popup
 import kotlin.test.Test
 import kotlin.test.assertEquals
+
 
 class CouiPopupDomainTest {
 
@@ -79,7 +81,7 @@ class CouiPopupLocateHelperTest {
     fun `relocate keeps the left edge when the anchor is on the left`() {
         val h = helper()
         h.domain.mainMenu.set(0, 0, 400, 800)
-        h.domain.anchor.set(20, 100, 120, 180)   // centreX 70 < 200
+        h.domain.anchor.set(20, 100, 120, 180) // centreX 70 < 200
         h.relocateMainMenu()
         assertEquals(0, h.domain.mainMenuRelocated.left)
         assertEquals(360, h.domain.mainMenuRelocated.width())
@@ -89,7 +91,7 @@ class CouiPopupLocateHelperTest {
     fun `relocate shifts everything when the anchor is on the right`() {
         val h = helper()
         h.domain.mainMenu.set(0, 0, 400, 800)
-        h.domain.anchor.set(280, 100, 380, 180)  // centreX 330 > 200
+        h.domain.anchor.set(280, 100, 380, 180) // centreX 330 > 200
         h.relocateMainMenu()
         assertEquals(40, h.domain.mainMenuRelocated.left)
     }
@@ -98,7 +100,7 @@ class CouiPopupLocateHelperTest {
     fun `relocate splits the difference when the anchor is centred`() {
         val h = helper()
         h.domain.mainMenu.set(0, 0, 400, 800)
-        h.domain.anchor.set(190, 100, 210, 180)  // centreX 200 == main centre
+        h.domain.anchor.set(190, 100, 210, 180) // centreX 200 == main centre
         h.relocateMainMenu()
         assertEquals(20, h.domain.mainMenuRelocated.left)
     }
@@ -115,7 +117,7 @@ class CouiPopupLocateHelperTest {
     @Test
     fun `anchor top is rescaled by the relocated height ratio`() {
         val h = helper()
-        h.domain.mainMenu.set(0, 100, 400, 900)          // height 800
+        h.domain.mainMenu.set(0, 100, 400, 900) // height 800
         h.domain.mainMenuRelocated.set(0, 100, 360, 820) // height 720
         h.setAnchorRow(rowTopInList = 408, rowHeight = 120, scrollY = 0)
         assertEquals(467, h.subMenuAnchorTopAfterMainMenuRelocated())

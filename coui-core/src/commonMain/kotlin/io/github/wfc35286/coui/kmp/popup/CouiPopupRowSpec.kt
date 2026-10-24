@@ -1,5 +1,7 @@
+// Copyright 2026, compose-miuix-ui contributors
+// SPDX-License-Identifier: Apache-2.0
 
-package io.github.wfc35286.coui.kmp.component
+package io.github.wfc35286.coui.kmp.popup
 
 internal enum class CouiPopupRowKind {
     Default,
@@ -61,17 +63,15 @@ internal fun couiPopupRowSpec(
     )
 }
 
-internal fun couiPopupStateSlotContent(spec: CouiPopupRowSpec, checked: Boolean): CouiPopupStateSlot =
-    when {
-        spec.stateSlotIsChevron -> CouiPopupStateSlot.Chevron
-        checked -> CouiPopupStateSlot.Check
-        else -> CouiPopupStateSlot.Empty
-    }
+internal fun couiPopupStateSlotContent(spec: CouiPopupRowSpec, checked: Boolean): CouiPopupStateSlot = when {
+    spec.stateSlotIsChevron -> CouiPopupStateSlot.Chevron
+    checked -> CouiPopupStateSlot.Check
+    else -> CouiPopupStateSlot.Empty
+}
 
 internal enum class CouiPopupStateSlot { Chevron, Check, Empty }
 
-internal fun couiPopupHasAvailableSubMenu(item: CouiPopupListItem): Boolean =
-    item.subItems.isNotEmpty() && item.subItems.all { it.type == CouiPopupItemType.Default }
+internal fun couiPopupHasAvailableSubMenu(item: CouiPopupListItem): Boolean = item.subItems.isNotEmpty() && item.subItems.all { it.type == CouiPopupItemType.Default }
 
 internal fun couiPopupWithGroupDividers(items: List<CouiPopupListItem>): List<CouiPopupListItem> {
     if (items.size < 3) return items

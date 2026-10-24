@@ -1,6 +1,7 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
-package io.github.wfc35286.coui.kmp.component
+
+package io.github.wfc35286.coui.kmp.graphics
 
 /**
  * The ColorOS platform backdrop blur, transcribed **verbatim** from the AGSL shader strings

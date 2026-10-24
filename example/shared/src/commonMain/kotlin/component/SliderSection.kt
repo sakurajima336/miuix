@@ -17,13 +17,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import io.github.wfc35286.coui.kmp.component.CouiCard
-import io.github.wfc35286.coui.kmp.component.CouiPreferenceItem
-import io.github.wfc35286.coui.kmp.component.CouiPreferencePosition
-import io.github.wfc35286.coui.kmp.component.CouiSectionSeekBar
-import io.github.wfc35286.coui.kmp.component.CouiSeekBar
-import io.github.wfc35286.coui.kmp.component.CouiSmallTitle
-import io.github.wfc35286.coui.kmp.component.CouiText
+import io.github.wfc35286.coui.kmp.basic.CouiCard
+import io.github.wfc35286.coui.kmp.basic.CouiSectionSeekBar
+import io.github.wfc35286.coui.kmp.basic.CouiSeekBar
+import io.github.wfc35286.coui.kmp.basic.CouiSmallTitle
+import io.github.wfc35286.coui.kmp.basic.CouiText
+import io.github.wfc35286.coui.kmp.preference.CouiPreferenceItem
+import io.github.wfc35286.coui.kmp.preference.CouiPreferencePosition
 import io.github.wfc35286.coui.kmp.token.CouiTextEmphasis
 import io.github.wfc35286.coui.kmp.token.CouiTypography
 

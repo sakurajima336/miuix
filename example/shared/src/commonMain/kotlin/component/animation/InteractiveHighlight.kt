@@ -2,9 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package component.animation
-
-// Adapted from Kyant0/AndroidLiquidGlass — https://github.com/Kyant0/AndroidLiquidGlass (Apache 2.0).
-
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.VisibilityThreshold
@@ -22,6 +19,9 @@ import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.blur.RuntimeShader
 import top.yukonga.miuix.kmp.blur.asBrush
 import top.yukonga.miuix.kmp.blur.isRuntimeShaderSupported
+
+// Adapted from Kyant0/AndroidLiquidGlass — https://github.com/Kyant0/AndroidLiquidGlass (Apache 2.0).
+
 
 internal class InteractiveHighlight(
     private val animationScope: CoroutineScope,

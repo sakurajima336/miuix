@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package component.effect
-
 import androidx.compose.ui.graphics.Brush
-import top.yukonga.miuix.kmp.blur.RuntimeShader
-import top.yukonga.miuix.kmp.blur.asBrush
 import kotlin.math.cos
 import kotlin.math.sin
+import top.yukonga.miuix.kmp.blur.RuntimeShader
+import top.yukonga.miuix.kmp.blur.asBrush
+
 
 internal class BgEffectPainter(
     private val isOs3: Boolean = true,

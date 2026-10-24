@@ -1,10 +1,9 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
-@file:Suppress("ktlint:standard:property-naming") // Preserve public COUI defaults API names.
+@file:Suppress("ktlint:standard:property-naming") // Preserve the public defaults API names.
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.basic
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -34,233 +33,206 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import io.github.wfc35286.coui.kmp.graphics.CouiThumbRenderer
+import io.github.wfc35286.coui.kmp.graphics.drawCouiTexturedThumb
 import io.github.wfc35286.coui.kmp.motion.CouiSpringData
 import io.github.wfc35286.coui.kmp.motion.rememberCouiParentIntercept
 import io.github.wfc35286.coui.kmp.motion.toSpringSpec
 import io.github.wfc35286.coui.kmp.shape.couiCapsulePath
 import io.github.wfc35286.coui.kmp.shape.createCouiCapsuleShader
 import io.github.wfc35286.coui.kmp.theme.CouiTheme
-import kotlinx.coroutines.flow.first
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.exp
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
+import kotlinx.coroutines.flow.first
 
 /**
- * Defaults for [CouiSeekBar], read from `COUISeekBarCore.initState` and the `coui_seekbar_*`
- * resources of ColorOS 17.0.0.
+ * Defaults for [CouiSeekBar].
  *
- * Every value here is the **default** an unattributed `COUISeekBar` gets, i.e. what
- * `com.oplus.settings.widget.SettingsSeekBar` renders with before preference-level overrides. A caller that
- * wants the settings "亮度" look has to override several of them - see [CouiSeekBarBrightness].
+ * Every value here is the default an unattributed bar renders with, matching the ColorOS
+ * material. A caller that wants the settings "亮度" look has to override several of them -
+ * see [CouiSeekBarBrightness].
  */
 object CouiSeekBarDefaults {
-    /** `coui_seekbar_background_height` - the track height at rest. */
+    /** The track height at rest. */
     val TrackHeight: Dp = 20.dp
 
     /**
-     * `coui_seekbar_background_radius`.
+     * The track's nominal corner radius.
      *
-     * **Not used for drawing.** `COUISeekBarCore.getBackgroundRadiusForDraw()` returns
-     * `curBackgroundHeight / 2`, and that is the value that reaches `drawRoundRect`; this attr
-     * only feeds the G2 path adapter (`COUISeekBarCore$SmoothRoundCornerHelper`) when
-     * `smoothStyleType == 1`. Kept here because it is part of the public attr surface - but do
-     * not pass it to `drawRoundRect`, which is how this component first shipped an almost square
-     * track.
+     * **Not used for drawing.** The drawn radius is derived from the track height at runtime
+     * (half the current height); this value only feeds the smooth-round-corner path adapter
+     * when the smooth style is enabled. Kept because it is part of the public attribute
+     * surface - but do not use it as the drawn radius.
      */
     val TrackRadius: Dp = 2.dp
 
-    /** `coui_seekbar_progress_height`. */
+    /** The progress height. */
     val ProgressHeight: Dp = 20.dp
 
-    /** `coui_seekbar_progress_radius`. Not used for drawing - see [TrackRadius]. */
+    /** The progress's nominal corner radius. Not used for drawing - see [TrackRadius]. */
     val ProgressRadius: Dp = 2.dp
 
     /**
-     * `COUISeekBarCore.initState`'s `paddingHorizontal` - the thumb's travel inset.
+     * The thumb's travel inset.
      *
-     * It is **derived**, not an attribute: `backgroundHeight * backgroundEnlargeScale / 2`, i.e.
-     * 10dp * 1.4 = 14dp on an unattributed bar. `HorizontalOrientationHandler.calculateProgressRect`
-     * offsets the thumb by exactly this much, which is why the same number shows up as the blue
-     * rect's left end minus half the progress height.
+     * It is **derived**, not an attribute: `trackHeight * backgroundEnlargeScale / 2`, i.e.
+     * 10dp * 1.4 = 14dp on an unattributed bar. The thumb is offset by exactly this much from
+     * each end, which is why the same number shows up as the progress rect's left end minus
+     * half the progress height.
      */
     val ProgressPadding: Dp = 14.dp
 
     /**
-     * `coui_seekbar_progress_pressed_padding_horizontal` - **not** used for the progress inset.
+     * The press-time progress inset - **not** the resting progress inset.
      *
-     * The attribute exists and reads 4dp, but `initState` never assigns it to
-     * `SeekBarState.paddingHorizontal` (which is the derived value above). Kept for documentation
-     * so it is not mistaken for the press-time inset again.
+     * The resting inset is the derived [ProgressPadding] above; this value is kept for
+     * documentation so the two are not mistaken for each other.
      */
     val ProgressPaddingPressed: Dp = 4.dp
 
-    /** `coui_seekbar_thumb_radius` - the thumb's radius at rest. */
+    /** The thumb's radius at rest. */
     val ThumbRadius: Dp = 6.dp
 
-    /** `coui_seekbar_thumb_max_radius` - the thumb's radius while pressed. */
+    /** The thumb's radius while pressed. */
     val ThumbMaxRadius: Dp = 8.dp
 
-    /** `coui_seekbar_thumb_shadow_size`. */
+    /** The thumb shadow's blur radius. */
     val ThumbShadowSize: Dp = 2.dp
 
-    /** `coui_seekbar_shadow_offset_y`. */
+    /** The thumb shadow's vertical offset. */
     val ThumbShadowOffsetY: Dp = 2.dp
 
-    /** `coui_seekbar_view_min_height` - `COUISeekBarCore.onMeasure` never goes below this. */
+    /** The bar's minimum height; layout never goes below this. */
     val MinHeight: Dp = 36.dp
 
     /**
-     * `TouchMotionTierParams.iolMaxStretchDistance` - how far the **whole bar** may slide after the
-     * finger, in dp.
+     * How far the **whole bar** may slide after the finger, in dp.
      *
-     * `TouchMotionRubberBand.apply` never reaches it: the rubber band asymptotically approaches
-     * `maxDistance` as the finger travels, which is why the bar visibly lags further and further
-     * behind the thumb instead of tracking it one-to-one.
+     * The rubber band never reaches it: it asymptotically approaches this distance as the
+     * finger travels, which is why the bar visibly lags further and further behind the thumb
+     * instead of tracking it one-to-one.
      */
     val MaxStretchDistance: Dp = 28.dp
 
-    /** `coui_seekbar_view_max_width` - `couiSeekBarMaxWidth` defaults to this. */
+    /** The bar's maximum width. */
     val MaxWidth: Dp = 480.dp
 
     /**
-     * `COUISeekBarCore.getDefaultBackgroundEnlargeScale()` - the factor the track grows by while
-     * pressed.
+     * The factor the track grows by while pressed.
      *
-     * This is the single most visible difference between the two sliders on the settings
-     * brightness page: the "最低自动亮度" row leaves this at 1.4 and its 20dp track swells to
-     * 28dp on touch-down, while the "亮度" row sets `couiSeekBarBackGroundEnlargeScale="1.0"`
-     * and stays put.
+     * With the default 1.4, a 20dp track swells to 28dp on touch-down; callers that want a
+     * static track pass 1.0 (see [CouiStatusBarToggleSlider]).
      */
     const val BackgroundEnlargeScale: Float = 1.4f
 
-    /** Original `LAYER_A_ALPHA_TOP` name; the reversed gradient places this stop at the bottom. */
+    /** The gradient layer's alpha at its bottom stop - the gradient is placed in reverse. */
     internal const val LayerATopAlpha: Int = 0xe6
 
-    /** Original `LAYER_A_ALPHA_BOTTOM` name; `(0, height) -> (0, 0)` places this at the top. */
+    /** The gradient layer's alpha at its top stop. */
     internal const val LayerABottomAlpha: Int = 0x8c
 
-    /** LayerB bitmap margin, in raw pixels (`const/high16 12.0f`, no density conversion). */
+    /** The LayerB bitmap's margin, in raw pixels (no density conversion). */
     const val LayerBInset: Float = 12f
 
-    /** `TexturedThumbRenderer` LayerB's fill - `#77FFFFFF`. */
+    /** The LayerB layer's fill - `#77FFFFFF`. */
     val LayerBFill: Color = Color(0x77FFFFFF)
 
-    /** `LAYER_B_SHADOW_RADIUS`, in raw pixels. */
+    /** The LayerB shadow's blur radius, in raw pixels. */
     const val LayerBShadowRadius: Float = 5f
 
-    /** `LAYER_B_SHADOW_DY`, in raw pixels. */
+    /** The LayerB shadow's vertical offset, in raw pixels. */
     const val LayerBShadowOffsetY: Float = 0.4f
 
-    /** `LAYER_B_SHADOW_STROKE_WIDTH`, in raw pixels. */
+    /** The LayerB shadow's stroke width, in raw pixels. */
     const val LayerBShadowStrokeWidth: Float = 10f
 
     /**
-     * `TexturedThumbRenderer.LAYER_C_SPRING_RESPONSE_IN` - the spring LayerC fades **out** with
-     * when the finger goes down.
+     * The spring LayerC fades **out** with when the finger goes down.
      *
-     * The direction is worth spelling out because it reads backwards: `onPressDown` calls
-     * `startLayerCAlphaAnim(1.0f, 0.0f, 0.5f)`, whose parameters are `(startValue, finalPosition,
-     * response)`. So pressing down takes LayerC from 1 to 0 - the plain white circle fades away
-     * and the gradient/shadow layers fade in underneath it.
+     * Pressing down takes LayerC from 1 to 0 - the plain white circle fades away and the
+     * gradient/shadow layers fade in underneath it.
      */
     val LayerCInSpec: SpringSpec<Float> = SpringBounce0Response050.toSpringSpec()
 
     /**
-     * `LAYER_C_SPRING_RESPONSE_OUT` - LayerC fades back **in** to 1.0 with this when the finger
-     * lifts, over the still-fading gradient.
+     * The spring LayerC fades back **in** with to 1.0 when the finger lifts, over the
+     * still-fading gradient.
      */
     val LayerCOutSpec: SpringSpec<Float> = SpringBounce0Response030.toSpringSpec()
 
-    /** `TEXTURE_SPRING_RESPONSE` / `TEXTURE_SPRING_BOUNCE` - the gradient + shadow layers' alpha. */
+    /** The spring driving the gradient + shadow layers' alpha. */
     val TextureSpec: SpringSpec<Float> = SpringBounce0Response030.toSpringSpec()
 
     /**
-     * `COUISeekBarCore.mHeightSpringAnim`'s `COUISpringForce` - `bounce 0.0, response 0.5`.
-     *
-     * Drives the track's height between [TrackHeight] and
-     * `TrackHeight * backgroundEnlargeScale`.
+     * The spring driving the track's height between [TrackHeight] and
+     * `TrackHeight * backgroundEnlargeScale` - bounce 0.0, response 0.5.
      */
     val EnlargeSpec: SpringSpec<Float> = SpringBounce0Response050.toSpringSpec()
 
     /**
-     * `StandardAnimationHandler.startThumbScaleAnimation(true)`'s spring - `bounce 0.3f`,
-     * `response 0.5f`.
+     * The spring the thumb grows with on press - bounce 0.3, response 0.5.
      *
-     * The thumb grows `curThumbRadius` -> `thumbMaxRadius` (6dp -> 8dp) on this spring, which is
-     * **bouncier** than the track's. Driving both from one spring, as this component first did,
-     * loses the overshoot you see on the thumb.
+     * The thumb grows from [ThumbRadius] to [ThumbMaxRadius] (6dp -> 8dp) on this spring, which
+     * is **bouncier** than the track's [EnlargeSpec]; the extra bounce is what produces the
+     * thumb's visible overshoot.
      */
     val ThumbScaleInSpec: SpringSpec<Float> = SpringBounce03Response050.toSpringSpec()
 
-    /** `startThumbScaleAnimation(false)` - the same spring with `bounce` dropped to `0f`. */
+    /** The spring the thumb shrinks with on release - [ThumbScaleInSpec] with `bounce` dropped to `0f`. */
     val ThumbScaleOutSpec: SpringSpec<Float> = SpringBounce0Response050.toSpringSpec()
 
     /**
-     * `COUISpotLightEffect.ensureFollowHandAnimation` - `bounce 0.15f, response 0.35f`, with a
+     * The spring the press glow rides towards the finger - bounce 0.15, response 0.35, with a
      * minimum visible change of `1e-4f`.
      *
-     * The press glow rides this spring towards the finger, and the touch handler retargets it on
-     * every move, so the light lags the finger slightly instead of snapping to it.
+     * The touch handler retargets it on every move, so the light lags the finger slightly
+     * instead of snapping to it.
      */
     val FollowHandSpec: SpringSpec<Float> = CouiSpringData(bounce = 0.15f, response = 0.35f)
         .toSpringSpec(visibilityThreshold = 1e-4f)
 
     /**
-     * `COUISeekBarAdvanced.initDragTransitionAnim` - `SpringForce(bounce = 0f, response = 0.15f)`.
+     * The spring the thumb follows the finger with - bounce 0, response 0.15.
      *
-     * `trackTouchEvent` retargets `mDragTransitionAnim` at the finger-derived pixel on every move,
-     * so the thumb **springs** after the finger rather than sticking to it. The response is 0.15 -
-     * far stiffer than the 0.5 this component first used for dragging, which is exactly why the
-     * official bar feels lighter under the finger.
+     * It is retargeted at the finger-derived pixel on every move, so the thumb **springs** after
+     * the finger rather than sticking to it. The response is deliberately stiff, which keeps the
+     * bar feeling light under the finger.
      */
     val DragTransitionSpec: SpringSpec<Float> = SpringBounce0Response015.toSpringSpec()
 
     /**
-     * `SpotLightType.TYPE_OPAQUE_MEDIUM_1` - the preset `SpotLightEffectRenderer` installs.
+     * The press glow's end radius, in shader pixels - the radius that makes the glow **local**.
      *
-     * `mStartRadius 100 -> mEndRadius 500` (shader pixels), `mEndIntensity 0.6`,
-     * `mAmbientStrength 0.4`, `mDiffuseStrength 0.4`, `mLightHeight 200`, `mNoise 0.08`,
-     * `BlendMode.OVERLAY`.
-     *
-     * The radius is what makes the glow **local**: the light sits at the finger, so once the
-     * finger is more than this far from the bar there is nothing left to light. The first version
-     * ignored the radius entirely (and pinned y to the bar's centre), so its glow never went away.
+     * The light sits at the finger, so once the finger is more than this far from the bar there
+     * is nothing left to light.
      */
     const val SpotLightRadius: Float = 500f
 
-    /** `mEndIntensity`. */
+    /** The press glow's end intensity. */
     const val SpotLightIntensity: Float = 0.6f
 
-    /** `mAmbientStrength` / `mDiffuseStrength` - the light model's two terms. */
+    /** The ambient term of the glow's light model. */
     const val SpotLightAmbient: Float = 0.4f
 
-    /** `mDiffuseStrength`. */
+    /** The diffuse term of the glow's light model. */
     const val SpotLightDiffuse: Float = 0.4f
 
-    /**
-     * The progress bar's colour - `res/color-v23/coui_seekbar_progress_selector.xml`, which is
-     * `?attr/couiColorDisable` when disabled and `?attr/couiColorContainerTheme` otherwise.
-     */
+    /** The progress bar's colour - the theme primary, dimmed when disabled. */
     @Composable
     fun progressColor(enabled: Boolean): Color {
         val colors = CouiTheme.colors
         return if (enabled) colors.primary else colors.primary.copy(alpha = 0.3f)
     }
 
-    /**
-     * The track colour - `coui_seekbar_background_selector.xml`, which resolves to
-     * `?attr/couiColorContainer12` in both states.
-     */
+    /** The track colour. */
     @Composable
     fun trackColor(): Color = CouiTheme.componentColors.seekBarTrack
 
-    /**
-     * The thumb colour - `coui_seekbar_thumb_selector.xml`:
-     * `coui_color_white`, or `coui_seekbar_thumb_disable_color` when disabled.
-     */
+    /** The thumb colour - white, or the dedicated disabled colour when disabled. */
     @Composable
     fun thumbColor(enabled: Boolean): Color {
         val componentColors = CouiTheme.componentColors
@@ -268,23 +240,22 @@ object CouiSeekBarDefaults {
     }
 
     /**
-     * `coui_seekbar_thumb_shadow_color` - `#1a000000` light, `#33ffffff` dark.
+     * The thumb shadow's colour - `#1a000000` light, `#33ffffff` dark.
      *
-     * Note this is **not** the colour `TexturedThumbRenderer` uses for its glow: that one calls
-     * `setShadowLayer(5px, 0, 0.4px, -1)`, i.e. opaque **white**. This value belongs to the base
-     * `StandardThumbRenderer.drawThumbRoundRect`, which `TexturedThumbRenderer` overrides.
+     * Note this is **not** the colour the textured thumb renderer uses for its glow: that glow
+     * is opaque **white**. This value belongs to the base thumb shadow only.
      */
     @Composable
     fun thumbShadowColor(): Color = CouiTheme.componentColors.seekBarThumbShadow
 }
 
 /**
- * Settings 17's COUISeekBar, with click, drag and MOVE_BY_DISTANCE touch policies.
+ * A seek bar with click, drag and move-by-distance touch policies.
  *
- * [moveType] uses the APK's MOVE_BY_DEFAULT / MOVE_BY_FINGER / MOVE_BY_DISTANCE values.
- * `ScreenMinBrightnessPreference.onBindViewHolder` explicitly chooses [CouiSeekBarMoveType.ByDistance]
- * with damping 1; `SettingsBrightnessPreference` keeps [CouiSeekBarMoveType.Default].
- * The distance mode has no hold timer: travel beyond touch slop starts the drag.
+ * [moveType] selects how the thumb tracks the finger: [CouiSeekBarMoveType.Default] springs the
+ * thumb after the finger's position, while [CouiSeekBarMoveType.ByDistance] snaps it to the
+ * position implied by the finger's travel. The distance mode has no hold timer: travel beyond
+ * touch slop starts the drag.
  *
  * [moveFollowHand] is retained for existing callers: false selects ByDistance unless [moveType]
  * is explicitly supplied. [thumbShadowSize] and [touchPaddingVertical] expose the brightness
@@ -459,7 +430,7 @@ fun CouiSeekBar(
         translate(rubber.shift, 0f) {
             val centreY = size.height / 2f
             val rawHeight = trackHeight + (maxBackgroundHeight - trackHeight) * press.enlarge
-            // Core.drawBackground temporarily snaps in-flight height to the pixel grid.
+            // The in-flight height is temporarily snapped to the pixel grid.
             val height = if (rawHeight != trackHeight && rawHeight != maxBackgroundHeight) rawHeight.roundToInt().toFloat() else rawHeight
             val radius = height / 2f
             val inset = paddingHorizontal - radius
@@ -506,7 +477,7 @@ fun CouiSeekBar(
     }
 }
 
-/** ClickAnimationHandler (0 / 0.3) and drag transition (0 / 0.15), in logical progress space. */
+/** Animates the seek bar's progress with the click spring (0 / 0.3) and drag transition (0 / 0.15), in logical progress space. */
 @Stable
 internal class CouiSeekBarMotion(initialValue: Float) {
     var fraction by mutableFloatStateOf(initialValue.coerceIn(0f, 1f))
@@ -544,7 +515,7 @@ private const val SpringRestDistance = 1e-3f
 private const val SpringRestVelocity = 1e-2f
 
 /**
- * One step of a COUI spring, in the `(bounce, response)` language [CouiSpringData] uses.
+ * One step of a coui spring, in the `(bounce, response)` language [CouiSpringData] uses.
  *
  * The integration is the analytic solution for a damped harmonic oscillator rather than an Euler
  * step, so the result does not depend on the frame time - the same reason Compose's own springs
@@ -585,108 +556,79 @@ internal inline fun step(
         newVelocity = (velocity - omega * (velocity + omega * delta) * dt) * decay
     }
     val moving = abs(newValue - target) >= valueThreshold || abs(newVelocity) >= velocityThreshold
-    // `COUISpringAnimation.setMinimumVisibleChange` is a **stop** condition, not a "snap to the
-    // target" one: when the remaining distance and the speed are both below the threshold the
-    // animation ends and the value simply stays where it is. Snapping to the target instead makes
-    // every sub-threshold frame jump onto the raw target, and a target that follows the finger
-    // (deformation / rubber band) therefore reproduces the touch jitter pixel by pixel - which is
-    // exactly the "length changes every frame" flicker while slowly dragging.
+    // The minimum visible change is a **stop** condition, not a "snap to the target" one: when
+    // the remaining distance and the speed are both below the threshold the animation ends and
+    // the value simply stays where it is. Snapping to the target instead makes every
+    // sub-threshold frame jump onto the raw target, and a target that follows the finger
+    // (deformation / rubber band) therefore reproduces the touch jitter pixel by pixel.
     if (moving) apply(newValue, newVelocity) else apply(current, 0f)
     return moving
 }
 
 /**
- * The `SettingsBrightnessPreference` slider, named after the layout it inflates.
+ * The brightness-row slider, named after the layout it is modelled on.
  *
- * On ColorOS 17 that row is:
- *
- * ```
- * com.oplus.settings.feature.display.SettingsBrightnessPreference   (the preference)
- *   → com.oplus.settings.widget.OplusToggleSliderView               (RelativeLayout + ToggleSlider)
- *       → res/layout/status_bar_toggle_slider.xml                   (inflated in its constructor)
- *           → com.coui.appcompat.seekbar.COUISeekBar                (the actual bar)
- * ```
- *
- * `status_bar_toggle_slider.xml` pins that [CouiSeekBar] to values well away from the
- * unattributed default: no enlarge (`1.0`), no progress padding, no thumb shadow, an 18dp
- * radius, and a custom `android:thumb` drawable - which decodes to a **fully transparent
- * placeholder** (see `COUI-菜单弹窗与进度条深扒.md` §7.1), so the thumb is drawn entirely by
- * `TexturedThumbRenderer`. Those are the values below.
- *
- * Its sibling row, `ScreenMinBrightnessPreference`, hosts a `SettingsSeekBar` (which extends
- * `COUISeekBar` with **no** attributes at all) and therefore uses the plain
- * [CouiSeekBarDefaults]. The two differ most visibly on touch-down: this one stays put, that one
- * swells to 1.4x.
+ * It pins [CouiSeekBar] to values well away from the [CouiSeekBarDefaults] baseline: no enlarge
+ * (1.0), no progress padding, no thumb shadow, and an 18dp radius. The track stays put on
+ * touch-down, unlike the default bar which swells to 1.4x.
  */
 object CouiStatusBarToggleSlider {
-    /** `brightness_toggle_slider_height`. */
+    /** The slider row's total height. */
     val Height: Dp = 36.dp
 
-    /** `brightness_toggle_slider_corner_radius` - `couiSeekBarBackground/ProgressRadius`. */
+    /** The track and progress corner radius. */
     val Radius: Dp = 18.dp
 
-    /** `couiSeekBarBackGroundEnlargeScale="1.0"` - the track does **not** swell. */
+    /** The track does **not** swell on press. */
     const val EnlargeScale: Float = 1.0f
 
-    /** `couiSeekBarProgressPaddingHorizontal="0dp"`. */
+    /** The thumb's travel inset - 0dp. */
     val ProgressPadding: Dp = 0.dp
 
-    /** `couiSeekBarThumbShadowSize="0dp"`. */
+    /** The thumb shadow's size - 0dp. */
     val ThumbShadowSize: Dp = 0.dp
 
     /**
-     * `color/status_bar_qs_brightness_slider_bg_color` - the brightness row's track colour.
+     * The brightness row's track colour.
      *
-     * Straight out of the APK's resource table:
-     *
-     * ```
-     * resource 0x7f060dd8 color/status_bar_qs_brightness_slider_bg_color
-     *     ()      #0f000000
-     *     (night) #ff333333
-     * ```
-     *
-     * The night value is **opaque** `#333333`, not a translucent black: a hard-coded `#0f000000`
-     * disappears into the dark card, which is what the row looked like before this was read off
-     * the device.
+     * `#0f000000` light, **opaque** `#ff333333` night: the opaque night value keeps the track
+     * visible against the dark card.
      */
     val TrackColor: Color
         @Composable get() = if (isSystemInDarkTheme()) Color(0xFF333333) else Color(0x0F000000)
 
     /**
-     * `color/status_bar_qs_brightness_slider_progress_color` - `#fffafafa` light, `#ff515151`
-     * night.
+     * The brightness row's progress colour - `#fffafafa` light, `#ff515151` night.
      *
-     * The layout only overrides `couiSeekBarBackgroundColor`, so the progress keeps the theme's
-     * blue; this is here for completeness because the resource exists.
+     * Provided for completeness: the modelled layout does not override the progress colour, so
+     * the progress keeps the theme's colour.
      */
     val ProgressColor: Color
         @Composable get() = if (isSystemInDarkTheme()) Color(0xFF515151) else Color(0xFFFAFAFA)
 }
 
-/** Whether the given travel should be treated as a tap rather than a drag, mirroring the
- * `mTouchSlop` check `COUISeekBarAdvanced.onTouchEvent` performs before it commits to a drag. */
+/** Whether the given travel should be treated as a tap rather than a drag - the touch-slop
+ * check performed before committing to a drag. */
 internal fun isWithinTouchSlop(deltaX: Float, touchSlop: Float): Boolean = abs(deltaX) < touchSlop
 
 // ---------------------------------------------------------------------------------------------
 // Shared spring specs.
 //
-// These used to be constructed inline inside the per-frame `advance` loops, which allocated a new
-// `CouiSpringData` several times per frame for as long as the finger was down. On device that
-// showed up as a GC storm (`gc_priority_optimize set UX fail-2` x8) and a multi-second freeze.
-// They are immutable values, so one instance each is all that is needed.
+// Immutable spring values constructed once and reused, so the per-frame animation loops do not
+// allocate.
 // ---------------------------------------------------------------------------------------------
 
-/** `mHeightSpringAnim` / `startThumbScaleAnimation(false)` - bounce 0, response 0.5. */
+/** A bounce-0, response-0.5 spring - the track height and the thumb shrink. */
 internal val SpringBounce0Response050: CouiSpringData = CouiSpringData(0f, 0.5f)
 
-/** `startThumbScaleAnimation(true)` - bounce 0.3, response 0.5. */
+/** A bounce-0.3, response-0.5 spring - the thumb growth. */
 internal val SpringBounce03Response050: CouiSpringData = CouiSpringData(0.3f, 0.5f)
 
-/** `TexturedThumbRenderer`'s texture / LayerC-out springs - bounce 0, response 0.3. */
+/** A bounce-0, response-0.3 spring - the texture alpha, LayerC fade-out and value-driven progress animation. */
 internal val SpringBounce0Response030: CouiSpringData = CouiSpringData(0f, 0.3f)
 
-/** `COUISpotLightEffect.animate(true)` - bounce 0, response 0.15. */
+/** A bounce-0, response-0.15 spring - the drag transition and the glow fade-in. */
 internal val SpringBounce0Response015: CouiSpringData = CouiSpringData(0f, 0.15f)
 
-/** `COUISpotLightEffect.animate(false)` - bounce 0, response 0.4. */
+/** A bounce-0, response-0.4 spring - the glow fade-out. */
 internal val SpringBounce0Response040: CouiSpringData = CouiSpringData(0f, 0.4f)

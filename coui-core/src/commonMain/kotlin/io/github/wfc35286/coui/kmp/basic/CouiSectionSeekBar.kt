@@ -1,10 +1,9 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
 @file:Suppress("ktlint:standard:property-naming") // Preserve public COUI defaults API names.
 
-package io.github.wfc35286.coui.kmp.component
-
+package io.github.wfc35286.coui.kmp.basic
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -36,89 +35,68 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import io.github.wfc35286.coui.kmp.graphics.CouiThumbRenderer
+import io.github.wfc35286.coui.kmp.graphics.drawCouiTexturedThumb
 import io.github.wfc35286.coui.kmp.motion.rememberCouiHaptics
 import io.github.wfc35286.coui.kmp.motion.rememberCouiParentIntercept
 import io.github.wfc35286.coui.kmp.theme.CouiTheme
-import kotlinx.coroutines.flow.first
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.first
 
 /**
- * Defaults for [CouiSectionSeekBar], read from `COUISectionSeekBar` / `SectionAnimationHandler` /
- * `SectionProgressRenderer` of `小布输入法_1.7.38.17-os.apk` (com.oplus.keyboard) and the sibling
- * copy in `设置_17.0.0.apk`.
+ * Defaults for [CouiSectionSeekBar].
  *
- * The row this reproduces is `res/nJ.xml` of the keyboard APK:
- *
- * ```
- * COUICustomListSelectedLinearLayout (paddingHorizontal 32dp)
- *  └ ConstraintLayout
- *     ├ TextView  tv_title      ("识别速度" / "笔迹粗细")
- *     ├ TextView  tv_type_start ("慢" / "细")
- *     ├ TextView  tv_type_end   ("快" / "粗")
- *     └ com.coui.appcompat.seekbar.COUISectionSeekBar  id=section_seek_bar
- * ```
+ * The bar presents a bounded range of discrete sections, with a mark drawn at every section
+ * boundary and a thumb that detents between them.
  */
 object CouiSectionSeekBarDefaults {
-    /**
-     * `coui_section_seekbar_tick_mark_radius` = **3.0dp**.
-     *
-     * `COUISectionSeekBar.initState` reads this dimen and stores it into
-     * `SeekBarState.sectionMarkRadius`; `SectionProgressRenderer` then hands that value straight to
-     * `Canvas.drawCircle`. It is a real density-scaled dimension - the earlier port treated it as a
-     * raw pixel radius, which at density 2.75 drew a ~1px dot instead of an 8.25px mark.
-     */
+    /** The radius of each section mark. A density-scaled dimension, not a raw pixel value. */
     val MarkRadius: Dp = 3.dp
 
     /**
-     * `SectionAnimationHandler.DRAG_MOVE_RATIO` - while dragging, the thumb only travels this
-     * fraction of the finger's movement. That damping is what makes the bar feel "detented": the
-     * thumb lags, then flips to the next section.
+     * While dragging, the thumb travels only this fraction of the finger's movement. That damping
+     * is what makes the bar feel "detented": the thumb lags, then flips to the next section.
      */
     const val DragMoveRatio: Float = 0.4f
 
-    /** `SectionAnimationHandler.SNAP_POSITION_THRESHOLD` - half a section flips it. */
+    /** Moving half a section's width flips the thumb to the neighbouring section. */
     const val SnapPositionThreshold: Float = 0.5f
 
-    /** `SectionAnimationHandler.DRAG_SNAP_DURATION` - the flip animation while dragging. */
+    /** The duration of the flip animation while dragging. */
     const val DragSnapDurationMs: Int = 100
 
-    /** `SectionAnimationHandler.RELEASE_SNAP_DURATION` - the settle animation on lift. */
+    /** The duration of the settle animation on lift. */
     const val ReleaseSnapDurationMs: Int = 150
 
-    /** `SectionAnimationHandler.PROGRESS_TRANSITION_DURATION` - programmatic `setProgress`. */
+    /** The duration of the animation when the value is changed programmatically. */
     const val ProgressTransitionDurationMs: Int = 200
 
-    /** `COUISectionSeekBar.VELOCITY_COMPUTE_TIME` - the window the drag velocity is measured over. */
+    /** The window over which the drag velocity is measured. */
     const val VelocityComputeTimeMs: Int = 100
 
-    /** `COUISectionSeekBar.DRAG_DIRECTION_THRESHOLD` - how far the finger must move to flip direction. */
+    /** How far the finger must move before the drag direction is considered flipped. */
     const val DragDirectionThreshold: Float = 0.5f
 
     /**
-     * `COUISectionSeekBar.POSITION_BIAS`.
-     *
-     * Used by the keyboard's `getFingerTrackX` when the finger sits outside the track, so the
-     * outermost section still wins.
+     * Nudges the section quantiser when the finger sits outside the track, so the outermost
+     * section still wins.
      */
     const val PositionBias: Float = 0.1f
 
-    /** The track's colour - same selector as the plain bar (`coui_seekbar_background_selector`). */
+    /** The track colour. */
     @Composable
     fun trackColor(): Color = CouiTheme.componentColors.seekBarTrack
 
-    /** The filled part - `coui_seekbar_progress_selector`. */
+    /** The colour of the filled part of the track. */
     @Composable
     fun progressColor(): Color = CouiTheme.colors.primary
 
     /**
-     * `coui_seekbar_active_mark_selector` - the marks **left of** the thumb.
-     *
-     * The selector resolves to `?attr/couiColorLabelOnColor` when enabled, which is `#ffffff` in
-     * both `Theme.COUI.Main` and `Theme.COUI.Main.Dark`. Disabled is
-     * `coui_seekbar_active_mark_disable_color` = `#8affffff` light / `#29ffffff` night.
+     * The colour of the marks **left of** the thumb (the filled side): white when enabled, a
+     * dimmer white when disabled.
      */
     @Composable
     fun activeMarkColor(enabled: Boolean = true): Color = when {
@@ -128,10 +106,8 @@ object CouiSectionSeekBarDefaults {
     }
 
     /**
-     * `coui_seekbar_inactive_mark_selector` - the marks **right of** the thumb.
-     *
-     * `?attr/couiColorLabelTertiary` = `#42000000` light / `#4dffffff` night; disabled is
-     * `coui_seekbar_inactive_mark_disable_color` = `#42000000` light / `#29ffffff` night.
+     * The colour of the marks **right of** the thumb (the unfilled side): translucent black in the
+     * light theme, translucent white in the dark theme, dimmer still when disabled.
      */
     @Composable
     fun inactiveMarkColor(enabled: Boolean = true): Color = when {
@@ -141,25 +117,20 @@ object CouiSectionSeekBarDefaults {
         else -> Color(0x42000000)
     }
 
-    /** `coui_seekbar_thumb_selector`. */
+    /** The thumb colour. */
     @Composable
     fun thumbColor(): Color = CouiTheme.componentColors.seekBarThumb
 }
 
 /**
- * A COUI **sectioned** seek bar - the `com.coui.appcompat.seekbar.COUISectionSeekBar` of the
- * keyboard's handwriting settings ("识别速度" / "笔迹粗细").
+ * A COUI **sectioned** seek bar with discrete detents.
  *
- * It is not a plain slider: every step is a detent. The pieces, all ported from smali:
- *
- * | behaviour | source |
- * |---|---|
- * | marks drawn at every step, hidden under the thumb | `SectionProgressRenderer.drawMarks` / `drawMarkIfVisible` |
- * | marks left of the thumb use the active colour, right of it the inactive one | `drawMarks` |
- * | anchored whole-section travel plus residual x0.6 | `COUISectionSeekBar.trackTouchEvent` |
- * | node transitions during dragging use a 100ms animation and haptic feedback | `startDragSnapAnimation`, `performFeedback()` |
- * | taps use a separate 200ms progress transition | `startClickTransitionAnim`, `startProgressTransitionAnim` |
- * | lifting settles onto the nearest section over 150ms | `snapToNearestSection` + `RELEASE_SNAP_DURATION` |
+ * It is not a plain slider: every step is a detent. A mark is drawn at every section, skipped when
+ * it is hidden under the thumb - marks on the filled side of the thumb use the active colour, the
+ * others the inactive one. While dragging, the thumb follows the finger across whole sections with
+ * a damped residual inside the current one; crossing a section runs a 100ms snap animation with
+ * haptic feedback. A tap snaps the thumb onto the nearest section with a 200ms progress
+ * transition, and lifting settles onto the nearest section over 150ms.
  *
  * @param value The current section, in `min..max`.
  * @param onValueChange Called once per committed section change.
@@ -183,7 +154,7 @@ fun CouiSectionSeekBar(
     val trackHeight = with(density) { CouiSeekBarDefaults.TrackHeight.toPx() }
     val progressHeight = with(density) { CouiSeekBarDefaults.ProgressHeight.toPx() }
     val markRadiusPx = with(density) { CouiSectionSeekBarDefaults.MarkRadius.roundToPx().toFloat() }
-    // `TexturedThumbRenderer`'s LayerB / shadow dimensions, shared with the plain bar's defaults.
+    // Thumb shadow dimensions, shared with the plain bar's defaults.
     val thumbShadowRadius = with(density) { CouiSeekBarDefaults.ThumbShadowSize.toPx() }
     val thumbShadowOffsetY = with(density) { CouiSeekBarDefaults.ThumbShadowOffsetY.toPx() }
     val thumbShadowColor = CouiSeekBarDefaults.thumbShadowColor()
@@ -206,10 +177,10 @@ fun CouiSectionSeekBar(
     val thumbColor = CouiSectionSeekBarDefaults.thumbColor()
 
     val section = remember(min, max) { CouiSectionMotion(min, max) }
-    // `performFeedback()` - the section bar ticks once per detent, both when a tap snaps the thumb
-    // onto a section and when a drag crosses one.
+    // The section bar ticks once per detent, both when a tap snaps the thumb onto a section and
+    // when a drag crosses one.
     val haptics = rememberCouiHaptics()
-    // `attemptClaimDrag()` - keeps the enclosing scroll container from stealing a drag.
+    // Keeps the enclosing scroll container from stealing a drag.
     val intercept = rememberCouiParentIntercept()
     var barWidth by remember { mutableIntStateOf(0) }
     var barHeight by remember { mutableIntStateOf(0) }
@@ -219,8 +190,7 @@ fun CouiSectionSeekBar(
     // own report as an external `setProgress`.
     var reportedValue by remember { mutableIntStateOf(value) }
 
-    // `setProgress` **from outside** goes through the 200ms transition animation
-    // (`PROGRESS_TRANSITION_DURATION`).
+    // A value change **from outside** goes through the 200ms transition animation.
     //
     // The `value != reportedValue` guard matters: without it every section this component commits
     // while dragging came straight back in as a new `value`, restarting a 200ms `transitionTo` on
@@ -239,8 +209,7 @@ fun CouiSectionSeekBar(
         }
     }
 
-    // Once the width is known, park the thumb on the caller's section without animating - the
-    // original does the same in `onSizeChanged` -> `syncSectionThumbXFromProgress`.
+    // Once the width is known, park the thumb on the caller's section without animating.
     LaunchedEffect(barWidth, min, max) {
         if (barWidth > 0) section.jumpTo(value, (barWidth - 2f * paddingHorizontal).coerceAtLeast(1f), min)
     }
@@ -309,8 +278,8 @@ fun CouiSectionSeekBar(
                                 } else if (change.position.x in 0f..barWidth.toFloat() &&
                                     change.position.y in 0f..barHeight.toFloat()
                                 ) {
-                                    // Section.startClickTransitionAnim -> setProgress(target,true,true)
-                                    // -> startProgressTransitionAnim: 200ms ValueAnimator (default ease).
+                                    // A tap uses the same 200ms progress transition as a
+                                    // programmatic value change.
                                     section.tapTo(fingerX, travel, min)
                                 } else {
                                     null
@@ -333,7 +302,7 @@ fun CouiSectionSeekBar(
                                 section.dragging = true
                                 intercept.setDisallowIntercept(true)
                                 rubber.move(change.position.x, maxStretch)
-                                // First trackTouchEvent only anchors and returns; no snap tween here.
+                                // The first move only anchors the drag and returns; no snap tween yet.
                                 val jumped = section.initDragAnchor(fingerX, travel, downTrackX, min)
                                 if (jumped != null) {
                                     reportedValue = jumped
@@ -377,25 +346,12 @@ fun CouiSectionSeekBar(
         translate(rubber.shift, 0f) {
             val centreY = size.height / 2f
             val rawBackgroundHeight = trackHeight + (maxBackgroundHeight - trackHeight) * press.enlarge
-            // `COUISeekBarCore.drawBackground`:
-            //
-            // ```java
-            // float h = state.getCurBackgroundHeight();
-            // float r = state.getCurBackgroundRadius();
-            // boolean midAnim = h != state.getBackgroundHeight() && h != mMaxBackgroundHeight;
-            // if (midAnim) {                       // only while the spring is travelling
-            //     float snapped = snapHeightToPixelGrid(h);   // == Math.round(h)
-            //     state.setCurBackgroundHeight(snapped);
-            //     state.setCurBackgroundRadius(snapped / 2f);
-            // }
-            // ... calculateBackgroundRect + drawInactiveTrack ...
-            // if (midAnim) { state.setCurBackgroundHeight(h); state.setCurBackgroundRadius(r); }
-            // ```
-            //
-            // The height is rounded to a **whole pixel** while the swell is in flight, and the float is
-            // restored afterwards. Drawing the raw float (as this did) puts the track's top and bottom
-            // edges on sub-pixel positions every frame, so the capsule shimmers and its centre drifts
-            // during the grow/shrink - the official instead grows in clean one-pixel steps.
+            // While the swell is in flight - neither at the rest height nor at the max - the drawn
+            // background height is rounded to a **whole pixel** (the spring itself keeps the
+            // float), and the radius is derived from the rounded height. Drawing the raw float
+            // puts the track's top and bottom edges on sub-pixel positions every frame, so the
+            // capsule shimmers and its centre drifts during the grow/shrink; the pixel snap makes
+            // it grow in clean one-pixel steps.
             val midEnlargeAnim = rawBackgroundHeight != trackHeight && rawBackgroundHeight != maxBackgroundHeight
             val curBackgroundHeight =
                 if (midEnlargeAnim) rawBackgroundHeight.roundToInt().toFloat() else rawBackgroundHeight
@@ -405,11 +361,11 @@ fun CouiSectionSeekBar(
             val backgroundRight = size.width - backgroundInset
             val backgroundTop = centreY - backgroundRadius
 
-            // Preserve the previously validated plain capsule used by the section bar.
+            // The section bar draws its track as a plain capsule.
             val trackSize = Size(backgroundRight - backgroundLeft, curBackgroundHeight)
             translate(backgroundLeft, backgroundTop) {
-                // FIDELITY NOTE: the table-based G2 sampler degenerates at radius=halfHeight.
-                // Use the plain round-rect fallback here; this is not evidence about libhwui's path.
+                // A plain round rect: capsule samplers degenerate when the radius equals half the
+                // height.
                 drawRoundRect(
                     color = trackColor,
                     topLeft = Offset.Zero,
@@ -420,10 +376,9 @@ fun CouiSectionSeekBar(
 
             val thumbRadius = thumbRadiusRest + (thumbRadiusPressed - thumbRadiusRest) * press.thumbScale
             // `section.thumbX` is *travel-local*: it runs 0..travel, where `travel` excludes the
-            // `paddingHorizontal` inset on both sides. The thumb, the blue rect and the marks must all
-            // be drawn in **view-local** space, so the inset has to be added back here. Drawing the
-            // thumb without it (which this did) put the thumb exactly `paddingHorizontal` to the left of
-            // its own mark.
+            // `paddingHorizontal` inset on both sides. The thumb, the progress rect and the marks
+            // are drawn in **view-local** space, so the inset has to be added back here - without
+            // it the thumb lands `paddingHorizontal` to the left of its own mark.
             val travel = (size.width - 2f * paddingHorizontal).coerceAtLeast(1f)
             val thumbCentreX = paddingHorizontal + if (rtl) travel - section.thumbX else section.thumbX
             val progressR = progressHeight / 2f
@@ -444,8 +399,8 @@ fun CouiSectionSeekBar(
                 }
             }
 
-            // `SectionProgressRenderer.drawMarks`: one circle per section, skipping the one hidden by
-            // the thumb, active colour on the filled side.
+            // One circle per section, skipping the one hidden by the thumb; the filled side uses
+            // the active colour.
             drawSectionMarks(
                 min = min,
                 max = max,
@@ -483,7 +438,7 @@ fun CouiSectionSeekBar(
     }
 }
 
-/** The mark drawing of `SectionProgressRenderer`. */
+/** Draws one mark per section, active colour on the filled side of the thumb. */
 private fun DrawScope.drawSectionMarks(
     min: Int,
     max: Int,
@@ -500,29 +455,26 @@ private fun DrawScope.drawSectionMarks(
 ) {
     if (max <= min) return
     val span = (max - min).toFloat()
-    // `drawMarks` starts from the inactive colour and switches once it passes the thumb; in RTL
-    // that means it starts on the inactive side.
+    // Marks on the filled side of the thumb use the active colour, the rest the inactive one; in
+    // RTL the filled side is on the right.
     for (step in min..max) {
         val fraction = (step - min) / span
         val x = if (rtl) canvasWidth - travelStart - travelLength * fraction else travelStart + travelLength * fraction
         val onFilledSide = if (rtl) x > thumbX else x < thumbX
         val color = if (onFilledSide) activeColor else inactiveColor
-        // `drawMarkIfVisible`: skip when the mark sits entirely under the thumb.
+        // Skip the mark when it sits entirely under the thumb.
         if (x - markRadius > thumbX - thumbRadius &&
             x + markRadius < thumbX + thumbRadius
         ) {
             continue
         }
-        // `SectionProgressRenderer` passes `state.sectionMarkRadius`, i.e. the
-        // `coui_section_seekbar_tick_mark_radius` dimen (3dp), straight into `drawCircle`.
         drawCircle(color = color, radius = markRadius, center = Offset(x, centreY))
     }
 }
 
 /**
- * The detent state machine, a port of `SectionAnimationHandler`.
- *
- * Kept separate from the drawing so the numbers below can be read against the smali one by one.
+ * The detent state machine: anchors a drag on a section, quantises the finger's travel to whole
+ * sections, and animates the snaps between them.
  */
 @Stable
 internal class CouiSectionMotion(private val min: Int, private val max: Int) {
@@ -539,7 +491,7 @@ internal class CouiSectionMotion(private val min: Int, private val max: Int) {
     private var thumbXVelocity = 0f
     private var initialised = false
 
-    // `SectionAnimationHandler` drag fields.
+    // Drag state fields.
     private var anchorSection = Int.MIN_VALUE
     private var anchorThumbX = 0f
     private var dragCurrentOffset = 0f
@@ -569,7 +521,7 @@ internal class CouiSectionMotion(private val min: Int, private val max: Int) {
 
     private fun sectionWidth(length: Float) = length / (max - min).toFloat()
 
-    /** The pixel X of a section - `SeekBarState.progressToScale(section) * length`. */
+    /** The pixel X of a section within the track. */
     fun sectionX(section: Int, length: Float): Float {
         val width = sectionWidth(length)
         val raw = width * (section - min)
@@ -577,11 +529,11 @@ internal class CouiSectionMotion(private val min: Int, private val max: Int) {
     }
 
     /**
-     * `COUISectionSeekBar.getFingerTrackX`:
-     * `(primaryToHorizontalAbsoluteScale(x, length) * length).coerceIn(0f, length)`.
+     * Maps a view-local x to the finger's **absolute** position on the track, coerced into
+     * `0..length`.
      *
-     * Note this is the finger's **absolute** position on the track, not a delta from where it went
-     * down - the whole drag maths below is expressed in that space.
+     * Note this is absolute, not a delta from where the finger went down - the whole drag maths
+     * below is expressed in that space.
      */
     fun fingerTrackX(x: Float, start: Float, length: Float, rtl: Boolean): Float {
         val raw = if (rtl) length - (x - start) else x - start
@@ -589,17 +541,17 @@ internal class CouiSectionMotion(private val min: Int, private val max: Int) {
     }
 
     /**
-     * `SectionAnimationHandler.initDragAnchor(FFF)` - `(fingerTrackX, length, fingerDownTrackX)`.
+     * Anchors a drag on the section nearest the finger's down position.
      *
-     * Two details matter and both were wrong in the first port:
+     * Two details matter:
      *
-     * 1. `dragAnchorThumbX` is the **section's** pixel position,
-     *    `state.progressToScale(anchorSection) * length` - not the finger's down position. The
-     *    quantiser below measures `offset = fingerTrackX - dragAnchorThumbX` from the detent, so
-     *    anchoring on the finger would shift every subsequent step by however far from the detent
-     *    the finger landed.
-     * 2. `dragDirection` is seeded here from `fingerTrackX >= dragAnchorThumbX`, so the very first
-     *    MOVE already has a direction instead of waiting for `DRAG_DIRECTION_THRESHOLD`.
+     * 1. The anchor is the **section's** pixel position, not the finger's down position. The
+     *    quantiser in [dragMove] measures `offset = fingerTrackX - anchorThumbX` from the detent,
+     *    so anchoring on the finger would shift every subsequent step by however far from the
+     *    detent the finger landed.
+     * 2. The drag direction is seeded here from the finger's position relative to the anchor, so
+     *    the very first move already has a direction instead of waiting for the direction
+     *    threshold.
      */
     fun initDragAnchor(fingerTrackX: Float, length: Float, fingerDownTrackX: Float, minSection: Int): Int? {
         val width = sectionWidth(length)
@@ -613,12 +565,12 @@ internal class CouiSectionMotion(private val min: Int, private val max: Int) {
         dragMoveAnimStartX = this.anchorThumbX
         dragMoveAnimEndX = Float.NaN
         dragSnapActive = false
-        // A fresh gesture must not inherit the previous lift's 150ms settle: while that snap was
-        // still marked as running, `dragMove`'s follow-the-finger branch (`snapDuration <= 0f`) was
-        // skipped, so the first moments of a new drag did not track the finger.
+        // A fresh gesture must not inherit the previous lift's 150ms settle: while that snap is
+        // still marked as running, `dragMove`'s follow-the-finger branch (`snapDuration <= 0f`) is
+        // skipped, so the first moments of a new drag would not track the finger.
         snapDuration = 0f
         lastFingerTrackX = fingerTrackX
-        // SectionAnimationHandler.initDragAnchor directly sets sectionThumbX to the anchor.
+        // The thumb jumps straight to the anchor.
         thumbX = this.anchorThumbX
         thumbXVelocity = 0f
         currentSection = anchorSection
@@ -627,11 +579,11 @@ internal class CouiSectionMotion(private val min: Int, private val max: Int) {
     }
 
     /**
-     * One MOVE of `COUISectionSeekBar.trackTouchEvent`.
+     * One move event of a drag.
      *
-     * The thumb is `anchor + wholeSections + residual * 0.6f`: the sections themselves are
-     * quantized (with `POSITION_BIAS` nudging in the direction of travel), and only the leftover
-     * inside the current section is damped - the literal `0.6f` is in the smali.
+     * The thumb is `anchor + wholeSections + residual * 0.6f`: whole sections are quantised (with
+     * [PositionBias] nudging in the direction of travel), and only the leftover inside the current
+     * section is damped.
      */
     fun dragMove(fingerTrackX: Float, length: Float, minSection: Int, onCommit: (Int) -> Unit) {
         val width = sectionWidth(length)
@@ -646,20 +598,12 @@ internal class CouiSectionMotion(private val min: Int, private val max: Int) {
         if (direction != 0 && dragDirection == 0) {
             dragDirection = direction
         } else if (direction != 0 && direction == -dragDirection) {
-            // `onDirectionReversed`:
+            // Direction reversal: re-anchor on the current section and abandon the running detent
+            // tween.
             //
-            // ```java
-            // if (dragAnchorSection != state.getProgress()) {
-            //     dragAnchorSection = state.getProgress();
-            //     dragAnchorThumbX = state.progressToScale(...) * length;
-            //     dragMoveAnimValue = 0f;
-            // }
-            // if (dragMoveAnimator != null) dragMoveAnimator.cancel();   // <-- this
-            // ```
-            //
-            // The `cancel()` matters: the running detent tween is expressed against the **old**
-            // `dragMoveAnimStartX`, so letting it finish after the anchor moved produced a visible
-            // jump. Cancelling also stops the `thumbX` updates that the still-running snap was
+            // Abandoning it matters: the running tween is expressed against the **old** start
+            // position, so letting it finish after the anchor moved produces a visible jump.
+            // Stopping it also unblocks the `thumbX` updates that the still-running snap was
             // suppressing through the `snapDuration <= 0f` guard.
             if (anchorSection != currentSection) {
                 anchorSection = currentSection
@@ -681,7 +625,7 @@ internal class CouiSectionMotion(private val min: Int, private val max: Int) {
         if (candidate != currentSection) {
             currentSection = candidate
             committedSection = candidate
-            // `startDragSnapAnimation(anchorThumbX, anchorThumbX + quantized, dragMoveAnimValue, length)`.
+            // Snap onto the newly reached section.
             startDragSnap(anchorThumbX + quantized, length)
             onCommit(candidate)
         } else if (snapDuration <= 0f) {
@@ -691,7 +635,7 @@ internal class CouiSectionMotion(private val min: Int, private val max: Int) {
     }
 
     /**
-     * `handleMotionEventUp` -> `handleFastMoveSnap` / `snapToNearestSection`.
+     * Settles onto the nearest section when the finger lifts.
      *
      * Returns the section to report if it differs from the last one already reported.
      */
@@ -724,14 +668,14 @@ internal class CouiSectionMotion(private val min: Int, private val max: Int) {
         currentSection = section
     }
 
-    /** `setFastMoving`/`setLastFingerTrackX` - the drag loop owns these. */
+    /** Records the finger's latest track position; the drag loop owns this. */
     fun setLastFingerTrackX(value: Float) {
         lastFingerTrackX = value
     }
 
     /**
-     * `setProgress` from outside - `snapToNearestSection` on the
-     * `PROGRESS_TRANSITION_DURATION` (200ms) path.
+     * A programmatic value change: animates onto the target section over
+     * [CouiSectionSeekBarDefaults.ProgressTransitionDurationMs].
      */
     fun transitionTo(value: Int, length: Float, minSection: Int) {
         if (length <= 0f || max <= min) return
@@ -743,7 +687,7 @@ internal class CouiSectionMotion(private val min: Int, private val max: Int) {
         progressTransition = true
     }
 
-    /** Tap path uses the same 200ms transition as setProgress(..., true, true). */
+    /** A tap uses the same 200ms transition as a programmatic value change. */
     fun tapTo(fingerTrackX: Float, length: Float, minSection: Int): Int? {
         val target = ((fingerTrackX / sectionWidth(length)).roundToInt() + minSection).coerceIn(minSection, max)
         if (target == currentSection) return null
@@ -751,7 +695,7 @@ internal class CouiSectionMotion(private val min: Int, private val max: Int) {
         return target
     }
 
-    /** `syncSectionThumbXFromProgress`: park on a section with no animation. */
+    /** Parks the thumb on a section with no animation. */
     fun jumpTo(value: Int, travel: Float, minSection: Int) {
         if (travel <= 0f || max <= min) return
         currentSection = value.coerceIn(minSection, max)
@@ -776,26 +720,26 @@ internal class CouiSectionMotion(private val min: Int, private val max: Int) {
     }
 
     /**
-     * `SectionAnimationHandler.startDragSnapAnimation(FFFF)`.
+     * Starts the detent snap after the thumb crosses into a new section.
      *
-     * The animator tweens `dragMoveAnimValue` from wherever it currently is to `endX` over
-     * [CouiSectionSeekBarDefaults.DragSnapDurationMs], and its update listener recomputes **every
-     * frame**:
+     * The animation tweens `dragMoveAnimValue` from wherever it currently is to the quantised
+     * travel over [CouiSectionSeekBarDefaults.DragSnapDurationMs], and the frame update recomputes
+     * **every frame**:
      *
      * ```
-     * sectionThumbX = clamp(dragMoveAnimStartX
-     *                      + dragMoveAnimValue   * 0.4f    // the tweened detent travel
-     *                      + dragCurrentOffset   * 0.6f,   // the *newest* finger residual
-     *                      0f, length)
+     * thumbX = clamp(dragMoveAnimStartX
+     *              + dragMoveAnimValue   * 0.4f    // the tweened detent travel
+     *              + dragCurrentOffset   * 0.6f,   // the *newest* finger residual
+     *              0f, length)
      * ```
      *
-     * The second term is the whole point of the design: `trackTouchEvent` keeps refreshing
+     * The second term is the whole point of the design: [dragMove] keeps refreshing
      * `dragCurrentOffset` from the live finger position, so the thumb keeps following the finger
-     * *while* the detent animation runs. Tweening straight onto the detent - which this used to do -
-     * pins the thumb for the full 100ms and is what made a held finger feel stuck.
+     * *while* the detent animation runs. Tweening straight onto the detent would pin the thumb for
+     * the full 100ms and make a held finger feel stuck.
      *
-     * `startDragSnapAnimation` also bails out early in two cases, both reproduced here: the end
-     * position is already reached, or the same end position is already being animated towards.
+     * Bails out early in two cases: the end position is already reached, or the same end position
+     * is already being animated towards.
      */
     private fun startDragSnap(endX: Float, length: Float) {
         if (thumbX == endX) return
@@ -806,12 +750,9 @@ internal class CouiSectionMotion(private val min: Int, private val max: Int) {
         dragSnapActive = true
         progressTransition = false
         snapFrom = dragMoveAnimValue
-        // **`endX - startX`, not `endX`.** The smali builds the animator as
-        // `ValueAnimator.ofFloat(p3, p2 - p1)` where `p1 = dragMoveAnimStartX` and
-        // `p2 = dragMoveAnimEndX`, so the animated value runs up to the *quantised travel* - the
-        // distance, not an absolute position. Tweening to the absolute `endX` made every section
-        // crossing throw the thumb far to the right, which is the "it jumps around while sliding"
-        // symptom.
+        // The animated value is the **quantised travel** (`endX - startX`), not an absolute
+        // position: the frame update adds it to `dragMoveAnimStartX`. Tweening to the absolute
+        // `endX` would throw the thumb far to the right on every section crossing.
         snapTo = endX - dragMoveAnimStartX
         snapElapsed = 0f
         snapDuration = CouiSectionSeekBarDefaults.DragSnapDurationMs / 1000f
@@ -828,19 +769,18 @@ internal class CouiSectionMotion(private val min: Int, private val max: Int) {
         if (snapDuration > 0f) {
             snapElapsed += dt
             val t = (snapElapsed / snapDuration).coerceIn(0f, 1f)
-            // `DRAG_SNAP_INTERPOLATOR` = PathInterpolatorCompat.create(0f, 0f, 0.25f, 1f).
+            // The drag snap uses a cubic ease-out (see [cubicEase]).
             val eased = if (progressTransition) {
-                // ValueAnimator's default AccelerateDecelerateInterpolator; no custom
-                // interpolator is installed by startProgressTransitionAnim.
+                // The progress transition uses the default accelerate/decelerate ease.
                 ((1f - cos(PI.toFloat() * t)) / 2f)
             } else {
                 cubicEase(t)
             }
             val animated = snapFrom + (snapTo - snapFrom) * eased
             if (dragSnapActive) {
-                // The drag detent's update listener: the tweened travel contributes 0.4, and the
-                // *live* finger residual contributes 0.6 - so the thumb keeps tracking the finger
-                // for the whole 100ms instead of parking on the detent.
+                // The tweened travel contributes 0.4 and the *live* finger residual 0.6, so the
+                // thumb keeps tracking the finger for the whole snap instead of parking on the
+                // detent.
                 dragMoveAnimValue = animated
                 thumbX = (
                     dragMoveAnimStartX +
@@ -866,21 +806,21 @@ internal class CouiSectionMotion(private val min: Int, private val max: Int) {
     }
 }
 
-/** `SectionAnimationHandler.DRAG_MOVE_RATIO` is 0.4; the in-section residual here is the smali's literal 0.6. */
+/** The in-section residual applied on top of the detented travel; the rest comes from [CouiSectionSeekBarDefaults.DragMoveRatio]. */
 private const val SectionResidualRatio = 0.6f
 
-/** `COUISectionSeekBar.DRAG_DIRECTION_THRESHOLD`. */
+/** How far the finger must move between events for the drag direction to flip. */
 private const val DirectionThreshold = 0.5f
 
-/** `COUISectionSeekBar.POSITION_BIAS` - nudges the quantizer in the direction of travel. */
+/** Nudges the section quantiser in the direction of travel. */
 private const val PositionBias = 0.1f
 
 /**
- * `PathInterpolatorCompat.create(0f, 0f, 0.25f, 1f)` - the ease-out the section snap uses.
+ * The ease-out the drag detent snap uses: a cubic Bezier from (0,0) to (1,1) with control points
+ * (0,0) and (0.25,1).
  *
- * A cubic Bezier from (0,0) to (1,1) with control points (0,0) and (0.25,1). Evaluating it at a
- * time fraction needs the x-parameter solved first, so this bisects for it (24 steps is well below
- * a pixel of error at any duration this is used with).
+ * Evaluating it at a time fraction needs the x-parameter solved first, so this bisects for it
+ * (24 steps is well below a pixel of error at any duration this is used with).
  */
 private fun cubicEase(t: Float): Float {
     val x = t.coerceIn(0f, 1f)

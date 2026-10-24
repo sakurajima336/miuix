@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 package component.highlight
-
 import top.yukonga.miuix.kmp.blur.highlight.Highlight
+
 
 internal object HighlightConfig {
 
