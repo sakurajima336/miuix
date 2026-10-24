@@ -8,6 +8,8 @@
  * Switch, list, menu and slider variants expose only local demo state. The
  * page uses **nothing from Miuix** - every colour, radius and spring comes from `coui-core`.
  */
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,13 +36,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
@@ -51,6 +59,12 @@ import io.github.wfc35286.coui.kmp.basic.CouiBottomFloatingNavigationBarDefaults
 import io.github.wfc35286.coui.kmp.basic.CouiBottomFloatingNavigationBarItem
 import io.github.wfc35286.coui.kmp.basic.CouiButton
 import io.github.wfc35286.coui.kmp.basic.CouiButtonSize
+import io.github.wfc35286.coui.kmp.basic.CouiCheckBox
+import io.github.wfc35286.coui.kmp.basic.CouiCheckBoxState
+import io.github.wfc35286.coui.kmp.basic.CouiCircularProgress
+import io.github.wfc35286.coui.kmp.basic.CouiExpandableFloatingButton
+import io.github.wfc35286.coui.kmp.basic.CouiFloatingButtonItem
+import io.github.wfc35286.coui.kmp.basic.CouiHorizontalProgressBar
 import io.github.wfc35286.coui.kmp.basic.CouiButtonType
 import io.github.wfc35286.coui.kmp.basic.CouiCard
 import io.github.wfc35286.coui.kmp.basic.CouiCardDefaults
@@ -58,7 +72,9 @@ import io.github.wfc35286.coui.kmp.basic.CouiRedDotType
 import io.github.wfc35286.coui.kmp.basic.CouiSectionSeekBar
 import io.github.wfc35286.coui.kmp.basic.CouiSeekBar
 import io.github.wfc35286.coui.kmp.basic.CouiSeekBarDefaults
+import io.github.wfc35286.coui.kmp.basic.CouiLoadingButton
 import io.github.wfc35286.coui.kmp.basic.CouiSeekBarMoveType
+import io.github.wfc35286.coui.kmp.basic.CouiTabLayout
 import io.github.wfc35286.coui.kmp.basic.CouiSmallTitle
 import io.github.wfc35286.coui.kmp.basic.CouiStatusBarToggleSlider
 import io.github.wfc35286.coui.kmp.basic.CouiSwitch
@@ -70,6 +86,11 @@ import io.github.wfc35286.coui.kmp.graphics.rememberCouiBackdrop
 import io.github.wfc35286.coui.kmp.popup.CouiPopupItemType
 import io.github.wfc35286.coui.kmp.popup.CouiPopupListItem
 import io.github.wfc35286.coui.kmp.popup.CouiPopupListWindow
+import io.github.wfc35286.coui.kmp.overlay.CouiAlertDialog
+import io.github.wfc35286.coui.kmp.overlay.CouiBottomSheet
+import io.github.wfc35286.coui.kmp.overlay.CouiSnackBar
+import io.github.wfc35286.coui.kmp.overlay.CouiTooltip
+import io.github.wfc35286.coui.kmp.overlay.CouiTooltipDirection
 import io.github.wfc35286.coui.kmp.preference.CouiMenuPreference
 import io.github.wfc35286.coui.kmp.preference.CouiPreferenceDefaults
 import io.github.wfc35286.coui.kmp.preference.CouiPreferenceItem
@@ -352,6 +373,19 @@ fun CouiCoreTestPage(
                     }
                 }
 
+                CouiSmallTitle("Loading button")
+                CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = CouiCardDefaults.HorizontalMargin)) { CouiLoadingDemo() }
+                CouiSmallTitle("Jelly tabs")
+                CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = CouiCardDefaults.HorizontalMargin)) { CouiJellyTabsDemo() }
+                CouiSmallTitle("Progress")
+                CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = CouiCardDefaults.HorizontalMargin)) { CouiProgressDemo() }
+                CouiSmallTitle("Dialog and snackbar")
+                CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = CouiCardDefaults.HorizontalMargin)) { CouiDialogDemo() }
+                CouiSmallTitle("Three-state checkbox")
+                CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = CouiCardDefaults.HorizontalMargin)) { CouiTriStateDemo() }
+                CouiSmallTitle("Floating button and tooltip")
+                CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = CouiCardDefaults.HorizontalMargin)) { CouiFabTooltipDemo() }
+
                 CouiSmallTitle("Bottom navigation bar")
 
                 CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = CouiCardDefaults.HorizontalMargin)) {
@@ -569,6 +603,196 @@ private fun CouiMixedMenuDemo() {
             onItemClick = { longMenuExpanded = false },
             onDismissRequest = { longMenuExpanded = false },
             touchPoint = longMenuTouchPoint,
+        )
+    }
+}
+
+
+@Composable
+private fun CouiLoadingDemo() {
+    var loading by remember { mutableStateOf(false) }
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        CouiLoadingButton(
+            text = "Submit",
+            loading = loading,
+            onClick = { loading = false },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        CouiButton(
+            text = if (loading) "Stop" else "Start",
+            onClick = { loading = !loading },
+            type = CouiButtonType.Secondary,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun CouiJellyTabsDemo() {
+    var tabIndex by remember { mutableIntStateOf(0) }
+    val tabs = listOf("Tab 1", "Tab 2", "Tab 3", "Tab 4")
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+        CouiTabLayout(
+            tabs = tabs,
+            selectedIndex = tabIndex,
+            onSelectedChange = { tabIndex = it },
+        )
+        Box(modifier = Modifier.padding(16.dp)) {
+            CouiText(tabs[tabIndex], CouiTypography.body, emphasis = CouiTextEmphasis.Secondary)
+        }
+    }
+}
+
+@Composable
+private fun CouiProgressDemo() {
+    var progress by remember { mutableFloatStateOf(0.4f) }
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        CouiCircularProgress(progress = progress)
+        Spacer(Modifier.width(20.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            CouiHorizontalProgressBar(progress = progress)
+            Spacer(Modifier.height(12.dp))
+            CouiSeekBar(value = progress, onValueChange = { progress = it })
+        }
+    }
+}
+
+@Composable
+private fun CouiDialogDemo() {
+    var showDialog by remember { mutableStateOf(false) }
+    var showSheet by remember { mutableStateOf(false) }
+    var showSnackBar by remember { mutableStateOf(false) }
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            CouiButton(text = "Dialog", onClick = { showDialog = true }, modifier = Modifier.weight(1f))
+            CouiButton(text = "Sheet", onClick = { showSheet = true }, type = CouiButtonType.Secondary, modifier = Modifier.weight(1f))
+        }
+        CouiButton(text = "Show snackbar", onClick = { showSnackBar = true }, modifier = Modifier.fillMaxWidth())
+    }
+    CouiAlertDialog(
+        visible = showDialog,
+        title = "Delete this file?",
+        message = "The file will be removed from this device. This cannot be undone.",
+        confirmText = "Delete",
+        dismissText = "Cancel",
+        onConfirm = { showDialog = false },
+        onDismissRequest = { showDialog = false },
+    )
+    CouiBottomSheet(
+        visible = showSheet,
+        onDismissRequest = { showSheet = false },
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
+            CouiText("Bottom sheet", CouiTypography.listTitle)
+            Spacer(Modifier.height(8.dp))
+            CouiText(
+                "Drag the panel down past half its height, tap the scrim, or go back to dismiss.",
+                CouiTypography.body,
+                emphasis = CouiTextEmphasis.Secondary,
+            )
+            Spacer(Modifier.height(24.dp))
+            CouiButton(text = "Done", onClick = { showSheet = false }, modifier = Modifier.fillMaxWidth())
+        }
+    }
+    CouiSnackBar(
+        visible = showSnackBar,
+        message = "Swipe this bar sideways to dismiss it",
+        onDismissRequest = { showSnackBar = false },
+    )
+}
+
+@Composable
+private fun CouiTriStateDemo() {
+    val checked = remember { mutableStateListOf(true, false, true) }
+    val masterState = when {
+        checked.all { it } -> CouiCheckBoxState.All
+        checked.any { it } -> CouiCheckBoxState.Part
+        else -> CouiCheckBoxState.None
+    }
+    val setAll: (Boolean) -> Unit = { next -> for (i in checked.indices) checked[i] = next }
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+        CouiPreferenceItem(
+            title = "Select all",
+            position = CouiPreferencePosition.First,
+            onClick = { setAll(masterState != CouiCheckBoxState.All) },
+            showDivider = true,
+            trailing = { CouiCheckBox(state = masterState, onStateChange = { setAll(it == CouiCheckBoxState.All) }) },
+        )
+        listOf("Option 1", "Option 2", "Option 3").forEachIndexed { index, title ->
+            CouiPreferenceItem(
+                title = title,
+                position = if (index == 2) CouiPreferencePosition.Last else CouiPreferencePosition.Middle,
+                onClick = { checked[index] = !checked[index] },
+                showDivider = index != 2,
+                trailing = {
+                    CouiCheckBox(
+                        state = if (checked[index]) CouiCheckBoxState.All else CouiCheckBoxState.None,
+                        onStateChange = { checked[index] = it == CouiCheckBoxState.All },
+                    )
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun CouiFabTooltipDemo() {
+    val directions = listOf(
+        CouiTooltipDirection.Up,
+        CouiTooltipDirection.Down,
+        CouiTooltipDirection.Left,
+        CouiTooltipDirection.Right,
+    )
+    val anchorBounds = remember { mutableStateListOf<androidx.compose.ui.geometry.Rect?>(null, null, null, null) }
+    var tooltipIndex by remember { mutableIntStateOf(-1) }
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 16.dp)) {
+        CouiText("Tap a tile to pin a tooltip on it", CouiTypography.body, emphasis = CouiTextEmphasis.Secondary)
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            directions.forEachIndexed { index, direction ->
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(CouiTheme.colors.background)
+                        .onGloballyPositioned { anchorBounds[index] = it.boundsInWindow() }
+                        .clickable { tooltipIndex = if (tooltipIndex == index) -1 else index },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CouiText(direction.name.first().toString(), CouiTypography.listTitle)
+                }
+            }
+        }
+        Spacer(Modifier.height(24.dp))
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.BottomEnd) {
+            CouiExpandableFloatingButton(
+                icon = rememberVectorPainter(CouiDemoIcons.Placeholder),
+                items = listOf(
+                    CouiFloatingButtonItem(label = "Scan"),
+                    CouiFloatingButtonItem(label = "Share"),
+                    CouiFloatingButtonItem(label = "New"),
+                ),
+                onItemSelected = { },
+            )
+        }
+    }
+    if (tooltipIndex in directions.indices) {
+        val index = tooltipIndex
+        CouiTooltip(
+            visible = true,
+            text = "Tooltip on the ${directions[index].name.lowercase()} side",
+            anchorBounds = anchorBounds[index],
+            direction = directions[index],
+            onDismissRequest = { tooltipIndex = -1 },
         )
     }
 }
