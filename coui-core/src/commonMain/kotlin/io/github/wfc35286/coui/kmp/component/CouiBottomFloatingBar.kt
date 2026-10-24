@@ -1,12 +1,14 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package io.github.wfc35286.coui.kmp.component
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -256,6 +258,33 @@ fun CouiBottomFloatingBar(
     dragSelectEnabled: Boolean = true,
     dispatchClickWhenAlreadySelected: Boolean = false,
     backdrop: CouiBackdrop? = LocalCouiBackdrop.current,
+    /**
+     * Whether the pill (the tab capsule) is shown. `false` is the official's `menuView == GONE`
+     * state, which leaves only the two accessory buttons.
+     *
+     * This is **not** `COUIBottomFloatingNavigationBar.showMenuView`/`hideMenuView`: those animate
+     * alpha/scale and end on `INVISIBLE`, so the capsule keeps its slot and the row keeps its
+     * centring (`MenuView.doMenuViewShowOrHideAnim` + `checkAllAnimationsEnded`,
+     * `COUIBottomFloatingNavigationBar.smali:3242-3261` / `:4091-4110` / `:490-507`). Here the
+     * capsule leaves the layout entirely, exactly like a real `View.GONE`.
+     *
+     * Geometry in that state, from `COUIBottomFloatingAccessoryNavigationBar#onLayout`'s GONE
+     * branch (`:1682-1690` + `layoutAccessoryIfVisible:742-768`):
+     *
+     * * the buttons sit **hard against the edges** - `paddingLeft` on the left, `right - 56dp` on
+     *   the right. `mSideViewSpacing` is not referenced on that path at all, so the usual 12dp gap
+     *   disappears instead of being redistributed;
+     * * each side is vertically centred on the row, which is still **88dp** tall - `onMeasure`
+     *   keeps the `min_height_without_padding_vertical` max (`:2115-2131`), it does not shrink to
+     *   the button height;
+     * * a side with no icon reserves nothing, so with only one accessory configured the row is not
+     *   pushed to the opposite edge by a phantom slot.
+     *
+     * The official exposes this state only through `getMenuView().setVisibility(GONE)` - there is
+     * no setter for it, and nothing in the container ever writes `GONE` itself
+     * (`49-ACCESSORY-ONLY-MODE.md`).
+     */
+    pillVisible: Boolean = true,
 ) {
     val start = remember { CouiAccessorySlot() }
     val end = remember { CouiAccessorySlot() }
@@ -269,59 +298,102 @@ fun CouiBottomFloatingBar(
 
     BoxWithConstraints(
         modifier =
-            modifier
-                .padding(horizontal = CouiBottomFloatingNavigationBarDefaults.PaddingHorizontal)
-                // `coui_bottom_floating_navigation_bar_min_height_without_padding_vertical`: the
-                // space the row reserves, with the 56dp controls centred inside it.
-                .height(CouiBottomFloatingNavigationBarDefaults.MinHeight),
+        modifier
+            .padding(horizontal = CouiBottomFloatingNavigationBarDefaults.PaddingHorizontal)
+            // `coui_bottom_floating_navigation_bar_min_height_without_padding_vertical`: the
+            // space the row reserves, with the 56dp controls centred inside it.
+            .height(CouiBottomFloatingNavigationBarDefaults.MinHeight),
         contentAlignment = Alignment.Center,
     ) {
-        // `layoutPositionsMediumScreen`: reserve `accSize + spacing` once per
-        // configured side, then centre what is left.
-        var reserve = 0.dp
-        if (startConfigured) reserve += CouiAccessoryButtonDefaults.Size + accessorySpacing
-        if (endConfigured) reserve += accessorySpacing + CouiAccessoryButtonDefaults.Size
-        val itemSpace = CouiBottomFloatingNavigationBarDefaults.ItemSpace
-        val idealPillWidth =
-            CouiBottomFloatingNavigationBarDefaults.ItemMaxWidth * items.size +
-                CouiBottomFloatingNavigationBarDefaults.InnerPadding * 2 +
-                itemSpace * (items.size - 1).coerceAtLeast(0)
-        val pillWidth = minOf((maxWidth - reserve).coerceAtLeast(0.dp), idealPillWidth)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (startConfigured) {
-                CouiAccessorySlotView(
-                    state = start,
-                    enabled = enabled,
-                    spacing = accessorySpacing,
-                    leading = true,
-                    backdrop = backdrop,
-                )
-                Spacer(Modifier.width(accessorySpacing))
+        if (!pillVisible) {
+            // The official's `menuView == GONE` branch. `COUIBottomFloatingAccessoryNavigationBar
+            // #onLayout` tests `mMenuView.getVisibility() == GONE` (`:1682-1690`) and then lays out
+            // nothing but the two accessories through `layoutAccessoryIfVisible` (`:742-768`):
+            //
+            //   left  = paddingLeft                       (start)
+            //   left  = right - paddingRight - 56dp       (end)
+            //   top   = (height - 56dp) / 2 + paddingTop  (both)
+            //
+            // `mSideViewSpacing` has **zero** references on that path, so the 12dp gap is gone and
+            // the buttons sit hard against the edges. The row keeps its 88dp reserve: `onMeasure`
+            // still takes the `min_height_without_padding_vertical` max (`:2115-2131`), it does not
+            // collapse to the button height.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (startConfigured) {
+                    CouiAccessorySlotView(
+                        state = start,
+                        enabled = enabled,
+                        spacing = 0.dp,
+                        leading = true,
+                        backdrop = backdrop,
+                    )
+                } else {
+                    Spacer(Modifier.width(CouiAccessoryButtonDefaults.Size))
+                }
+                if (endConfigured) {
+                    CouiAccessorySlotView(
+                        state = end,
+                        enabled = enabled,
+                        spacing = 0.dp,
+                        leading = false,
+                        backdrop = backdrop,
+                    )
+                } else {
+                    Spacer(Modifier.width(CouiAccessoryButtonDefaults.Size))
+                }
             }
-            CouiBottomFloatingNavigationBar(
-                items = items,
-                selectedIndex = selectedIndex,
-                onSelected = onSelect,
-                // The row already owns the screen-edge padding and the 72dp reserve, so the pill
-                // must not add either of them a second time.
-                modifier = Modifier.width(pillWidth),
-                horizontalPadding = 0.dp,
-                materialEnabled = materialEnabled,
-                shadowEnabled = shadowEnabled,
-                enabled = enabled,
-                dragSelectEnabled = dragSelectEnabled,
-                dispatchClickWhenAlreadySelected = dispatchClickWhenAlreadySelected,
-                backdrop = backdrop,
-            )
-            if (endConfigured) {
-                Spacer(Modifier.width(accessorySpacing))
-                CouiAccessorySlotView(
-                    state = end,
+        } else {
+            // `layoutPositionsMediumScreen`: reserve `accSize + spacing` once per
+            // configured side, then centre what is left.
+            var reserve = 0.dp
+            if (startConfigured) reserve += CouiAccessoryButtonDefaults.Size + accessorySpacing
+            if (endConfigured) reserve += accessorySpacing + CouiAccessoryButtonDefaults.Size
+            val itemSpace = CouiBottomFloatingNavigationBarDefaults.ItemSpace
+            val idealPillWidth =
+                CouiBottomFloatingNavigationBarDefaults.ItemMaxWidth * items.size +
+                    CouiBottomFloatingNavigationBarDefaults.InnerPadding * 2 +
+                    itemSpace * (items.size - 1).coerceAtLeast(0)
+            val pillWidth = minOf((maxWidth - reserve).coerceAtLeast(0.dp), idealPillWidth)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (startConfigured) {
+                    CouiAccessorySlotView(
+                        state = start,
+                        enabled = enabled,
+                        spacing = accessorySpacing,
+                        leading = true,
+                        backdrop = backdrop,
+                    )
+                    Spacer(Modifier.width(accessorySpacing))
+                }
+                CouiBottomFloatingNavigationBar(
+                    items = items,
+                    selectedIndex = selectedIndex,
+                    onSelected = onSelect,
+                    // The row already owns the screen-edge padding and the 88dp reserve, so the pill
+                    // must not add either of them a second time.
+                    modifier = Modifier.width(pillWidth),
+                    horizontalPadding = 0.dp,
+                    materialEnabled = materialEnabled,
+                    shadowEnabled = shadowEnabled,
                     enabled = enabled,
-                    spacing = accessorySpacing,
-                    leading = false,
+                    dragSelectEnabled = dragSelectEnabled,
+                    dispatchClickWhenAlreadySelected = dispatchClickWhenAlreadySelected,
                     backdrop = backdrop,
                 )
+                if (endConfigured) {
+                    Spacer(Modifier.width(accessorySpacing))
+                    CouiAccessorySlotView(
+                        state = end,
+                        enabled = enabled,
+                        spacing = accessorySpacing,
+                        leading = false,
+                        backdrop = backdrop,
+                    )
+                }
             }
         }
     }
@@ -348,9 +420,18 @@ private fun CouiAccessorySlotView(
     val scale = remember { Animatable(if (shown) 1f else 0.5f) }
     val alpha = remember { Animatable(if (shown) 1f else 0f) }
     val travel = remember { Animatable(0f) }
+    // Without a pill there is nothing to slide *under*: the official's `mFakeBounds` target is the
+    // capsule, so with the capsule GONE the collapsed slot travels its own width instead of
+    // `accSize + spacing` and leaves the row completely rather than stopping half-way.
     val collapsedTravel = (CouiAccessoryButtonDefaults.Size + spacing).value
     // The leading side slides right (into the pill), the trailing one slides left.
-    val travelTarget = if (shown) 0f else if (leading) collapsedTravel else -collapsedTravel
+    val travelTarget = if (shown) {
+        0f
+    } else if (leading) {
+        collapsedTravel
+    } else {
+        -collapsedTravel
+    }
     val animate = state.animateVisibility
     LaunchedEffect(shown, animate) {
         if (!animate) {
@@ -395,11 +476,11 @@ private fun CouiAccessorySlotView(
         // the page behind the button - not the bar's already-blurred pill.
         backdrop = backdrop,
         modifier =
-            Modifier.graphicsLayer {
-                scaleX = scale.value
-                scaleY = scale.value
-                this.alpha = alpha.value
-                translationX = travel.value
-            },
+        Modifier.graphicsLayer {
+            scaleX = scale.value
+            scaleY = scale.value
+            this.alpha = alpha.value
+            translationX = travel.value
+        },
     )
 }

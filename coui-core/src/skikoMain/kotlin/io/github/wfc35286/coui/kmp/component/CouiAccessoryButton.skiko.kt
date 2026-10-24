@@ -1,4 +1,4 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package io.github.wfc35286.coui.kmp.component
@@ -8,7 +8,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import io.github.wfc35286.coui.kmp.theme.CouiTheme
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -57,14 +56,14 @@ private fun DrawScope.drawCouiAccessoryCausticGlow(density: Float, dark: Boolean
     val edge = ((h - top) / (end - top)).coerceIn(0.01f, 0.99f)
     drawRoundRect(
         brush =
-            Brush.verticalGradient(
-                0f to Color.Transparent,
-                edge * 0.5f to peak.copy(alpha = peak.alpha * 0.35f),
-                edge to peak,
-                1f to Color.Transparent,
-                startY = top,
-                endY = end,
-            ),
+        Brush.verticalGradient(
+            0f to Color.Transparent,
+            edge * 0.5f to peak.copy(alpha = peak.alpha * 0.35f),
+            edge to peak,
+            1f to Color.Transparent,
+            startY = top,
+            endY = end,
+        ),
         topLeft = Offset(0f, top),
         size = Size(w, end - top),
         cornerRadius = CornerRadius(radius),
@@ -86,7 +85,18 @@ private const val PEAK = 0.30f
 internal actual fun Modifier.couiAccessoryMaterial(
     dark: Boolean,
     backdrop: CouiBackdrop?,
+    backgroundColor: Color,
+    scaleX: () -> Float,
+    scaleY: () -> Float,
 ): Modifier {
     val circle = remember { androidx.compose.foundation.shape.RoundedCornerShape(percent = 50) }
-    return this.background(color = CouiTheme.colors.bar, shape = circle)
+    return this.background(color = backgroundColor, shape = circle)
 }
+
+/**
+ * skiko has no AGSL, so the rim cannot be drawn: `COUIShadowEdgeDrawable` itself refuses to build
+ * without `isRuntimeShaderVersion()`, and the official draws nothing in that case. Returning the
+ * receiver unchanged reproduces that (rather than approximating a rim that would not match).
+ */
+@Composable
+internal actual fun Modifier.couiAccessoryEdge(dark: Boolean): Modifier = this

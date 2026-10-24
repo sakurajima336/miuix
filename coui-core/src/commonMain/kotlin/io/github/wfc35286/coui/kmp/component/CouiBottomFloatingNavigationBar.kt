@@ -1,5 +1,6 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
+
 package io.github.wfc35286.coui.kmp.component
 
 import androidx.compose.animation.core.Animatable
@@ -57,18 +58,18 @@ import androidx.compose.ui.unit.dp
 import io.github.wfc35286.coui.kmp.effect.CouiSpotLightDefaults
 import io.github.wfc35286.coui.kmp.effect.drawCouiSpotLight
 import io.github.wfc35286.coui.kmp.effect.rememberCouiSpotLightState
-import io.github.wfc35286.coui.kmp.motion.CouiPressSprings
 import io.github.wfc35286.coui.kmp.motion.CouiDeformDeadZonePx
 import io.github.wfc35286.coui.kmp.motion.CouiMinVisibleChange
 import io.github.wfc35286.coui.kmp.motion.CouiPressEngineDefaults
 import io.github.wfc35286.coui.kmp.motion.CouiPressMaskMinVisibleChange
 import io.github.wfc35286.coui.kmp.motion.CouiPressMaskSpring
+import io.github.wfc35286.coui.kmp.motion.CouiPressSprings
 import io.github.wfc35286.coui.kmp.motion.CouiSpringData
 import io.github.wfc35286.coui.kmp.motion.CouiTouchCommon
 import io.github.wfc35286.coui.kmp.motion.CouiTouchTiers
 import io.github.wfc35286.coui.kmp.motion.couiCalculateScaleWithK
-import io.github.wfc35286.coui.kmp.motion.couiHandUpSpring
 import io.github.wfc35286.coui.kmp.motion.couiDeformScales
+import io.github.wfc35286.coui.kmp.motion.couiHandUpSpring
 import io.github.wfc35286.coui.kmp.motion.couiPressScale
 import io.github.wfc35286.coui.kmp.motion.couiRubberBand
 import io.github.wfc35286.coui.kmp.motion.toSpringSpec
@@ -127,8 +128,18 @@ object CouiBottomFloatingNavigationBarDefaults {
     /** `coui_bottom_floating_navigation_bar_height` - the pill itself. */
     val Height: Dp = 56.dp
 
-    /** `coui_bottom_floating_navigation_bar_min_height_without_padding_vertical`. */
-    val MinHeight: Dp = 72.dp
+    /**
+     * `coui_bottom_floating_navigation_bar_min_height_without_padding_vertical` =
+     * `0x7f0707d2` = **88dp** in the gallery APK (`OppoGallery2` 17.10.4, MT workspace `6s0z2165`,
+     * `COUIBottomFloatingAccessoryNavigationBar.smali:151-157` + `onMeasure:2115-2131`, single
+     * `default` variant, no `-night` override).
+     *
+     * This used to be 72dp, which came from the software-store APK and made the whole row 16dp
+     * short: the 56dp controls then sat in a 72dp box instead of the official 88dp one, so the
+     * accessories looked oversized against the reserved row even though both are 56dp.
+     * `48-GALLERY-ACCESSORY-GEOMETRY.md` §5.
+     */
+    val MinHeight: Dp = 88.dp
 
     /** `coui_bottom_floating_navigation_bar_padding_horizontal` - the gap to the screen edges. */
     val PaddingHorizontal: Dp = 16.dp
@@ -235,8 +246,7 @@ object CouiBottomFloatingNavigationBarDefaults {
 
     /** The fallback panel colour for the current theme (`isCOUIDarkThemeOrNightMode`). */
     @Composable
-    fun fallbackPanelColor(): Color =
-        if (CouiTheme.colors.background.luminance() < 0.5f) FallbackPanelColorDark else FallbackPanelColorLight
+    fun fallbackPanelColor(): Color = if (CouiTheme.colors.background.luminance() < 0.5f) FallbackPanelColorDark else FallbackPanelColorLight
 
     /** The title's type style - 10dp fixed. */
     val TitleStyle: CouiTextStyle = CouiTextStyle(TitleSize)
@@ -262,12 +272,11 @@ object CouiBottomFloatingNavigationBarDefaults {
     }
 
     /** The right-hand overflow of the badge for a [digits]-digit number. */
-    fun redDotRightOverflow(digits: Int): Dp =
-        when {
-            digits <= 1 -> RedDotRightOverflow1Digit
-            digits == 2 -> RedDotRightOverflow2Digit
-            else -> RedDotRightOverflow3Digit
-        }
+    fun redDotRightOverflow(digits: Int): Dp = when {
+        digits <= 1 -> RedDotRightOverflow1Digit
+        digits == 2 -> RedDotRightOverflow2Digit
+        else -> RedDotRightOverflow3Digit
+    }
 
     /**
      * `COUISpotLightEffect.TYPE_OPAQUE_MEDIUM_2` - the spotlight preset the bottom bar uses
@@ -500,12 +509,12 @@ fun CouiBottomFloatingNavigationBar(
 
     BoxWithConstraints(
         modifier =
-            modifier
-                .padding(horizontal = horizontalPadding)
-                // `coui_bottom_floating_navigation_bar_min_height_without_padding_vertical`: the
-                // space the bar reserves, with the 56dp pill centred inside it. The official gets
-                // the same result from the 72dp host container it is inflated into.
-                .height(CouiBottomFloatingNavigationBarDefaults.MinHeight),
+        modifier
+            .padding(horizontal = horizontalPadding)
+            // `coui_bottom_floating_navigation_bar_min_height_without_padding_vertical`: the
+            // space the bar reserves, with the 56dp pill centred inside it. The official gets
+            // the same result from the 88dp host container it is inflated into.
+            .height(CouiBottomFloatingNavigationBarDefaults.MinHeight),
         contentAlignment = Alignment.Center,
     ) {
         // `BaseBottomFloatingMenuView.onMeasure`: every item is capped at `ItemMaxWidth` and the pill
@@ -542,211 +551,210 @@ fun CouiBottomFloatingNavigationBar(
         // which is what the official `MotionEvent.getX()` sees on its own dispatch.
         Box(
             modifier =
-                Modifier
-                    .fillMaxSize()
-                    .pointerInput(enabled, dragSelectEnabled, pillWidth, itemWidth, items.size) {
-                        if (!enabled) return@pointerInput
-                        awaitEachGesture {
-                            val down = awaitFirstDown(requireUnconsumed = false)
-                            val pillWidthPx = pillWidth.toPx()
-                            val pillHeightPx = CouiBottomFloatingNavigationBarDefaults.Height.toPx()
-                            val left = (size.width - pillWidthPx) / 2f
-                            val top = (size.height - pillHeightPx) / 2f
-                            val downPos = down.position
-                            val inside =
-                                downPos.x >= left && downPos.x <= left + pillWidthPx &&
-                                    downPos.y >= top && downPos.y <= top + pillHeightPx
-                            if (!inside) return@awaitEachGesture
-                            // `BaseBottomFloatingMenuView#findChildViewUnder`: a raw geometric hit
-                            // test against the item rects - closed intervals, **no** touchSlop, no
-                            // velocity, no snapping. The very same routine decides "which item was
-                            // pressed" and "which item is under the finger now".
-                            val inner = CouiBottomFloatingNavigationBarDefaults.InnerPadding.toPx()
-                            val space = CouiBottomFloatingNavigationBarDefaults.ItemSpace.toPx()
-                            val itemW = itemWidth.toPx()
-                            fun itemIndexAt(pos: Offset): Int {
-                                if (pos.y < top || pos.y > top + pillHeightPx) return -1
-                                for (i in items.indices) {
-                                    val x0 = left + inner + i * (itemW + space)
-                                    if (pos.x >= x0 && pos.x <= x0 + itemW) return i
-                                }
-                                return -1
+            Modifier
+                .fillMaxSize()
+                .pointerInput(enabled, dragSelectEnabled, pillWidth, itemWidth, items.size) {
+                    if (!enabled) return@pointerInput
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        val pillWidthPx = pillWidth.toPx()
+                        val pillHeightPx = CouiBottomFloatingNavigationBarDefaults.Height.toPx()
+                        val left = (size.width - pillWidthPx) / 2f
+                        val top = (size.height - pillHeightPx) / 2f
+                        val downPos = down.position
+                        val inside =
+                            downPos.x >= left && downPos.x <= left + pillWidthPx &&
+                                downPos.y >= top && downPos.y <= top + pillHeightPx
+                        if (!inside) return@awaitEachGesture
+                        // `BaseBottomFloatingMenuView#findChildViewUnder`: a raw geometric hit
+                        // test against the item rects - closed intervals, **no** touchSlop, no
+                        // velocity, no snapping. The very same routine decides "which item was
+                        // pressed" and "which item is under the finger now".
+                        val inner = CouiBottomFloatingNavigationBarDefaults.InnerPadding.toPx()
+                        val space = CouiBottomFloatingNavigationBarDefaults.ItemSpace.toPx()
+                        val itemW = itemWidth.toPx()
+                        fun itemIndexAt(pos: Offset): Int {
+                            if (pos.y < top || pos.y > top + pillHeightPx) return -1
+                            for (i in items.indices) {
+                                val x0 = left + inner + i * (itemW + space)
+                                if (pos.x >= x0 && pos.x <= x0 + itemW) return i
                             }
-                            // `MenuView#dispatchTouchEvent(ACTION_DOWN)`: remember the pressed item
-                            // and clear the pending slide target. A press that lands on the capsule
-                            // but not on an item belongs to the container, so it is consumed; a press
-                            // on an item stays with that item's own `clickable` (taps).
-                            val downIndex = itemIndexAt(downPos)
-                            if (downIndex < 0 && !down.isConsumed) down.consume()
-                            // The selection the gesture starts from = the official's
-                            // `mSelectedItemId` before any MOVE.
-                            val downSelected =
-                                if (dragIndex in items.indices) dragIndex else selectedIndexState.value
-                            var pendingIndex = -1
-                            var lastPos = downPos
-                            var upChange: PointerInputChange? = null
-                            // `COUISpotLightEffectDrawable.setLightPositionByPointerIndex`: the pill-local
-                            // coordinates are **divided by the bounds** before they reach the effect,
-                            // so the state (and hence the shader's `u_lightPosAndHeight`) works in
-                            // normalized space. Feeding raw pixels here put the light hundreds of
-                            // radii away from the finger, which is why the highlight never showed up
-                            // where it was pressed.
-                            val origin = Offset(left, top)
-                            val pillW = pillWidthPx.coerceAtLeast(1f)
-                            val pillH = pillHeightPx.coerceAtLeast(1f)
-                            fun Offset.normalizeToPill(): Offset =
-                                Offset(((this.x - origin.x) / pillW), ((this.y - origin.y) / pillH))
-                            spotLight.press(downPos.normalizeToPill())
-                            barPressed = true
-                            // `handleTouchDown`: the drag spring takes over from wherever the axes
-                            // currently are, so a still-running release keeps its velocity.
-                            for (axis in listOf(deformXAxis, deformYAxis, rubberXAxis, rubberYAxis)) {
-                                axis.spring = CouiTouchTiers.DragSpring
-                                axis.target = axis.value
-                            }
-                            val velocityTracker = VelocityTracker()
-                            velocityTracker.addPosition(down.uptimeMillis, downPos)
-                            var lastVx = 0f
-                            var lastVy = 0f
-                            while (true) {
-                                val event = awaitPointerEvent()
-                                val change = event.changes.firstOrNull()
-                                if (change?.pressed == true) {
-                                    val pos = change.position
-                                    lastPos = pos
-                                    spotLight.moveTo(pos.normalizeToPill())
-                                    velocityTracker.addPosition(change.uptimeMillis, pos)
-                                    // `MenuView#onMenuTouchMove`: hit test on every frame and move
-                                    // the highlight **immediately** - the tab under the finger turns
-                                    // selected (icon state + label colour) while the finger is still
-                                    // down. MOVE never reports to the host; it only records the
-                                    // pending target (`mPendingSlideSelectItemId`) for ACTION_UP.
-                                    if (dragSelectEnabled) {
-                                        val hit = itemIndexAt(pos)
-                                        val current =
-                                            if (dragIndex in items.indices) dragIndex else downSelected
-                                        if (hit >= 0 && hit != current) {
-                                            pendingIndex = hit
-                                            dragIndex = hit
-                                        }
-                                    }
-                                    // Travel from the touch-down point, exactly what
-                                    // `COUIITouchMotionUnit.handleTouchMove` feeds `moveAnimate`.
-                                    val dx = pos.x - downPos.x
-                                    val dy = pos.y - downPos.y
-                                    // `iolDeadZone` is raw pixels (5.0f, never dp-scaled).
-                                    if (
-                                        abs(dx) >= CouiDeformDeadZonePx ||
-                                            abs(dy) >= CouiDeformDeadZonePx
-                                    ) {
-                                        val scales =
-                                            couiDeformScales(
-                                                dx = dx,
-                                                dy = dy,
-                                                maxScale =
-                                                    couiCalculateScaleWithK(
-                                                        width = barSize.width,
-                                                        height = barSize.height,
-                                                        maxScale = CouiTouchCommon.MaxScale,
-                                                    ),
-                                                maxRubberPx = maxDeformPx,
-                                            )
-                                        deformXAxis.target = scales.x
-                                        deformYAxis.target = scales.y
-                                        // `COUIRubberAnimatorUnit`: the *target* is the
-                                        // rubber-banded travel; the drag spring follows it.
-                                        rubberXAxis.target =
-                                            couiRubberBand(
-                                                dx,
-                                                CouiTouchTiers.RubberCurveRatio,
-                                                maxStretchPx,
-                                            )
-                                        rubberYAxis.target =
-                                            couiRubberBand(
-                                                dy,
-                                                CouiTouchTiers.RubberCurveRatio,
-                                                maxStretchPx,
-                                            )
-                                    }
-                                } else {
-                                    // ACTION_UP / ACTION_CANCEL: remember where the finger lifted -
-                                    // the dispatch decision is made right below.
-                                    lastPos = change?.position ?: lastPos
-                                    upChange = change
-                                    break
-                                }
-                            }
-                            // `MenuView#dispatchTouchEvent(ACTION_UP)`:
-                            //   1. `performClickOnChildUnder(up)` - only when the item under the
-                            //      lifted finger is **not** the pressed one (a plain tap is still
-                            //      the item's own click);
-                            //   2. `dispatchPendingSlideItemClickIfNeeded` - then the pending slide
-                            //      target.
-                            // Exactly one `onItemClick` leaves the library per gesture, and only
-                            // here - that is why a drag switches the page on release, never while
-                            // the finger is moving.
-                            if (dragSelectEnabled) {
-                                val upIndex = itemIndexAt(lastPos)
-                                val target =
-                                    when {
-                                        upIndex >= 0 && upIndex != downIndex -> upIndex
-                                        upIndex < 0 && pendingIndex >= 0 -> pendingIndex
-                                        else -> -1
-                                    }
-                                if (target >= 0) {
-                                    // Consume the lift so the pressed item's own `clickable` cannot
-                                    // report a second time for the same gesture (`clickable` treats
-                                    // a consumed up as a cancelled tap).
-                                    upChange?.consume()
-                                    dragIndex = target
-                                    onSelectedState.value(target)
-                                } else {
-                                    // Back on the pressed tab (or no slide at all): hand the gesture
-                                    // back to that item's `clickable`, so a tap still reports and a
-                                    // single gesture can never report twice.
-                                    dragIndex = -1
-                                }
-                            }
-                            // `barOffsetX/Y` already hold the released position, and this spring
-                            // animates those very values home - there is no second source to hand
-                            // over to.
-                            val releaseVelocity = velocityTracker.calculateVelocity()
-                            lastVx = releaseVelocity.x
-                            lastVy = releaseVelocity.y
-                            spotLight.release()
-                            barPressed = false
-                            // `backAnimation()` / `COUIRubberAnimatorUnit.handleTouchUp`.
-                            //
-                            // `TouchMotionHandUpHelper.computeInitialVelocity(pan, totalDist,
-                            // multiplier, clamp)` is
-                            //     initial = clamp(pan / totalDist * multiplier, +-clamp)
-                            // and, crucially, `totalDist` is **per unit**: the deform unit uses
-                            // `iolMaxDeformRubberDistance` (150dp) while the rubber unit uses
-                            // `iolMaxStretchDistance` (28dp). The multiplier is how far from rest
-                            // the axis currently sits - for deform that is `|scale - 1|`, confirmed
-                            // in `COUIDeformAnimatorUnit` (`sub-float p5, p2, 1.0f`).
-                            val panVx = lastVx
-                            val panVy = lastVy
-                            val deformRangePx = maxDeformPx
-                            fun releaseAxis(
-                                axis: PopupSpringAxis,
-                                rest: Float,
-                                pan: Float,
-                                rangePx: Float,
-                            ) {
-                                val denominator = rangePx.coerceAtLeast(1f)
-                                axis.velocity =
-                                    (pan / denominator * abs(axis.value - rest))
-                                        .coerceIn(-1000f, 1000f)
-                                axis.spring = CouiTouchTiers.HandUpSpringLargeArea
-                                axis.target = rest
-                            }
-                            releaseAxis(deformXAxis, 1f, panVx, deformRangePx)
-                            releaseAxis(deformYAxis, 1f, panVy, deformRangePx)
-                            releaseAxis(rubberXAxis, 0f, panVx, maxStretchPx)
-                            releaseAxis(rubberYAxis, 0f, panVy, maxStretchPx)
+                            return -1
                         }
-                    },
+                        // `MenuView#dispatchTouchEvent(ACTION_DOWN)`: remember the pressed item
+                        // and clear the pending slide target. A press that lands on the capsule
+                        // but not on an item belongs to the container, so it is consumed; a press
+                        // on an item stays with that item's own `clickable` (taps).
+                        val downIndex = itemIndexAt(downPos)
+                        if (downIndex < 0 && !down.isConsumed) down.consume()
+                        // The selection the gesture starts from = the official's
+                        // `mSelectedItemId` before any MOVE.
+                        val downSelected =
+                            if (dragIndex in items.indices) dragIndex else selectedIndexState.value
+                        var pendingIndex = -1
+                        var lastPos = downPos
+                        var upChange: PointerInputChange? = null
+                        // `COUISpotLightEffectDrawable.setLightPositionByPointerIndex`: the pill-local
+                        // coordinates are **divided by the bounds** before they reach the effect,
+                        // so the state (and hence the shader's `u_lightPosAndHeight`) works in
+                        // normalized space. Feeding raw pixels here put the light hundreds of
+                        // radii away from the finger, which is why the highlight never showed up
+                        // where it was pressed.
+                        val origin = Offset(left, top)
+                        val pillW = pillWidthPx.coerceAtLeast(1f)
+                        val pillH = pillHeightPx.coerceAtLeast(1f)
+                        fun Offset.normalizeToPill(): Offset = Offset(((this.x - origin.x) / pillW), ((this.y - origin.y) / pillH))
+                        spotLight.press(downPos.normalizeToPill())
+                        barPressed = true
+                        // `handleTouchDown`: the drag spring takes over from wherever the axes
+                        // currently are, so a still-running release keeps its velocity.
+                        for (axis in listOf(deformXAxis, deformYAxis, rubberXAxis, rubberYAxis)) {
+                            axis.spring = CouiTouchTiers.DragSpring
+                            axis.target = axis.value
+                        }
+                        val velocityTracker = VelocityTracker()
+                        velocityTracker.addPosition(down.uptimeMillis, downPos)
+                        var lastVx = 0f
+                        var lastVy = 0f
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            val change = event.changes.firstOrNull()
+                            if (change?.pressed == true) {
+                                val pos = change.position
+                                lastPos = pos
+                                spotLight.moveTo(pos.normalizeToPill())
+                                velocityTracker.addPosition(change.uptimeMillis, pos)
+                                // `MenuView#onMenuTouchMove`: hit test on every frame and move
+                                // the highlight **immediately** - the tab under the finger turns
+                                // selected (icon state + label colour) while the finger is still
+                                // down. MOVE never reports to the host; it only records the
+                                // pending target (`mPendingSlideSelectItemId`) for ACTION_UP.
+                                if (dragSelectEnabled) {
+                                    val hit = itemIndexAt(pos)
+                                    val current =
+                                        if (dragIndex in items.indices) dragIndex else downSelected
+                                    if (hit >= 0 && hit != current) {
+                                        pendingIndex = hit
+                                        dragIndex = hit
+                                    }
+                                }
+                                // Travel from the touch-down point, exactly what
+                                // `COUIITouchMotionUnit.handleTouchMove` feeds `moveAnimate`.
+                                val dx = pos.x - downPos.x
+                                val dy = pos.y - downPos.y
+                                // `iolDeadZone` is raw pixels (5.0f, never dp-scaled).
+                                if (
+                                    abs(dx) >= CouiDeformDeadZonePx ||
+                                    abs(dy) >= CouiDeformDeadZonePx
+                                ) {
+                                    val scales =
+                                        couiDeformScales(
+                                            dx = dx,
+                                            dy = dy,
+                                            maxScale =
+                                            couiCalculateScaleWithK(
+                                                width = barSize.width,
+                                                height = barSize.height,
+                                                maxScale = CouiTouchCommon.MaxScale,
+                                            ),
+                                            maxRubberPx = maxDeformPx,
+                                        )
+                                    deformXAxis.target = scales.x
+                                    deformYAxis.target = scales.y
+                                    // `COUIRubberAnimatorUnit`: the *target* is the
+                                    // rubber-banded travel; the drag spring follows it.
+                                    rubberXAxis.target =
+                                        couiRubberBand(
+                                            dx,
+                                            CouiTouchTiers.RubberCurveRatio,
+                                            maxStretchPx,
+                                        )
+                                    rubberYAxis.target =
+                                        couiRubberBand(
+                                            dy,
+                                            CouiTouchTiers.RubberCurveRatio,
+                                            maxStretchPx,
+                                        )
+                                }
+                            } else {
+                                // ACTION_UP / ACTION_CANCEL: remember where the finger lifted -
+                                // the dispatch decision is made right below.
+                                lastPos = change?.position ?: lastPos
+                                upChange = change
+                                break
+                            }
+                        }
+                        // `MenuView#dispatchTouchEvent(ACTION_UP)`:
+                        //   1. `performClickOnChildUnder(up)` - only when the item under the
+                        //      lifted finger is **not** the pressed one (a plain tap is still
+                        //      the item's own click);
+                        //   2. `dispatchPendingSlideItemClickIfNeeded` - then the pending slide
+                        //      target.
+                        // Exactly one `onItemClick` leaves the library per gesture, and only
+                        // here - that is why a drag switches the page on release, never while
+                        // the finger is moving.
+                        if (dragSelectEnabled) {
+                            val upIndex = itemIndexAt(lastPos)
+                            val target =
+                                when {
+                                    upIndex >= 0 && upIndex != downIndex -> upIndex
+                                    upIndex < 0 && pendingIndex >= 0 -> pendingIndex
+                                    else -> -1
+                                }
+                            if (target >= 0) {
+                                // Consume the lift so the pressed item's own `clickable` cannot
+                                // report a second time for the same gesture (`clickable` treats
+                                // a consumed up as a cancelled tap).
+                                upChange?.consume()
+                                dragIndex = target
+                                onSelectedState.value(target)
+                            } else {
+                                // Back on the pressed tab (or no slide at all): hand the gesture
+                                // back to that item's `clickable`, so a tap still reports and a
+                                // single gesture can never report twice.
+                                dragIndex = -1
+                            }
+                        }
+                        // `barOffsetX/Y` already hold the released position, and this spring
+                        // animates those very values home - there is no second source to hand
+                        // over to.
+                        val releaseVelocity = velocityTracker.calculateVelocity()
+                        lastVx = releaseVelocity.x
+                        lastVy = releaseVelocity.y
+                        spotLight.release()
+                        barPressed = false
+                        // `backAnimation()` / `COUIRubberAnimatorUnit.handleTouchUp`.
+                        //
+                        // `TouchMotionHandUpHelper.computeInitialVelocity(pan, totalDist,
+                        // multiplier, clamp)` is
+                        //     initial = clamp(pan / totalDist * multiplier, +-clamp)
+                        // and, crucially, `totalDist` is **per unit**: the deform unit uses
+                        // `iolMaxDeformRubberDistance` (150dp) while the rubber unit uses
+                        // `iolMaxStretchDistance` (28dp). The multiplier is how far from rest
+                        // the axis currently sits - for deform that is `|scale - 1|`, confirmed
+                        // in `COUIDeformAnimatorUnit` (`sub-float p5, p2, 1.0f`).
+                        val panVx = lastVx
+                        val panVy = lastVy
+                        val deformRangePx = maxDeformPx
+                        fun releaseAxis(
+                            axis: PopupSpringAxis,
+                            rest: Float,
+                            pan: Float,
+                            rangePx: Float,
+                        ) {
+                            val denominator = rangePx.coerceAtLeast(1f)
+                            axis.velocity =
+                                (pan / denominator * abs(axis.value - rest))
+                                    .coerceIn(-1000f, 1000f)
+                            axis.spring = CouiTouchTiers.HandUpSpringLargeArea
+                            axis.target = rest
+                        }
+                        releaseAxis(deformXAxis, 1f, panVx, deformRangePx)
+                        releaseAxis(deformYAxis, 1f, panVy, deformRangePx)
+                        releaseAxis(rubberXAxis, 0f, panVx, maxStretchPx)
+                        releaseAxis(rubberYAxis, 0f, panVy, maxStretchPx)
+                    }
+                },
             contentAlignment = Alignment.Center,
         ) {
             CouiFloatingMaterialSurface(
@@ -771,48 +779,48 @@ fun CouiBottomFloatingNavigationBar(
                 shadowEnabled = shadowEnabled,
                 dark = isDark,
                 modifier =
-                    Modifier
-                        .width(pillWidth)
-                        .height(CouiBottomFloatingNavigationBarDefaults.Height),
+                Modifier
+                    .width(pillWidth)
+                    .height(CouiBottomFloatingNavigationBarDefaults.Height),
                 fallback = {
                     // `applyPanelBackground()`: a flat `ColorDrawable` - the official's own fallback.
                     Box(
                         modifier =
-                            Modifier
-                                .fillMaxSize()
-                                // No `shadowElevation`: the official fallback is a bare
-                                // `ColorDrawable` and draws no shadow of its own, and a Compose
-                                // elevation here paints a grey halo *outside* the capsule - the
-                                // "一圈灰蒙蒙的包裹" the probe kept showing.
-                                .graphicsLayer {
-                                    shape = pillShape
-                                    shadowElevation = 0f
-                                    clip = false
-                                }
-                                .background(
-                                    color = CouiBottomFloatingNavigationBarDefaults.fallbackPanelColor(),
-                                    shape = pillShape,
-                                ),
+                        Modifier
+                            .fillMaxSize()
+                            // No `shadowElevation`: the official fallback is a bare
+                            // `ColorDrawable` and draws no shadow of its own, and a Compose
+                            // elevation here paints a grey halo *outside* the capsule - the
+                            // "一圈灰蒙蒙的包裹" the probe kept showing.
+                            .graphicsLayer {
+                                shape = pillShape
+                                shadowElevation = 0f
+                                clip = false
+                            }
+                            .background(
+                                color = CouiBottomFloatingNavigationBarDefaults.fallbackPanelColor(),
+                                shape = pillShape,
+                            ),
                     )
                 },
             ) {
                 Row(
                     modifier =
-                        Modifier
-                            .fillMaxSize()
-                            // **All** transform (translation / press scale / deformation) is applied by
-                            // `CouiFloatingMaterialSurface`, once, so the material and the content can
-                            // never drift apart. Applying it here as well doubled the rubber-band
-                            // travel and squared the deformation scale - which is exactly the "two
-                            // layers" the pill showed while being dragged.
-                            .onSizeChanged { barSize = Size(it.width.toFloat(), it.height.toFloat()) }
-                            .drawWithContent {
-                                // `BaseBottomFloatingMenuView.onDraw`: the spotlight is painted by the
-                                // view itself, i.e. **under** its children, clipped to the pill.
-                                drawCouiSpotLight(spotLight, spotLightSpec, pillShape)
-                                this@drawWithContent.drawContent()
-                            }
-                            .padding(horizontal = CouiBottomFloatingNavigationBarDefaults.InnerPadding),
+                    Modifier
+                        .fillMaxSize()
+                        // **All** transform (translation / press scale / deformation) is applied by
+                        // `CouiFloatingMaterialSurface`, once, so the material and the content can
+                        // never drift apart. Applying it here as well doubled the rubber-band
+                        // travel and squared the deformation scale - which is exactly the "two
+                        // layers" the pill showed while being dragged.
+                        .onSizeChanged { barSize = Size(it.width.toFloat(), it.height.toFloat()) }
+                        .drawWithContent {
+                            // `BaseBottomFloatingMenuView.onDraw`: the spotlight is painted by the
+                            // view itself, i.e. **under** its children, clipped to the pill.
+                            drawCouiSpotLight(spotLight, spotLightSpec, pillShape)
+                            this@drawWithContent.drawContent()
+                        }
+                        .padding(horizontal = CouiBottomFloatingNavigationBarDefaults.InnerPadding),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     items.forEachIndexed { index, item ->
@@ -872,29 +880,29 @@ private fun CouiBottomFloatingNavigationBarItemView(
         // and the bar does not clip its items either. Only the selected tab shows it.
         Box(
             modifier =
-                Modifier
-                    .width(width)
-                    .height(CouiBottomFloatingNavigationBarDefaults.ItemHeight)
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        enabled = enabled,
-                        onClick = onClick,
-                    ),
+            Modifier
+                .width(width)
+                .height(CouiBottomFloatingNavigationBarDefaults.ItemHeight)
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    enabled = enabled,
+                    onClick = onClick,
+                ),
         ) {
             if (selected) {
                 Box(
                     modifier =
-                        Modifier
-                            .align(Alignment.TopCenter)
-                            .offset(y = -CouiBottomFloatingNavigationBarDefaults.LargeIconOverflow)
-                            .size(CouiBottomFloatingNavigationBarDefaults.LargeIconSize),
+                    Modifier
+                        .align(Alignment.TopCenter)
+                        .offset(y = -CouiBottomFloatingNavigationBarDefaults.LargeIconOverflow)
+                        .size(CouiBottomFloatingNavigationBarDefaults.LargeIconSize),
                 ) {
                     Image(
                         painter = item.icon,
                         contentDescription = null,
                         colorFilter =
-                            item.iconTint.takeIf { it != Color.Unspecified }?.let { ColorFilter.tint(it) },
+                        item.iconTint.takeIf { it != Color.Unspecified }?.let { ColorFilter.tint(it) },
                     )
                     CouiBottomFloatingNavigationBarRedDot(
                         item = item,
@@ -915,36 +923,36 @@ private fun CouiBottomFloatingNavigationBarItemView(
     }
     Column(
         modifier =
-            Modifier
-                .width(width)
-                .height(CouiBottomFloatingNavigationBarDefaults.ItemHeight)
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = null,
-                    enabled = enabled,
-                    onClick = onClick,
-                ),
+        Modifier
+            .width(width)
+            .height(CouiBottomFloatingNavigationBarDefaults.ItemHeight)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                enabled = enabled,
+                onClick = onClick,
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(CouiBottomFloatingNavigationBarDefaults.IconTopMargin))
         Box(
             modifier =
-                Modifier
-                    .size(CouiBottomFloatingNavigationBarDefaults.IconSize),
-                    // `COUIFadeMaskImageView` is deliberately **not** reproduced: re-reading the
-                    // official `onDraw` shows it is a no-op. It draws the icon first
-                    // (`invoke-super ... ImageView.onDraw`), then opens a *fresh* transparent layer
-                    // with `saveLayer(0, 0, w, h, null)` and only then paints the radial gradient
-                    // (`#00FFFFFF -> #33FFFFFF`) with `PorterDuff.DST_IN` - `DST_IN` composites
-                    // against an empty destination, so the result is fully transparent and the icon
-                    // is left untouched. To fade anything the order would have to be
-                    // `saveLayer -> draw the icon -> DST_IN -> restore`; both the market 26.9.4 and
-                    // the contacts 17.20.80 builds ship the same (ineffective) order.
-                    //
-                    // So the selected tab changes **only** through `state_selected`: the caller's
-                    // [CouiBottomFloatingNavigationBarItem.iconTint] (or a stateful icon drawable) is
-                    // the whole "selected icon" treatment. The earlier `DstIn` overlay here is what
-                    // made our selected icon visibly fade - which the official never does.
+            Modifier
+                .size(CouiBottomFloatingNavigationBarDefaults.IconSize),
+            // `COUIFadeMaskImageView` is deliberately **not** reproduced: re-reading the
+            // official `onDraw` shows it is a no-op. It draws the icon first
+            // (`invoke-super ... ImageView.onDraw`), then opens a *fresh* transparent layer
+            // with `saveLayer(0, 0, w, h, null)` and only then paints the radial gradient
+            // (`#00FFFFFF -> #33FFFFFF`) with `PorterDuff.DST_IN` - `DST_IN` composites
+            // against an empty destination, so the result is fully transparent and the icon
+            // is left untouched. To fade anything the order would have to be
+            // `saveLayer -> draw the icon -> DST_IN -> restore`; both the market 26.9.4 and
+            // the contacts 17.20.80 builds ship the same (ineffective) order.
+            //
+            // So the selected tab changes **only** through `state_selected`: the caller's
+            // [CouiBottomFloatingNavigationBarItem.iconTint] (or a stateful icon drawable) is
+            // the whole "selected icon" treatment. The earlier `DstIn` overlay here is what
+            // made our selected icon visibly fade - which the official never does.
         ) {
             Image(
                 painter = item.icon,
@@ -995,23 +1003,23 @@ private fun CouiBottomFloatingNavigationBarRedDot(
         CouiRedDotType.Point ->
             Box(
                 modifier =
-                    modifier
-                        .offset(x = offsetX, y = offsetY)
-                        .size(CouiBottomFloatingNavigationBarDefaults.RedDotDiameter)
-                        .clip(RoundedCornerShape(percent = 50))
-                        .background(CouiBottomFloatingNavigationBarDefaults.RedDotColor),
+                modifier
+                    .offset(x = offsetX, y = offsetY)
+                    .size(CouiBottomFloatingNavigationBarDefaults.RedDotDiameter)
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(CouiBottomFloatingNavigationBarDefaults.RedDotColor),
             )
 
         else ->
             Box(
                 modifier =
-                    modifier
-                        .offset(x = offsetX, y = offsetY)
-                        .widthIn(min = CouiBottomFloatingNavigationBarDefaults.RedDotMinWidth)
-                        .height(CouiBottomFloatingNavigationBarDefaults.RedDotHeight)
-                        .clip(RoundedCornerShape(percent = 50))
-                        .background(CouiBottomFloatingNavigationBarDefaults.RedDotColor)
-                        .padding(horizontal = 2.dp),
+                modifier
+                    .offset(x = offsetX, y = offsetY)
+                    .widthIn(min = CouiBottomFloatingNavigationBarDefaults.RedDotMinWidth)
+                    .height(CouiBottomFloatingNavigationBarDefaults.RedDotHeight)
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(CouiBottomFloatingNavigationBarDefaults.RedDotColor)
+                    .padding(horizontal = 2.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 CouiText(

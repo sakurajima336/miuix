@@ -1,4 +1,4 @@
-// Copyright 2026, COUI contributors
+// Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package io.github.wfc35286.coui.kmp.component
@@ -543,24 +543,62 @@ private fun CouiAccessoryButtonSurface(
                     scaleY = couiComposeScale(press, deformYAxis.value)
                     translationX = rubberXAxis.value
                     translationY = rubberYAxis.value
-                }
-                // `setCausticShadowEffect()`: painted behind the fill and **outside** the circle -
-                // the render node draws the outline shadow under the view's own content.
-                .couiAccessoryCaustic(dark)
-                .clip(CircleShape)
-                // `setViewBlurEffect(this, TYPE_FRAMEWORK_BOTTOM_BAR)`: the same blur preset the
-                // pill uses, applied to the circle and sampling the page behind it. When no
-                // backdrop is available it degrades to the flat fill, which is what a non-material
-                // device shows anyway.
-                .couiAccessoryMaterial(dark = dark, backdrop = backdrop)
-                .background(backgroundColor)
-                .drawWithContent {
-                    // `onDraw`: the touch effect is drawn before the icon.
-                    drawCouiSpotLight(spotLight, spotLightSpec, CircleShape)
-                    this@drawWithContent.drawContent()
                 },
         contentAlignment = Alignment.Center,
     ) {
+        // The chrome is a **sibling** of the content, never its ancestor.
+        //
+        // `couiAccessoryMaterial` hangs a blur `RenderEffect` on a `graphicsLayer`, and a Compose
+        // layer blurs *everything drawn into it* - which, when the icon was a child of that same
+        // node, included the icon. The official's `setBackgroundRenderEffect` only replaces the
+        // view's **background**: `COUIBottomFloatingAccessoryView.onDraw` paints the spot light and
+        // then `drawIcon` on top of it (`:2510-2518`), and neither is ever blurred. Splitting the
+        // chrome into its own `matchParentSize` Box puts the icon back above the material, exactly
+        // where `onDraw` puts it.
+        Box(
+            modifier =
+                Modifier
+                    .matchParentSize()
+                    // `setCausticShadowEffect()`: painted behind the fill and **outside** the
+                    // circle - the render node draws the outline shadow under the view's own
+                    // content.
+                    .couiAccessoryCaustic(dark)
+                    .clip(CircleShape)
+                    // `setViewBlurEffect(this, TYPE_FRAMEWORK_BOTTOM_BAR)`: the same blur preset
+                    // the pill uses, applied to the circle and sampling the page behind it. When
+                    // no backdrop is available it degrades to the flat fill, which is what a
+                    // non-material device shows anyway.
+                    // The fill is handed to the material instead of being painted here. The
+                    // official's `applyFallbackBackgroundColor()` returns immediately while
+                    // `isMaterialQualityEnable()` is true (`COUIBottomFloatingAccessoryView
+                    // .smali:294-322`), i.e. on a material device the flat colour never covers the
+                    // blurred surface - it is only the *base* the framework paints over. Painting
+                    // it after the material put it on top of the blur and flattened the circle to
+                    // a solid disc.
+                    .couiAccessoryMaterial(
+                        dark = dark,
+                        backdrop = backdrop,
+                        backgroundColor = backgroundColor,
+                        // Read at draw time: the layer above is the one that carries this scale, so
+                        // the backdrop has to sample the page through its inverse or the blur slides
+                        // with the button while it is pressed and dragged.
+                        scaleX = { couiComposeScale(pressScale.value, deformXAxis.value) },
+                        scaleY = { couiComposeScale(pressScale.value, deformYAxis.value) },
+                    )
+                    .drawWithContent {
+                        // `onDraw`: the touch effect is drawn before the icon.
+                        drawCouiSpotLight(spotLight, spotLightSpec, CircleShape)
+                        this@drawWithContent.drawContent()
+                    },
+        )
+        // `drawPanelStroke()`: a **third** sibling, above the material and below the icon.
+        //
+        // It cannot be appended to the chrome chain above. `couiAccessoryMaterial` ends with a
+        // `graphicsLayer { renderEffect }`, and every modifier after that node draws *inside* the
+        // layer - so a stroke hung there goes through the same blur kernel as the page behind the
+        // button and all but disappears. The official keeps them apart for the same reason: the
+        // rim is a view-background effect (`setViewStrokeEffect`), the icon is `onDraw` content.
+        Box(modifier = Modifier.matchParentSize().clip(CircleShape).couiAccessoryEdge(dark))
         content()
     }
 }
@@ -591,12 +629,46 @@ internal expect fun Modifier.couiAccessoryCaustic(dark: Boolean): Modifier
  * to paint a captured [CouiBackdrop] into the layer first - that is why [backdrop] is a parameter.
  *
  * When no backdrop is supplied - or the version gates the official applies twice more
- * (`isMaterialVersion()`, `canApplyBackgroundRenderEffect()`) are not met - the actual paints the
- * flat `couiColorBar` fill instead. The official does **not** fall back (it just returns and
- * draws nothing), which is a real defect there; a visible flat panel is the better degradation.
+ * (`isMaterialVersion()`, `canApplyBackgroundRenderEffect()`) are not met - the actual paints
+ * [backgroundColor] as the flat `couiColorBar` fill instead. The official does **not** fall back
+ * (it just returns and draws nothing), which is a real defect there; a visible flat panel is the
+ * better degradation.
+ *
+ * @param backgroundColor The circle's fill, i.e. `setAccessoryBackgroundColor` / `couiColorBar`.
+ *   It is the **base** the blur is composited over, never a layer on top of it: the official only
+ *   applies it while `isMaterialQualityEnable()` is false (`applyFallbackBackgroundColor()`,
+ *   `COUIBottomFloatingAccessoryView.smali:294-322`), so on a material device the blurred surface
+ *   is what shows. Painting it above the material flattens the circle to a solid disc.
+ * @param scaleX The circle's current horizontal scale, read **at draw time**. The backdrop layer
+   draws inside that scaled space, so the page has to be sampled with the inverse - otherwise the
+   picture inside the button is glued to it and slides/breathes while it is pressed and dragged,
+   which is the artefact `drawCouiBackdropLayer` exists to remove. The pill passes the same pair
+   (`couiComposeScale(pressScale, deformScale)`).
+ * @param scaleY The vertical counterpart of [scaleX].
  */
 @Composable
 internal expect fun Modifier.couiAccessoryMaterial(
     dark: Boolean,
     backdrop: CouiBackdrop?,
+    backgroundColor: Color,
+    scaleX: () -> Float = { 1f },
+    scaleY: () -> Float = { 1f },
 ): Modifier
+
+/**
+ * `drawPanelStroke()` - the circle's rim highlight and inner glow.
+ *
+ * `COUIBottomFloatingAccessoryView.updateStrokeEffect()` calls
+ * `COUIMaterialEffect.setViewStrokeEffect(this, TYPE_FRAMEWORK_CAPSULE_3)`, which the framework
+ * turns into `OplusMaterialUtil.setEdgeParams(...)` + `setShadowParams(...)`. Those paint on the
+ * **view background**, i.e. above the blurred material and below the content - which is why the
+ * accessory's own `onDraw` never draws a stroke (`:2454-2468` only draws the touch effect and the
+ * icon).
+ *
+ * So this must be applied to a **sibling** of [couiAccessoryMaterial], never appended to it: a
+ * Compose modifier added after that chain draws inside its blur `graphicsLayer` and would be
+ * blurred away. On platforms without the AGSL shader this is a no-op, exactly like the official
+ * drawing nothing when `COUIShadowEdgeDrawable` cannot build.
+ */
+@Composable
+internal expect fun Modifier.couiAccessoryEdge(dark: Boolean): Modifier
