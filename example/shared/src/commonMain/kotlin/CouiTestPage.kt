@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -41,6 +42,8 @@ import component.BackNavigationIcon
 import io.github.wfc35286.coui.kmp.basic.CouiButton
 import io.github.wfc35286.coui.kmp.basic.CouiButtonSize
 import io.github.wfc35286.coui.kmp.basic.CouiButtonType
+import io.github.wfc35286.coui.kmp.basic.CouiCheckBox as CouiTriStateCheckBox
+import io.github.wfc35286.coui.kmp.basic.CouiCheckBoxState
 import io.github.wfc35286.coui.kmp.basic.CouiCircularProgress
 import io.github.wfc35286.coui.kmp.basic.CouiHorizontalProgressBar
 import io.github.wfc35286.coui.kmp.basic.CouiLoadingButton
@@ -155,6 +158,7 @@ fun CouiTestPage(
                         item(key = "couiNewSheet") { CouiNewSheetSection() }
                         item(key = "couiNewProgress") { CouiNewProgressSection() }
                         item(key = "couiNewDialog") { CouiNewDialogSection() }
+                        item(key = "couiNewCheckbox") { CouiNewCheckboxSection() }
                         item(key = "couiPalette") { CouiPaletteSection() }
                         item { Spacer(modifier = Modifier.height(12.dp)) }
                     }
@@ -673,4 +677,50 @@ private fun CouiNewDialogSection() {
         message = "Swipe this bar sideways to dismiss it",
         onDismissRequest = { showSnackBar = false },
     )
+}
+
+@Composable
+private fun CouiNewCheckboxSection() {
+    val checked = rememberSaveable { mutableStateListOf(true, false, true) }
+    val masterState = when {
+        checked.all { it } -> CouiCheckBoxState.All
+        checked.any { it } -> CouiCheckBoxState.Part
+        else -> CouiCheckBoxState.None
+    }
+
+    CouiCategoryHeader(title = "Three-state Checkbox")
+    CouiCard(modifier = Modifier.padding(horizontal = 16.dp)) {
+        Column(modifier = Modifier.padding(vertical = 8.dp)) {
+            CouiPreferenceItem(
+                title = "Select all",
+                onClick = {
+                    val next = masterState != CouiCheckBoxState.All
+                    for (i in checked.indices) checked[i] = next
+                },
+                showDivider = true,
+                trailing = {
+                    CouiTriStateCheckBox(
+                        state = masterState,
+                        onStateChange = { state ->
+                            val next = state == CouiCheckBoxState.All
+                            for (i in checked.indices) checked[i] = next
+                        },
+                    )
+                },
+            )
+            listOf("Option 1", "Option 2", "Option 3").forEachIndexed { index, title ->
+                CouiPreferenceItem(
+                    title = title,
+                    showDivider = index != 2,
+                    onClick = { checked[index] = !checked[index] },
+                    trailing = {
+                        CouiTriStateCheckBox(
+                            state = if (checked[index]) CouiCheckBoxState.All else CouiCheckBoxState.None,
+                            onStateChange = { checked[index] = it == CouiCheckBoxState.All },
+                        )
+                    },
+                )
+            }
+        }
+    }
 }
