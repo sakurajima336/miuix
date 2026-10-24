@@ -93,6 +93,11 @@ fun CouiCoreTestPage(
     var sectionValue by remember { mutableIntStateOf(2) }
     var barIndex by remember { mutableIntStateOf(0) }
     var barVisible by remember { mutableStateOf(true) }
+    // Which accessory slots are configured. The official decides this purely by whether the side
+    // has an icon (`isAccessoryIconConfigured` -> `getIconDrawable() != null`), and the two sides
+    // are completely independent - so "pill on the left, one button on the right" is just the
+    // start slot left unconfigured.
+    var accessories by remember { mutableIntStateOf(2) } // 0 = both, 1 = start only, 2 = end only
     val barIcon = rememberVectorPainter(CouiDemoIcons.Placeholder)
     // The official never tints the icon itself - it hands `setSelected` to the ImageView and
     // lets the caller's Drawable decide. The demo expresses the same thing with `iconTint`.
@@ -352,10 +357,29 @@ fun CouiCoreTestPage(
                 CouiCard(modifier = Modifier.fillMaxWidth().padding(horizontal = CouiCardDefaults.HorizontalMargin)) {
                     CouiPreferenceItem(
                         title = "Bottom navigation bar",
-                        position = CouiPreferencePosition.Single,
+                        position = CouiPreferencePosition.Middle,
                         summary = if (barVisible) "Shown" else "Hidden",
                         onClick = { barVisible = !barVisible },
                         trailing = { CouiSwitch(checked = barVisible, onCheckedChange = { barVisible = it }) },
+                    )
+                    // The two accessory slots are independent: leaving one unconfigured is exactly
+                    // the official's `isAccessoryIconConfigured == false` for that side, and
+                    // `layoutPositionsMediumScreen` then centres only the slots that exist.
+                    CouiPreferenceItem(
+                        title = "Accessory slots",
+                        position = CouiPreferencePosition.Single,
+                        summary = when (accessories) {
+                            0 -> "Both sides"
+                            1 -> "Start only"
+                            else -> "End only"
+                        },
+                        onClick = { accessories = (accessories + 1) % 3 },
+                        trailing = {
+                            CouiSwitch(
+                                checked = accessories == 0,
+                                onCheckedChange = { accessories = if (it) 0 else 1 },
+                            )
+                        },
                     )
                 }
 
@@ -399,15 +423,23 @@ fun CouiCoreTestPage(
                     items = barItems,
                     selectedIndex = barIndex,
                     onSelect = { barIndex = it },
-                    startAccessory = {
-                        icon(barIcon)
-                        contentDescription("图集")
-                        onClick { barIndex = 0 }
+                    startAccessory = if (accessories == 2) {
+                        null
+                    } else {
+                        {
+                            icon(barIcon)
+                            contentDescription("图集")
+                            onClick { barIndex = 0 }
+                        }
                     },
-                    endAccessory = {
-                        icon(barIcon)
-                        contentDescription("更多")
-                        onClick { barIndex = 1 }
+                    endAccessory = if (accessories == 1) {
+                        null
+                    } else {
+                        {
+                            icon(barIcon)
+                            contentDescription("更多")
+                            onClick { barIndex = 1 }
+                        }
                     },
                     // The material's background blur: the bar samples the captured page by
                     // reference in its own draw pass, so scrolling and the predictive-back scene
