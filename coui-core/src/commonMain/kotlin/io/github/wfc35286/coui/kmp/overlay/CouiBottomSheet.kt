@@ -44,8 +44,11 @@ object CouiBottomSheetDefaults {
     /** The spring that shows the sheet: slow and heavy, no bounce. */
     val ShowSpring = CouiSpringData(bounce = 0f, response = 0.45f)
 
-    /** The spring that hides the sheet: quick and dry, no bounce. */
-    val HideSpring = CouiSpringData(bounce = 0f, response = 0.18f)
+    /** The spring that hides a short sheet: quick and dry, no bounce. */
+    val HideSpringSmall = CouiSpringData(bounce = 0f, response = 0.18f)
+
+    /** The spring that hides a tall sheet (at least half the screen): no bounce. */
+    val HideSpringLarge = CouiSpringData(bounce = 0f, response = 0.37f)
 
     /** The scale of the resting sheet; it grows to 1.0 as the sheet rises. */
     const val CollapsedScale = 0.8f
@@ -113,6 +116,8 @@ fun CouiBottomSheet(
     var composed by remember { mutableStateOf(visible) }
     val progress = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
+    var panelHeightPx by remember { mutableFloatStateOf(0f) }
+    var parentHeightPx by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(visible) {
         if (visible) {
@@ -122,23 +127,25 @@ fun CouiBottomSheet(
                 CouiBottomSheetDefaults.ShowSpring.toSpringSpec(CouiBottomSheetDefaults.ShowThresholdPx),
             )
         } else if (composed) {
-            progress.animateTo(
-                0f,
-                CouiBottomSheetDefaults.HideSpring.toSpringSpec(CouiBottomSheetDefaults.HideThresholdPx),
-            )
+            // Tall sheets drop away on the slower spring, short ones on the quick one.
+            val hideSpring = if (panelHeightPx >= parentHeightPx / 2f) {
+                CouiBottomSheetDefaults.HideSpringLarge
+            } else {
+                CouiBottomSheetDefaults.HideSpringSmall
+            }
+            progress.animateTo(0f, hideSpring.toSpringSpec(CouiBottomSheetDefaults.HideThresholdPx))
             composed = false
         }
     }
     if (!composed) return
 
-    var panelHeightPx by remember { mutableFloatStateOf(0f) }
     val panelColor = CouiTheme.colors.backgroundWithCard
 
     Popup(
         onDismissRequest = onDismissRequest,
         properties = PopupProperties(focusable = true),
     ) {
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize().onSizeChanged { parentHeightPx = it.height.toFloat() }) {
             val panelMaxHeight = maxHeight - CouiBottomSheetDefaults.TopMargin
             Box(
                 modifier = Modifier

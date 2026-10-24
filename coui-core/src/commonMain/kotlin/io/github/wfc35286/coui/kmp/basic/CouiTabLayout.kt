@@ -149,7 +149,7 @@ fun CouiTabLayout(
             lastSelected = selectedIndex
             indicator.animateTo(
                 targetValue = Offset(targetLeft, targetWidth),
-                animationSpec = tween(durationMillis = travel, easing = CouiEasing.MoveEase),
+                animationSpec = tween(durationMillis = travel, easing = CouiEasing.Ease),
             )
         }
 

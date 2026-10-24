@@ -36,6 +36,8 @@ import io.github.wfc35286.coui.kmp.basic.CouiText
 import io.github.wfc35286.coui.kmp.motion.CouiSpringData
 import io.github.wfc35286.coui.kmp.motion.toSpringSpec
 import io.github.wfc35286.coui.kmp.token.CouiTypography
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /** The side of the anchor a [CouiTooltip] sits on. */
@@ -120,11 +122,15 @@ fun CouiTooltip(
     LaunchedEffect(visible) {
         if (visible) {
             composed = true
-            scale.animateTo(1f, CouiTooltipDefaults.ScaleSpring.toSpringSpec())
-            alpha.animateTo(1f, CouiTooltipDefaults.AlphaSpring.toSpringSpec())
+            coroutineScope {
+                launch { scale.animateTo(1f, CouiTooltipDefaults.ScaleSpring.toSpringSpec()) }
+                launch { alpha.animateTo(1f, CouiTooltipDefaults.AlphaSpring.toSpringSpec()) }
+            }
         } else if (composed) {
-            scale.animateTo(0f, CouiTooltipDefaults.ScaleSpring.toSpringSpec())
-            alpha.animateTo(0f, CouiTooltipDefaults.AlphaSpring.toSpringSpec())
+            coroutineScope {
+                launch { scale.animateTo(0f, CouiTooltipDefaults.ScaleSpring.toSpringSpec()) }
+                launch { alpha.animateTo(0f, CouiTooltipDefaults.AlphaSpring.toSpringSpec()) }
+            }
             composed = false
         }
     }

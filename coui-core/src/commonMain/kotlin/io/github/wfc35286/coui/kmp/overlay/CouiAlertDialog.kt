@@ -4,6 +4,7 @@
 package io.github.wfc35286.coui.kmp.overlay
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -24,6 +25,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -34,8 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import io.github.wfc35286.coui.kmp.basic.CouiText
-import io.github.wfc35286.coui.kmp.motion.CouiSpringData
-import io.github.wfc35286.coui.kmp.motion.toSpringSpec
+import io.github.wfc35286.coui.kmp.motion.CouiEasing
 import io.github.wfc35286.coui.kmp.theme.CouiTheme
 import io.github.wfc35286.coui.kmp.token.CouiFontSize
 import io.github.wfc35286.coui.kmp.token.CouiTextEmphasis
@@ -79,17 +81,11 @@ object CouiAlertDialogDefaults {
     /** The dim the dialog casts on the content behind it. */
     val ScrimColor = Color(0x33000000)
 
-    /** The spring that shows the dialog: slow and heavy, no bounce. */
-    val ShowSpring = CouiSpringData(bounce = 0f, response = 0.45f)
+    /** The enter travel: 250ms on the standard COUI movement curve. */
+    const val EnterDurationMs = 250
 
-    /** The spring that hides the dialog: quick and dry, no bounce. */
-    val HideSpring = CouiSpringData(bounce = 0f, response = 0.18f)
-
-    /** The visible-change threshold of the show spring, in pixels. */
-    const val ShowThresholdPx = 1f
-
-    /** The visible-change threshold of the hide spring, in pixels. */
-    const val HideThresholdPx = 10f
+    /** The exit travel: 150ms of pure fade on the decelerate curve. */
+    const val ExitDurationMs = 150
 
     /** The scale the dialog appears at; it grows to 1.0 as it settles in. */
     const val EnterScale = 0.8f
@@ -141,14 +137,25 @@ fun CouiAlertDialog(
     destructive: Boolean = false,
 ) {
     var composed by remember { mutableStateOf(visible) }
-    val progress = remember { Animatable(0f) }
+    val alpha = remember { Animatable(0f) }
+    val scaleAnim = remember { Animatable(0f) }
 
     LaunchedEffect(visible) {
         if (visible) {
             composed = true
-            progress.animateTo(1f, CouiAlertDialogDefaults.ShowSpring.toSpringSpec(CouiAlertDialogDefaults.ShowThresholdPx))
+            // Enter: the fade and the 0.8 -> 1.0 scale run together over 250ms.
+            coroutineScope {
+                launch {
+                    alpha.animateTo(1f, tween(durationMillis = CouiAlertDialogDefaults.EnterDurationMs, easing = CouiEasing.MoveEase))
+                }
+                launch {
+                    scaleAnim.animateTo(1f, tween(durationMillis = CouiAlertDialogDefaults.EnterDurationMs, easing = CouiEasing.MoveEase))
+                }
+            }
         } else if (composed) {
-            progress.animateTo(0f, CouiAlertDialogDefaults.HideSpring.toSpringSpec(CouiAlertDialogDefaults.HideThresholdPx))
+            // Exit: a pure 150ms fade - the panel does not shrink back.
+            scaleAnim.snapTo(1f)
+            alpha.animateTo(0f, tween(durationMillis = CouiAlertDialogDefaults.ExitDurationMs, easing = CouiEasing.OutEase))
             composed = false
         }
     }
@@ -164,7 +171,7 @@ fun CouiAlertDialog(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .graphicsLayer { alpha = progress.value }
+                    .graphicsLayer { this.alpha = alpha.value }
                     .background(CouiAlertDialogDefaults.ScrimColor),
             )
             Box(
@@ -173,9 +180,8 @@ fun CouiAlertDialog(
                     .widthIn(max = CouiAlertDialogDefaults.MaxWidth)
                     .heightIn(max = CouiAlertDialogDefaults.MaxHeight)
                     .graphicsLayer {
-                        val p = progress.value
-                        alpha = p
-                        val scale = CouiAlertDialogDefaults.EnterScale + (1f - CouiAlertDialogDefaults.EnterScale) * p
+                        this.alpha = alpha.value
+                        val scale = CouiAlertDialogDefaults.EnterScale + (1f - CouiAlertDialogDefaults.EnterScale) * scaleAnim.value
                         scaleX = scale
                         scaleY = scale
                     }

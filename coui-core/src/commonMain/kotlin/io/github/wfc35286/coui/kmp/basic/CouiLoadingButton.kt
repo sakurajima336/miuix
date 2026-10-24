@@ -31,7 +31,7 @@ object CouiLoadingButtonDefaults {
     const val RestAlpha = 51f / 255f
 
     /** The intermediate opacity reached on the way to and from the peak. */
-    const val MidAlpha = 153f / 255f
+    const val MidAlpha = 127.5f / 255f
 
     /** The peak opacity of a wave. */
     const val PeakAlpha = 1f
