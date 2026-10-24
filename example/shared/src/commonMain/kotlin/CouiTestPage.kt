@@ -41,6 +41,8 @@ import component.BackNavigationIcon
 import io.github.wfc35286.coui.kmp.basic.CouiButton
 import io.github.wfc35286.coui.kmp.basic.CouiButtonSize
 import io.github.wfc35286.coui.kmp.basic.CouiButtonType
+import io.github.wfc35286.coui.kmp.basic.CouiLoadingButton
+import io.github.wfc35286.coui.kmp.basic.CouiTabLayout
 import io.github.wfc35286.coui.kmp.example.CouiCard
 import io.github.wfc35286.coui.kmp.example.CouiCategoryHeader
 import io.github.wfc35286.coui.kmp.example.CouiCheckBox
@@ -54,6 +56,7 @@ import io.github.wfc35286.coui.kmp.example.CouiSeekBar
 import io.github.wfc35286.coui.kmp.example.CouiSwitch
 import io.github.wfc35286.coui.kmp.example.CouiTabRow
 import io.github.wfc35286.coui.kmp.example.CouiTheme
+import io.github.wfc35286.coui.kmp.overlay.CouiBottomSheet
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
@@ -143,6 +146,9 @@ fun CouiTestPage(
                         item(key = "couiSearch") { CouiSearchSection() }
                         item(key = "couiList") { CouiListSection() }
                         item(key = "couiButtons") { CouiButtonSection() }
+                        item(key = "couiNewLoading") { CouiNewLoadingSection() }
+                        item(key = "couiJellyTabs") { CouiJellyTabsSection() }
+                        item(key = "couiNewSheet") { CouiNewSheetSection() }
                         item(key = "couiPalette") { CouiPaletteSection() }
                         item { Spacer(modifier = Modifier.height(12.dp)) }
                     }
@@ -487,6 +493,102 @@ private fun CouiSwatchRow(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun CouiNewLoadingSection() {
+    var loading by rememberSaveable { mutableStateOf(false) }
+
+    CouiCategoryHeader(title = "Loading Button")
+    CouiCard(modifier = Modifier.padding(horizontal = 16.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            CouiLoadingButton(
+                text = "Submit",
+                loading = loading,
+                onClick = { loading = false },
+                modifier = Modifier.weight(1f),
+            )
+            CouiButton(
+                text = if (loading) "Stop" else "Start",
+                onClick = { loading = !loading },
+                type = CouiButtonType.Secondary,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun CouiJellyTabsSection() {
+    var tabIndex by rememberSaveable { mutableIntStateOf(0) }
+    val tabs = listOf("Tab 1", "Tab 2", "Tab 3", "Tab 4")
+
+    CouiCategoryHeader(title = "Jelly Tabs")
+    CouiCard(modifier = Modifier.padding(horizontal = 16.dp)) {
+        Column(modifier = Modifier.padding(vertical = 8.dp)) {
+            CouiTabLayout(
+                tabs = tabs,
+                selectedIndex = tabIndex,
+                onSelectedChange = { tabIndex = it },
+            )
+            CouiDivider(inset = 0.dp)
+            Box(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = tabs[tabIndex],
+                    style = MiuixTheme.textStyles.body2,
+                    color = CouiTheme.colors.labelSecondary,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CouiNewSheetSection() {
+    var showSheet by rememberSaveable { mutableStateOf(false) }
+
+    CouiCategoryHeader(title = "Bottom Sheet")
+    CouiCard(modifier = Modifier.padding(horizontal = 16.dp)) {
+        Box(modifier = Modifier.padding(16.dp)) {
+            CouiButton(
+                text = "Show bottom sheet",
+                onClick = { showSheet = true },
+            )
+        }
+    }
+    CouiBottomSheet(
+        visible = showSheet,
+        onDismissRequest = { showSheet = false },
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 24.dp),
+        ) {
+            Text(
+                text = "Bottom sheet",
+                style = MiuixTheme.textStyles.main,
+                color = CouiTheme.colors.labelPrimary,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Drag the panel down past half its height, tap the scrim, or go back to dismiss. It scales from 0.8 to 1.0 while it rises.",
+                style = MiuixTheme.textStyles.body2,
+                color = CouiTheme.colors.labelSecondary,
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            CouiButton(
+                text = "Done",
+                onClick = { showSheet = false },
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
