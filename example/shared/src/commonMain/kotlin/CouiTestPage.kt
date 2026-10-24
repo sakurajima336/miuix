@@ -41,6 +41,8 @@ import component.BackNavigationIcon
 import io.github.wfc35286.coui.kmp.basic.CouiButton
 import io.github.wfc35286.coui.kmp.basic.CouiButtonSize
 import io.github.wfc35286.coui.kmp.basic.CouiButtonType
+import io.github.wfc35286.coui.kmp.basic.CouiCircularProgress
+import io.github.wfc35286.coui.kmp.basic.CouiHorizontalProgressBar
 import io.github.wfc35286.coui.kmp.basic.CouiLoadingButton
 import io.github.wfc35286.coui.kmp.basic.CouiTabLayout
 import io.github.wfc35286.coui.kmp.example.CouiCard
@@ -56,7 +58,9 @@ import io.github.wfc35286.coui.kmp.example.CouiSeekBar
 import io.github.wfc35286.coui.kmp.example.CouiSwitch
 import io.github.wfc35286.coui.kmp.example.CouiTabRow
 import io.github.wfc35286.coui.kmp.example.CouiTheme
+import io.github.wfc35286.coui.kmp.overlay.CouiAlertDialog
 import io.github.wfc35286.coui.kmp.overlay.CouiBottomSheet
+import io.github.wfc35286.coui.kmp.overlay.CouiSnackBar
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
@@ -149,6 +153,8 @@ fun CouiTestPage(
                         item(key = "couiNewLoading") { CouiNewLoadingSection() }
                         item(key = "couiJellyTabs") { CouiJellyTabsSection() }
                         item(key = "couiNewSheet") { CouiNewSheetSection() }
+                        item(key = "couiNewProgress") { CouiNewProgressSection() }
+                        item(key = "couiNewDialog") { CouiNewDialogSection() }
                         item(key = "couiPalette") { CouiPaletteSection() }
                         item { Spacer(modifier = Modifier.height(12.dp)) }
                     }
@@ -591,4 +597,80 @@ private fun CouiNewSheetSection() {
             )
         }
     }
+}
+
+@Composable
+private fun CouiNewProgressSection() {
+    var progress by rememberSaveable { mutableFloatStateOf(0.4f) }
+
+    CouiCategoryHeader(title = "Progress")
+    CouiCard(modifier = Modifier.padding(horizontal = 16.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CouiCircularProgress(progress = progress)
+                Spacer(modifier = Modifier.width(20.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    CouiHorizontalProgressBar(progress = progress)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    CouiSeekBar(value = progress, onValueChange = { progress = it })
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "${(progress * 100).toInt()}%",
+                style = MiuixTheme.textStyles.footnote1,
+                color = CouiTheme.colors.labelSecondary,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CouiNewDialogSection() {
+    var showDialog by rememberSaveable { mutableStateOf(false) }
+    var showSnackBar by rememberSaveable { mutableStateOf(false) }
+
+    CouiCategoryHeader(title = "Dialog & SnackBar")
+    CouiCard(modifier = Modifier.padding(horizontal = 16.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            CouiButton(
+                text = "Dialog",
+                onClick = { showDialog = true },
+                modifier = Modifier.weight(1f),
+            )
+            CouiButton(
+                text = "SnackBar",
+                onClick = { showSnackBar = true },
+                type = CouiButtonType.Secondary,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+    CouiAlertDialog(
+        visible = showDialog,
+        title = "Delete this file?",
+        message = "The file will be removed from this device. This cannot be undone.",
+        confirmText = "Delete",
+        dismissText = "Cancel",
+        onConfirm = { showDialog = false },
+        onDismissRequest = { showDialog = false },
+    )
+    CouiSnackBar(
+        visible = showSnackBar,
+        message = "Swipe this bar sideways to dismiss it",
+        onDismissRequest = { showSnackBar = false },
+    )
 }
