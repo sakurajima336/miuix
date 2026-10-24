@@ -3,6 +3,7 @@
 @file:OptIn(ExperimentalScrollBarApi::class)
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import component.BackNavigationIcon
@@ -45,6 +48,8 @@ import io.github.wfc35286.coui.kmp.basic.CouiButtonType
 import io.github.wfc35286.coui.kmp.basic.CouiCheckBox as CouiTriStateCheckBox
 import io.github.wfc35286.coui.kmp.basic.CouiCheckBoxState
 import io.github.wfc35286.coui.kmp.basic.CouiCircularProgress
+import io.github.wfc35286.coui.kmp.basic.CouiExpandableFloatingButton
+import io.github.wfc35286.coui.kmp.basic.CouiFloatingButtonItem
 import io.github.wfc35286.coui.kmp.basic.CouiHorizontalProgressBar
 import io.github.wfc35286.coui.kmp.basic.CouiLoadingButton
 import io.github.wfc35286.coui.kmp.basic.CouiTabLayout
@@ -64,6 +69,8 @@ import io.github.wfc35286.coui.kmp.example.CouiTheme
 import io.github.wfc35286.coui.kmp.overlay.CouiAlertDialog
 import io.github.wfc35286.coui.kmp.overlay.CouiBottomSheet
 import io.github.wfc35286.coui.kmp.overlay.CouiSnackBar
+import io.github.wfc35286.coui.kmp.overlay.CouiTooltip
+import io.github.wfc35286.coui.kmp.overlay.CouiTooltipDirection
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
@@ -159,6 +166,7 @@ fun CouiTestPage(
                         item(key = "couiNewProgress") { CouiNewProgressSection() }
                         item(key = "couiNewDialog") { CouiNewDialogSection() }
                         item(key = "couiNewCheckbox") { CouiNewCheckboxSection() }
+                        item(key = "couiFabTooltip") { CouiFabTooltipSection() }
                         item(key = "couiPalette") { CouiPaletteSection() }
                         item { Spacer(modifier = Modifier.height(12.dp)) }
                     }
@@ -722,5 +730,95 @@ private fun CouiNewCheckboxSection() {
                 )
             }
         }
+    }
+}
+
+private val CouiFabPlusIcon: androidx.compose.ui.graphics.vector.ImageVector by lazy {
+    androidx.compose.ui.graphics.vector.ImageVector.Builder(
+        name = "CouiFabPlus",
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f,
+    ).apply {
+        addPath(
+            pathData = androidx.compose.ui.graphics.vector.PathParser()
+                .parsePathString("M12,5.5 L12,18.5 M5.5,12 L18.5,12").toNodes(),
+            stroke = androidx.compose.ui.graphics.SolidColor(Color.White),
+            strokeLineWidth = 2f,
+            strokeLineCap = androidx.compose.ui.graphics.StrokeCap.Round,
+        )
+    }.build()
+}
+
+@Composable
+private fun CouiFabTooltipSection() {
+    val directions = listOf(
+        CouiTooltipDirection.Up,
+        CouiTooltipDirection.Down,
+        CouiTooltipDirection.Left,
+        CouiTooltipDirection.Right,
+    )
+    val anchorBounds = remember {
+        mutableStateListOf<androidx.compose.ui.geometry.Rect?>(null, null, null, null)
+    }
+    var tooltipIndex by rememberSaveable { mutableIntStateOf(-1) }
+
+    CouiCategoryHeader(title = "Floating Button & Tooltip")
+    CouiCard(modifier = Modifier.padding(horizontal = 16.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Tap a tile to pin a tooltip on it",
+                style = MiuixTheme.textStyles.footnote1,
+                color = CouiTheme.colors.labelSecondary,
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                directions.forEachIndexed { index, direction ->
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(CouiTheme.colors.background)
+                            .onGloballyPositioned { coords ->
+                                anchorBounds[index] = coords.boundsInWindow()
+                            }
+                            .clickable { tooltipIndex = if (tooltipIndex == index) -1 else index },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = direction.name.first().toString(),
+                            style = MiuixTheme.textStyles.main,
+                            color = CouiTheme.colors.labelPrimary,
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.BottomEnd,
+            ) {
+                CouiExpandableFloatingButton(
+                    icon = androidx.compose.ui.graphics.vector.rememberVectorPainter(CouiFabPlusIcon),
+                    items = listOf(
+                        CouiFloatingButtonItem(label = "Scan"),
+                        CouiFloatingButtonItem(label = "Share"),
+                        CouiFloatingButtonItem(label = "New"),
+                    ),
+                    onItemSelected = { },
+                )
+            }
+        }
+    }
+    if (tooltipIndex in directions.indices) {
+        val index = tooltipIndex
+        CouiTooltip(
+            visible = true,
+            text = "Tooltip on the ${directions[index].name.lowercase()} side",
+            anchorBounds = anchorBounds[index],
+            direction = directions[index],
+            onDismissRequest = { tooltipIndex = -1 },
+        )
     }
 }
